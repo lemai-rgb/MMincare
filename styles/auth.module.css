@@ -1,0 +1,688 @@
+.authPage {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: clamp(16px, 3dvh, 40px) clamp(20px, 3vw, 40px);
+  background: conic-gradient(
+    from 90deg at 50% 50%,
+    var(--mm-auth-green-wash) 0%,
+    var(--mm-canvas) 53.72%,
+    var(--mm-auth-green-wash) 100%
+  );
+}
+
+.authShell {
+  position: relative;
+  width: min(1127px, calc(100vw - 80px));
+  height: min(774px, calc(100dvh - 48px));
+  min-height: 620px;
+  max-height: 774px;
+  overflow: hidden;
+  border: 1px solid var(--mm-auth-border);
+  border-radius: var(--radius-auth-shell);
+  background: var(--mm-surface);
+}
+
+.formBackButton:focus-visible,
+.authBrand:focus-visible,
+.primaryButton:focus-visible,
+.googleButton:focus-visible,
+.passwordToggle:focus-visible,
+.forgotPassword:focus-visible,
+.switchPrompt a:focus-visible {
+  outline: 2px solid var(--mm-primary);
+  outline-offset: 2px;
+}
+
+.formCard {
+  position: absolute;
+  z-index: 3;
+  top: clamp(40px, 8.2dvh, 84px);
+  left: 59px;
+  width: 470px;
+  height: min(600px, calc(100% - 80px));
+  overflow: visible;
+  border-radius: var(--radius-auth-card);
+  background: rgb(255 255 255 / 76%);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 8%);
+  backdrop-filter: blur(10.672px);
+}
+
+.formContent {
+  height: 100%;
+  padding: clamp(30px, 5.2dvh, 53px) 58px clamp(18px, 2.5dvh, 24px);
+}
+
+.formHeader {
+  display: flex;
+  height: 40px;
+  align-items: center;
+  gap: 11px;
+}
+
+.formBackButton {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--mm-primary-dark);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.formBackButton svg {
+  width: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.formBackButton:hover {
+  background: rgb(110 139 107 / 11%);
+  color: var(--mm-primary);
+}
+
+.authBrand {
+  border-radius: 3px;
+  color: var(--mm-primary-dark);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 24px;
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.authBrand:hover {
+  color: var(--mm-primary);
+}
+
+.authTitle {
+  margin-top: 4px;
+  color: var(--mm-text);
+  font-size: 48px;
+  font-weight: 600;
+  line-height: 58px;
+}
+
+.authForm {
+  display: flex;
+  flex-direction: column;
+  margin-top: 20px;
+}
+
+.fieldGroup {
+  position: relative;
+  display: flex;
+  min-height: 80px;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.fieldGroup label {
+  color: var(--mm-text);
+  font-size: 16px;
+  line-height: 19px;
+}
+
+.fieldGroup input {
+  width: 100%;
+  height: 40px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-input);
+  background: var(--mm-surface);
+  color: var(--mm-text);
+  font-size: 14px;
+  outline: none;
+  padding: 0 16px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.fieldGroup input::placeholder {
+  color: var(--mm-placeholder);
+  font-size: 13px;
+}
+
+.fieldGroup input:hover {
+  border-color: #d7d1c9;
+}
+
+.fieldGroup input:focus-visible {
+  border-color: var(--mm-primary);
+  box-shadow: 0 0 0 2px rgb(110 139 107 / 18%);
+}
+
+.fieldGroup input.inputError {
+  border-color: #d9776a;
+  box-shadow: 0 0 0 1px #d9776a;
+}
+
+.fieldError {
+  min-height: 14px;
+  color: #c85f52;
+  font-size: 12px;
+  line-height: 14px;
+}
+
+.passwordControl {
+  position: relative;
+}
+
+.passwordControl input {
+  padding-right: 48px;
+}
+
+.passwordToggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  width: 44px;
+  height: 40px;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-input);
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.passwordToggle:hover {
+  color: var(--mm-primary-dark);
+}
+
+.passwordToggle svg {
+  width: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.forgotPassword {
+  align-self: flex-end;
+  margin-top: -1px;
+  border: 0;
+  background: transparent;
+  color: var(--mm-primary-dark);
+  cursor: pointer;
+  font-size: 16px;
+  letter-spacing: 0.8px;
+  line-height: 20px;
+}
+
+.primaryButton {
+  width: 160px;
+  height: 48px;
+  margin: 38px auto 0;
+  border: 0;
+  border-radius: var(--radius-button);
+  background: var(--mm-primary);
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 150ms ease, transform 120ms ease;
+}
+
+.primaryButton:hover {
+  background: #5d775b;
+}
+
+.primaryButton:active {
+  background: var(--mm-primary-dark);
+  transform: translateY(1px);
+}
+
+.primaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.alternativeAuth {
+  margin-top: 27px;
+  text-align: center;
+}
+
+.alternativeAuth p {
+  font-size: 16px;
+  line-height: 19px;
+}
+
+.googleButton {
+  display: grid;
+  height: 36px;
+  place-items: center;
+  margin: 10px auto 0;
+  border: 1px solid var(--mm-auth-border);
+  border-radius: var(--radius-pill);
+  background: var(--mm-surface);
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease,
+    transform 120ms ease;
+}
+
+.googleButton:hover {
+  border-color: var(--mm-primary);
+  background: var(--mm-surface-soft);
+}
+
+.googleButton:active {
+  transform: translateY(1px);
+}
+
+.loginGoogleButton {
+  width: 258px;
+}
+
+.registerGoogleButton {
+  width: 342px;
+  height: 57px;
+  margin-top: 8px;
+}
+
+.switchPrompt {
+  margin-top: 45px;
+  text-align: center;
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.switchPrompt a {
+  border-radius: 2px;
+  color: var(--mm-primary-dark);
+  text-decoration: none;
+}
+
+.switchPrompt a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.registerForm {
+  margin-top: 20px;
+}
+
+.registerForm .fieldGroup {
+  min-height: 79px;
+}
+
+.registerButton {
+  margin-top: 5px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.registerForm .alternativeAuth {
+  margin-top: 16px;
+}
+
+.registerForm .switchPrompt {
+  margin-top: 20px;
+}
+
+.petIllustration {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 44.48%;
+  width: 55.5%;
+  height: auto;
+  max-height: clamp(360px, 65dvh, 626px);
+  object-fit: contain;
+  opacity: 0.95;
+  transform: translateY(-50%);
+}
+
+.authDecorations {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.authDecorations svg {
+  position: absolute;
+  fill: currentColor;
+  opacity: 0.32;
+}
+
+.authLeaf {
+  top: 74px;
+  left: 74%;
+  width: 30px;
+  color: #b8ccb6;
+}
+
+.authBone {
+  top: 105px;
+  right: 92px;
+  width: 26px;
+  color: #dfc9a8;
+  transform: rotate(-38deg);
+}
+
+.authStar {
+  bottom: 30px;
+  left: 145px;
+  width: 28px;
+  color: #b8ccb6;
+}
+
+@media (max-width: 1199px) {
+  .authPage {
+    padding: 24px;
+  }
+
+  .authShell {
+    width: calc(100vw - 48px);
+    height: min(774px, calc(100dvh - 48px));
+    min-height: 620px;
+  }
+
+  .formCard {
+    top: clamp(40px, 7dvh, 70px);
+    left: 5.2%;
+    width: 46%;
+    height: calc(100% - 80px);
+    min-height: 0;
+  }
+
+  .formContent {
+    padding-right: clamp(28px, 5vw, 58px);
+    padding-left: clamp(28px, 5vw, 58px);
+  }
+
+  .authTitle {
+    font-size: clamp(40px, 4vw, 48px);
+    line-height: 1.15;
+  }
+
+  .petIllustration {
+    left: 48%;
+    width: 52%;
+  }
+}
+
+@media (min-width: 768px) and (max-height: 820px) {
+  .authPage {
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+
+  .authShell {
+    height: calc(100dvh - 32px);
+  }
+
+  .formCard {
+    top: 40px;
+    height: calc(100% - 80px);
+  }
+
+  .formContent {
+    padding-top: 30px;
+    padding-bottom: 16px;
+  }
+
+  .authTitle {
+    margin-top: 6px;
+    font-size: 42px;
+    line-height: 50px;
+  }
+
+  .authForm,
+  .registerForm {
+    margin-top: 12px;
+  }
+
+  .fieldGroup {
+    min-height: 72px;
+    gap: 5px;
+  }
+
+  .registerForm .fieldGroup {
+    min-height: 68px;
+  }
+
+  .primaryButton {
+    height: 46px;
+    margin-top: 20px;
+  }
+
+  .registerButton {
+    margin-top: 4px;
+  }
+
+  .alternativeAuth {
+    margin-top: 20px;
+  }
+
+  .registerForm .alternativeAuth {
+    margin-top: 12px;
+  }
+
+  .googleButton {
+    margin-top: 6px;
+  }
+
+  .registerGoogleButton {
+    height: 48px;
+  }
+
+  .switchPrompt {
+    margin-top: 26px;
+  }
+
+  .registerForm .switchPrompt {
+    margin-top: 14px;
+  }
+
+  .petIllustration {
+    max-height: clamp(360px, 62dvh, 510px);
+  }
+}
+
+@media (min-width: 768px) and (max-height: 720px) {
+  .authShell {
+    min-height: 590px;
+  }
+
+  .formCard {
+    top: 28px;
+    height: calc(100% - 56px);
+  }
+
+  .formContent {
+    padding-top: 22px;
+    padding-bottom: 14px;
+  }
+
+  .authTitle {
+    margin-top: 4px;
+    font-size: 38px;
+    line-height: 44px;
+  }
+
+  .authForm,
+  .registerForm {
+    margin-top: 8px;
+  }
+
+  .fieldGroup,
+  .registerForm .fieldGroup {
+    min-height: 64px;
+    gap: 3px;
+  }
+
+  .fieldError {
+    min-height: 12px;
+    line-height: 12px;
+  }
+
+  .primaryButton {
+    height: 44px;
+    margin-top: 12px;
+  }
+
+  .registerButton {
+    margin-top: 2px;
+  }
+
+  .alternativeAuth,
+  .registerForm .alternativeAuth {
+    margin-top: 8px;
+  }
+
+  .registerGoogleButton {
+    height: 44px;
+  }
+
+  .switchPrompt,
+  .registerForm .switchPrompt {
+    margin-top: 10px;
+  }
+
+  .petIllustration {
+    max-height: clamp(330px, 60dvh, 430px);
+  }
+}
+
+@media (max-width: 767px) {
+  .authPage {
+    display: block;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: clamp(12px, 4vw, 16px);
+  }
+
+  .authShell {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+    aspect-ratio: auto;
+    padding: clamp(12px, 4vw, 16px);
+  }
+
+  .formCard {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+
+  .formContent {
+    padding: 24px clamp(20px, 6vw, 24px);
+  }
+
+  .authTitle {
+    margin-top: 6px;
+    font-size: clamp(32px, 9.2vw, 36px);
+    line-height: 1.2;
+  }
+
+  .authForm,
+  .registerForm {
+    margin-top: 18px;
+  }
+
+  .fieldGroup,
+  .registerForm .fieldGroup {
+    min-height: 84px;
+  }
+
+  .fieldGroup input,
+  .passwordToggle {
+    height: 48px;
+  }
+
+  .primaryButton,
+  .googleButton,
+  .loginGoogleButton,
+  .registerGoogleButton {
+    width: 100%;
+  }
+
+  .primaryButton {
+    height: 48px;
+    margin-top: 20px;
+  }
+
+  .registerButton {
+    margin-top: 8px;
+  }
+
+  .alternativeAuth,
+  .registerForm .alternativeAuth {
+    margin-top: 20px;
+  }
+
+  .googleButton,
+  .registerGoogleButton {
+    height: 48px;
+  }
+
+  .switchPrompt,
+  .registerForm .switchPrompt {
+    margin-top: 24px;
+  }
+
+  .petIllustration {
+    display: none;
+  }
+
+  .authDecorations {
+    display: none;
+  }
+}
+
+@media (max-width: 374px) {
+  .authPage,
+  .authShell {
+    padding: 12px;
+  }
+
+  .formContent {
+    padding: 22px 18px;
+  }
+
+  .formHeader {
+    gap: 10px;
+  }
+
+  .authBrand {
+    font-size: 18px;
+  }
+
+  .authTitle {
+    font-size: 32px;
+  }
+
+  .authForm,
+  .registerForm {
+    margin-top: 16px;
+  }
+
+  .fieldGroup,
+  .registerForm .fieldGroup {
+    min-height: 82px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .formBackButton,
+  .primaryButton,
+  .googleButton,
+  .fieldGroup input {
+    transition: none;
+  }
+}

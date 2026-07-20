@@ -1,0 +1,38 @@
+{
+  "home": {
+    "bottomWave": "https://www.figma.com/api/mcp/asset/eda77b7e-18df-4b00-9dc1-d626f3c6cc67",
+    "orDivider": "https://www.figma.com/api/mcp/asset/a3d5ac39-70ec-43c3-bb58-35b26a51c531",
+    "dogArrow": "https://www.figma.com/api/mcp/asset/bfd5585b-e0c8-4c53-9245-3d94a09aaefc",
+    "dogHead": "https://www.figma.com/api/mcp/asset/bea94124-fec1-4d96-8952-24285f922515",
+    "catHead": "https://www.figma.com/api/mcp/asset/90298234-7e64-4414-a38b-cc30770fd631",
+    "catArrow": "https://www.figma.com/api/mcp/asset/b18e710f-5abe-4f84-9ef5-d35cecffbb96",
+    "threadLine": "https://www.figma.com/api/mcp/asset/cee00c18-9b0b-4334-b550-125f61cc7a93",
+    "leafSmall": "https://www.figma.com/api/mcp/asset/f65fc479-c422-4a60-abf9-fb48f95d5804",
+    "dotBeige": "https://www.figma.com/api/mcp/asset/449702af-02c7-43f2-813f-17d2029406f8",
+    "dotGreen": "https://www.figma.com/api/mcp/asset/3573029b-cb0d-4f81-96f8-39f82d40ac79",
+    "leafLarge": "https://www.figma.com/api/mcp/asset/e81fc2b7-768d-4da2-9ebe-d56582b456a9",
+    "decorStar": "https://www.figma.com/api/mcp/asset/00e0b7f0-ff69-45ff-bc6b-a96af0ba739d",
+    "decorBone": "https://www.figma.com/api/mcp/asset/057561ca-7d69-4cec-8302-b545905413bb",
+    "decorFish": "https://www.figma.com/api/mcp/asset/fd1e2cfb-5b21-48a7-a016-5d70afc1eb97"
+  },
+  "login": {
+    "petIllustration": "https://www.figma.com/api/mcp/asset/13177b15-b502-4272-9abe-b1df26d99c3b",
+    "backArrow": "https://www.figma.com/api/mcp/asset/bf5cd6d2-96b1-404c-bf27-2beecdcc009a",
+    "eyeHidden": "https://www.figma.com/api/mcp/asset/baa7f246-7628-4ee9-acb6-469d77c6dac8",
+    "google": "https://www.figma.com/api/mcp/asset/899a9656-4cf9-4a1e-bfc0-2cda5cca74b4",
+    "decorBone": "https://www.figma.com/api/mcp/asset/5b56bd85-0423-4026-8c1a-7738b04383ed",
+    "decorStar": "https://www.figma.com/api/mcp/asset/d1a88f08-4fa5-4085-9bc5-c1b01d0c0ab2",
+    "decorLeaf": "https://www.figma.com/api/mcp/asset/6907a551-8141-4c3b-839c-9d1bd27b232c",
+    "decorSmall": "https://www.figma.com/api/mcp/asset/12149fb5-0902-428d-8926-429ec9cb0bfb"
+  },
+  "register": {
+    "petIllustration": "https://www.figma.com/api/mcp/asset/f70dbe7d-3834-4717-9ed2-dbbe4cf75832",
+    "backArrow": "https://www.figma.com/api/mcp/asset/c1dfacd5-8edd-4886-a252-77ee0536bd78",
+    "eyeHidden": "https://www.figma.com/api/mcp/asset/00450c7b-c0de-4156-8413-db308e2c9efd",
+    "google": "https://www.figma.com/api/mcp/asset/805a871c-61a1-4856-871c-b3cc83157ee9",
+    "decorBone": "https://www.figma.com/api/mcp/asset/32771171-eacd-4feb-91fc-52871f841e9b",
+    "decorStar": "https://www.figma.com/api/mcp/asset/3f024a9c-6546-4bc5-aac4-6ae9f691e310",
+    "decorLeaf": "https://www.figma.com/api/mcp/asset/5ccd1947-97a7-4d50-b9e8-6bd79fb89e82",
+    "decorSmall": "https://www.figma.com/api/mcp/asset/1ee42adf-d3c8-4de6-b543-f818334c0b59"
+  }
+}

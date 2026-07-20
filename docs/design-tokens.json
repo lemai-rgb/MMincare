@@ -1,0 +1,100 @@
+{
+  "source": {
+    "figmaFileKey": "s21SYuVWawEJlHIcg8njuI",
+    "figmaFileUrl": "https://www.figma.com/design/s21SYuVWawEJlHIcg8njuI/MMin-Care-UL-design",
+    "pageNodeId": "6:5",
+    "screens": {
+      "home": {
+        "nodeId": "18:16",
+        "width": 1440,
+        "height": 1024
+      },
+      "login": {
+        "nodeId": "25:56",
+        "width": 1449,
+        "height": 1024
+      },
+      "register": {
+        "nodeId": "45:7",
+        "width": 1449,
+        "height": 1024
+      }
+    }
+  },
+  "color": {
+    "primary": "#6E8B6B",
+    "primaryDark": "#4F6F52",
+    "textPrimary": "#333333",
+    "homeTextPrimary": "#2D2D2D",
+    "textSecondary": "#7C7C7C",
+    "textPlaceholder": "#BFBFBF",
+    "border": "#E8E2DA",
+    "surface": "#FFFFFF",
+    "canvas": "#FAF8F5",
+    "authGreenWash": "#DDEBDD",
+    "elevatedSubtle": "#F2F2F7",
+    "gray2": "#AEAEB2",
+    "authOuterBorder": "#727272",
+    "homeSecondaryButton": "#FCFBF9"
+  },
+  "typography": {
+    "fontSans": "Inter",
+    "fontDisplayMono": "Intel One Mono",
+    "homeLogo": {
+      "size": 40,
+      "weight": 700,
+      "lineHeight": "normal"
+    },
+    "homeDescription": {
+      "size": 20,
+      "weight": 400,
+      "lineHeight": 32
+    },
+    "title": {
+      "size": 20,
+      "weight": 600,
+      "lineHeight": "normal"
+    },
+    "body": {
+      "size": 16,
+      "weight": 400,
+      "lineHeight": "normal"
+    },
+    "caption": {
+      "size": 14,
+      "weight": 400,
+      "lineHeight": "normal"
+    },
+    "authPageTitle": {
+      "size": 48,
+      "weight": 600,
+      "lineHeight": "normal"
+    },
+    "authBrand": {
+      "size": 20,
+      "weight": 600,
+      "lineHeight": "normal"
+    },
+    "authPlaceholder": {
+      "size": 13,
+      "weight": 400,
+      "lineHeight": "normal"
+    }
+  },
+  "radius": {
+    "homeShell": 32,
+    "authShell": 28,
+    "authFormCard": 24,
+    "speciesCard": 24,
+    "featureStrip": 32,
+    "button": 14,
+    "pill": 999,
+    "input": 4
+  },
+  "shadow": {
+    "homeShellInset": "inset 0 12px 32px rgba(0,0,0,0.06)",
+    "speciesCard": "0 8px 24px rgba(0,0,0,0.08)",
+    "featureStrip": "0 8px 12px rgba(0,0,0,0.06)",
+    "authFormCardRecommended": "0 12px 32px rgba(0,0,0,0.08)"
+  }
+}
