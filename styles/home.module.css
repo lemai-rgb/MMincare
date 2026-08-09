@@ -271,7 +271,7 @@
   min-height: 136px;
   grid-template-columns: repeat(4, 1fr);
   gap: 24px;
-  align-items: center;
+  align-items: start;
   padding: 22px 36px;
   transform: translateX(-50%);
   border: 1px solid var(--mm-border);
@@ -281,6 +281,9 @@
 }
 
 .feature {
+  display: grid;
+  grid-template-rows: 48px auto;
+  align-content: start;
   text-align: center;
 }
 
@@ -665,6 +668,12 @@
 @media (min-width: 560px) and (max-width: 767px) {
   .featureStrip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 559px) {
+  .feature {
+    grid-template-rows: auto auto;
   }
 }
 
