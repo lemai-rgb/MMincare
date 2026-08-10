@@ -1,0 +1,9 @@
+.page { display: grid; min-height: 100dvh; padding: 24px; place-items: center; background: var(--mm-canvas); }
+.card { width: min(100%, 520px); padding: clamp(28px, 6vw, 48px); border: 1px solid var(--mm-border); border-radius: var(--radius-auth-card); background: var(--mm-surface); box-shadow: var(--shadow-card); text-align: center; }
+.brand { margin: 0 0 20px; color: var(--mm-primary); font-size: 30px; font-weight: 700; }
+.card h1 { margin: 0; color: var(--mm-primary-dark); font-size: clamp(28px, 5vw, 38px); }
+.card > p:not(.brand) { margin: 18px 0 0; line-height: 1.6; }
+.actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 28px; }
+.primaryLink, .secondaryLink { min-width: 132px; padding: 12px 18px; border: 1px solid var(--mm-primary); border-radius: var(--radius-button); text-decoration: none; }
+.primaryLink { background: var(--mm-primary); color: white; }
+.secondaryLink { color: var(--mm-primary-dark); }

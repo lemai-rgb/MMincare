@@ -1,119 +1,99 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
-import { normalizeEmail, validateRegister } from "@/lib/authValidation";
+import { getAvailableAuthDestination, getOnboardingPath } from "@/lib/authRedirect";
+import type { OnboardingSpecies } from "@/lib/authRedirect";
 import type { AuthFieldErrors } from "@/lib/authValidation";
+import { normalizeEmail, validateRegister } from "@/lib/authValidation";
+import { createClient } from "@/lib/supabase/client";
 import styles from "@/styles/auth.module.css";
 import { AuthFormCard } from "./AuthFormCard";
 import { AuthInput } from "./AuthInput";
-import { GoogleAuthButton } from "./GoogleAuthButton";
 import { PasswordInput } from "./PasswordInput";
 
-type RegisterFormProps = {
-  species?: "cat" | "dog";
-};
+type RegisterFormProps = { species?: OnboardingSpecies };
 
 export function RegisterForm({ species }: RegisterFormProps) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<AuthFieldErrors>({});
+  const [formError, setFormError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (Object.keys(errors).length === 0) return;
-
     const frameId = requestAnimationFrame(() => {
-      formRef.current
-        ?.querySelector<HTMLInputElement>('input[aria-invalid="true"]')
-        ?.focus();
+      formRef.current?.querySelector<HTMLInputElement>('input[aria-invalid="true"]')?.focus();
     });
-
     return () => cancelAnimationFrame(frameId);
   }, [errors]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const normalizedEmail = normalizeEmail(email);
-    const nextErrors = validateRegister({
-      email: normalizedEmail,
-      password,
-      confirmPassword,
-    });
+    if (isLoading || successMessage) return;
 
+    const normalizedEmail = normalizeEmail(email);
+    const nextErrors = validateRegister({ email: normalizedEmail, password, confirmPassword });
     setEmail(normalizedEmail);
     setErrors(nextErrors);
+    setFormError("");
+    if (Object.keys(nextErrors).length > 0) return;
 
+    setIsLoading(true);
+    const next = species ? getOnboardingPath(species) : "/dashboard";
+    const confirmUrl = new URL("/auth/confirm", window.location.origin);
+    confirmUrl.searchParams.set("next", next);
+
+    const { data, error } = await createClient().auth.signUp({
+      email: normalizedEmail,
+      password,
+      options: { emailRedirectTo: confirmUrl.toString() },
+    });
+
+    if (error) {
+      const duplicateCodes = new Set(["email_exists", "user_already_exists"]);
+      setFormError(
+        duplicateCodes.has(error.code ?? "")
+          ? "Email này đã được đăng ký. Vui lòng đăng nhập."
+          : "Không thể đăng ký lúc này. Vui lòng thử lại.",
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    if (data.session) {
+      router.replace(getAvailableAuthDestination(next));
+      router.refresh();
+      return;
+    }
+
+    setSuccessMessage("Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản.");
+    setIsLoading(false);
   }
 
   return (
     <AuthFormCard title="Đăng ký">
-      <form
-        ref={formRef}
-        className={`${styles.authForm} ${styles.registerForm}`}
-        noValidate
-        onSubmit={handleSubmit}
-      >
+      <form ref={formRef} className={`${styles.authForm} ${styles.registerForm}`} noValidate onSubmit={handleSubmit}>
         {species && <input type="hidden" name="species" value={species} />}
-        <AuthInput
-          id="register-email"
-          name="email"
-          label="Email"
-          type="email"
-          value={email}
-          placeholder="username@gmail.com"
-          autoComplete="email"
-          error={errors.email}
-          onChange={(event) => {
-            setEmail(event.target.value);
-            if (errors.email) setErrors((current) => ({ ...current, email: undefined }));
-          }}
-          onBlur={() => setEmail((current) => normalizeEmail(current))}
-        />
-        <PasswordInput
-          id="register-password"
-          name="password"
-          label="Mật khẩu"
-          value={password}
-          placeholder="Mật khẩu"
-          autoComplete="new-password"
-          error={errors.password}
-          onChange={(event) => {
-            setPassword(event.target.value);
-            if (errors.password) setErrors((current) => ({ ...current, password: undefined }));
-          }}
-        />
-        <PasswordInput
-          id="register-confirm-password"
-          name="confirmPassword"
-          label="Xác nhận mật khẩu"
-          value={confirmPassword}
-          placeholder="Nhập lại mật khẩu"
-          autoComplete="new-password"
-          error={errors.confirmPassword}
-          onChange={(event) => {
-            setConfirmPassword(event.target.value);
-            if (errors.confirmPassword) {
-              setErrors((current) => ({ ...current, confirmPassword: undefined }));
-            }
-          }}
-        />
+        <AuthInput id="register-email" name="email" label="Email" type="email" value={email} placeholder="username@gmail.com" autoComplete="email" error={errors.email} onChange={(event) => { setEmail(event.target.value); setFormError(""); if (errors.email) setErrors((current) => ({ ...current, email: undefined })); }} onBlur={() => setEmail((current) => normalizeEmail(current))} />
+        <PasswordInput id="register-password" name="password" label="Mật khẩu" value={password} placeholder="Mật khẩu" autoComplete="new-password" error={errors.password} onChange={(event) => { setPassword(event.target.value); setFormError(""); if (errors.password) setErrors((current) => ({ ...current, password: undefined })); }} />
+        <PasswordInput id="register-confirm-password" name="confirmPassword" label="Xác nhận mật khẩu" value={confirmPassword} placeholder="Nhập lại mật khẩu" autoComplete="new-password" error={errors.confirmPassword} onChange={(event) => { setConfirmPassword(event.target.value); setFormError(""); if (errors.confirmPassword) setErrors((current) => ({ ...current, confirmPassword: undefined })); }} />
 
-        <button className={`${styles.primaryButton} ${styles.registerButton}`} type="submit">
-          Đăng ký
+        {formError && <p className={styles.formError} role="alert">{formError}</p>}
+        {successMessage && <p className={styles.formSuccess} role="status">{successMessage}</p>}
+        <button className={`${styles.primaryButton} ${styles.registerButton}`} type="submit" disabled={isLoading || Boolean(successMessage)}>
+          {isLoading ? "Đang đăng ký…" : "Đăng ký"}
         </button>
 
-        <div className={styles.alternativeAuth}>
-          <p>Hoặc đăng ký với</p>
-          <GoogleAuthButton variant="register" />
-        </div>
-
-        <p className={styles.switchPrompt}>
-          Đã có tài khoản? <Link href="/login">Đăng nhập</Link>
-        </p>
+        <p className={styles.switchPrompt}>Đã có tài khoản? <Link href="/login">Đăng nhập</Link></p>
       </form>
     </AuthFormCard>
   );

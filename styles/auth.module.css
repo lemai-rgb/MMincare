@@ -229,6 +229,27 @@
   transition: background-color 150ms ease, transform 120ms ease;
 }
 
+.formError,
+.formSuccess {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 14px;
+  line-height: 18px;
+}
+
+.formError + .primaryButton,
+.formSuccess + .primaryButton {
+  margin-top: 14px;
+}
+
+.formError {
+  color: #a33;
+}
+
+.formSuccess {
+  color: var(--mm-primary-dark);
+}
+
 .primaryButton:hover {
   background: #5d775b;
 }
