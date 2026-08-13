@@ -125,7 +125,7 @@ export function CreatePetForm({ initialSpecies }: CreatePetFormProps) {
             <div className={styles.field}>
               <label htmlFor="pet-species">Loài <b aria-hidden="true">*</b></label>
               <select id="pet-species" name="species" value={species} aria-invalid={Boolean(errors.species)} aria-describedby={errors.species ? "pet-species-error" : undefined} onChange={(event) => { setSpecies(event.target.value as PetSpecies | ""); clearFieldError("species"); }}>
-                <option value="">VD: Chó</option>
+                <option value="" disabled hidden>Chọn loài</option>
                 {PET_SPECIES.map((option) => <option key={option} value={option}>{speciesLabels[option]}</option>)}
               </select>
               <small id="pet-species-error">{errors.species ?? ""}</small>
@@ -134,7 +134,7 @@ export function CreatePetForm({ initialSpecies }: CreatePetFormProps) {
             <div className={styles.field}>
               <label htmlFor="pet-gender">Giới tính <b aria-hidden="true">*</b></label>
               <select id="pet-gender" name="gender" value={gender} aria-invalid={Boolean(errors.gender)} aria-describedby={errors.gender ? "pet-gender-error" : undefined} onChange={(event) => { setGender(event.target.value as PetGender | ""); clearFieldError("gender"); }}>
-                <option value="">VD: Đực / Cái</option>
+                <option value="" disabled hidden>Chọn giới tính</option>
                 {PET_GENDERS.map((option) => <option key={option} value={option}>{genderLabels[option]}</option>)}
               </select>
               <small id="pet-gender-error">{errors.gender ?? ""}</small>
