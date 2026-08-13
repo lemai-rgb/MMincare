@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { getSafeAuthNext } from "@/lib/authRedirect";
+import { getAvailableAuthDestination, getSafeAuthNext, parseSpecies } from "@/lib/authRedirect";
 import styles from "@/styles/authStatus.module.css";
 
 type ConfirmationErrorPageProps = {
@@ -11,7 +11,12 @@ export default async function ConfirmationErrorPage({ searchParams }: Confirmati
   const params = await searchParams;
   const errorCode = Array.isArray(params.error_code) ? params.error_code[0] : params.error_code;
   const next = getSafeAuthNext(Array.isArray(params.next) ? params.next[0] : params.next);
-  const loginHref = next === "/dashboard" ? "/login" : `/login?next=${encodeURIComponent(next)}`;
+  const destination = getAvailableAuthDestination(next);
+  const destinationUrl = new URL(destination, "http://mmincare.internal");
+  const species = destinationUrl.pathname === "/dashboard"
+    ? parseSpecies(destinationUrl.searchParams.get("species"))
+    : undefined;
+  const loginHref = species ? `/login?species=${species}` : "/login";
   const isExpiredOtp = errorCode === "otp_expired";
 
   return (
