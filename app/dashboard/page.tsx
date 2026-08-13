@@ -54,26 +54,85 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const newPetHref = species ? `/pets/new?species=${species}` : "/pets/new";
   const hasPets = pets.length > 0;
 
+  if (hasPets) {
+    return (
+      <main className={`${styles.page} ${styles.populatedPage}`}>
+        <header className={styles.populatedHeader}>
+          <Link className={styles.populatedBrand} href="/">
+            <span>MMinCare</span>
+            <span>Care more, worry less</span>
+          </Link>
+
+          <nav className={styles.primaryNav} aria-label="Điều hướng chính">
+            <Link className={styles.activeNavItem} href="/dashboard">Thú cưng<span className={styles.navChevron} aria-hidden="true" /></Link>
+            <span className={styles.navItem}>Nhắc hẹn<span className={styles.navChevron} aria-hidden="true" /></span>
+            <span className={styles.navItem}>Hồ sơ y tế<span className={styles.navChevron} aria-hidden="true" /></span>
+            <span className={styles.navItem}>Tài khoản<span className={styles.navChevron} aria-hidden="true" /></span>
+          </nav>
+
+          <div className={styles.headerActions}>
+            <Link className={styles.addPetAction} href="/pets/new">+ Thêm hồ sơ thú cưng</Link>
+            <LogoutButton />
+          </div>
+        </header>
+
+        <section className={styles.populatedShell} aria-labelledby="dashboard-title">
+          <div className={styles.populatedListIntro}>
+            <h1 id="dashboard-title">Thú cưng của bạn</h1>
+            <p>Chọn một bé để xem hồ sơ sức khỏe, lịch tiêm và nhắc hẹn chăm sóc.</p>
+          </div>
+
+          <section className={styles.petGrid} aria-label="Danh sách thú cưng">
+            {pets.map((pet) => {
+              const age = getPetAgeLabel(pet.date_of_birth);
+              const updatedAt = formatUpdatedAt(pet.updated_at ?? pet.created_at);
+
+              return (
+                <article className={styles.petCard} key={pet.pet_id}>
+                  <div className={styles.avatarFrame}>
+                    <PetAvatar species={pet.species} pictureUrl={pet.picture_url} />
+                  </div>
+                  <div className={styles.petDetails}>
+                    <h2>{pet.name}</h2>
+                    <ul className={styles.petMetadata} aria-label={`Thông tin của ${pet.name}`}>
+                      <li>{getPetSpeciesLabel(pet.species)}</li>
+                      {pet.breed && <li>{pet.breed}</li>}
+                      <li>{getPetGenderLabel(pet.gender)}</li>
+                      {age && <li>{age}</li>}
+                    </ul>
+                    <p className={styles.healthStatus}>Chưa có thông tin sức khỏe</p>
+                  </div>
+                  <div className={styles.cardAside}>
+                    <button className={styles.profilePreviewButton} type="button" disabled aria-disabled="true">
+                      Xem hồ sơ →
+                    </button>
+                    {updatedAt && <p className={styles.updatedAt}>Cập nhật gần nhất: {updatedAt}</p>}
+                  </div>
+                </article>
+              );
+            })}
+          </section>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className={styles.page}>
-      <section className={`${styles.petShell} ${hasPets ? styles.populatedShell : ""}`} aria-labelledby="dashboard-title">
-        <header className={`${styles.petHeader} ${hasPets ? styles.populatedHeader : ""}`}>
+      <section className={styles.petShell} aria-labelledby="dashboard-title">
+        <header className={styles.petHeader}>
           <Link className={styles.brandLink} href="/">
             <span>MMinCare</span>
-            {hasPets && <span className={styles.brandTagline}>Care more, worry less</span>}
           </Link>
           <LogoutButton />
         </header>
 
-        <div className={`${styles.listIntro} ${hasPets ? styles.populatedListIntro : ""}`}>
+        <div className={styles.listIntro}>
           <div>
-            {hasPets ? <p className={styles.eyebrow}>Thú cưng của bạn</p> : <p className={styles.eyebrow}>Không gian chăm sóc của bạn</p>}
+            <p className={styles.eyebrow}>Không gian chăm sóc của bạn</p>
             <h1 id="dashboard-title">Thú cưng của tôi</h1>
             <p>Quản lý hồ sơ sức khỏe của các bé tại một nơi.</p>
           </div>
-          {hasPets && (
-            <Link className={styles.primaryAction} href="/pets/new">Thêm thú cưng</Link>
-          )}
         </div>
 
         {species && pets.length === 0 && !petsError && (
@@ -87,37 +146,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             <h2>Chưa thể tải danh sách thú cưng</h2>
             <p>Vui lòng thử tải lại trang sau ít phút.</p>
           </section>
-        ) : !hasPets ? (
+        ) : (
           <section className={styles.emptyState} aria-labelledby="empty-pets-title">
             <span className={styles.emptyMark} aria-hidden="true">♡</span>
             <h2 id="empty-pets-title">Bạn chưa có hồ sơ thú cưng nào</h2>
             <p>Hãy thêm hồ sơ đầu tiên để lưu giữ thông tin chăm sóc của bé.</p>
             <Link className={styles.primaryAction} href={newPetHref}>Thêm thú cưng</Link>
-          </section>
-        ) : (
-          <section className={styles.petGrid} aria-label="Danh sách thú cưng">
-            {pets.map((pet) => {
-              const age = getPetAgeLabel(pet.date_of_birth);
-              const updatedAt = formatUpdatedAt(pet.updated_at);
-
-              return (
-              <article className={styles.petCard} key={pet.pet_id}>
-                <div className={styles.avatarFrame}>
-                  <PetAvatar species={pet.species} pictureUrl={pet.picture_url} />
-                </div>
-                <div className={styles.petDetails}>
-                  <h2>{pet.name}</h2>
-                  <ul className={styles.petMetadata} aria-label={`Thông tin của ${pet.name}`}>
-                    <li>{getPetSpeciesLabel(pet.species)}</li>
-                    {pet.breed && <li>{pet.breed}</li>}
-                    <li>{getPetGenderLabel(pet.gender)}</li>
-                    {age && <li>{age}</li>}
-                  </ul>
-                </div>
-                {updatedAt && <p className={styles.updatedAt}>Cập nhật gần nhất: {updatedAt}</p>}
-              </article>
-              );
-            })}
           </section>
         )}
       </section>
