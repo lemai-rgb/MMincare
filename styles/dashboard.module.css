@@ -40,11 +40,14 @@
   text-decoration: none;
 }
 
-.populatedShell {
+.petListShell {
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
   width: min(calc(100% - 78px), 1378px);
-  min-height: calc(100dvh - 100px);
+  min-height: 905px;
   margin: 10px auto 30px;
-  padding: 14px clamp(32px, 4.6vw, 66px) 80px;
+  padding: 14px 66px 80px;
   border: 1px solid var(--mm-border);
   border-radius: 32px;
   background: var(--mm-surface);
@@ -52,22 +55,27 @@
 }
 
 .populatedHeader {
-  display: flex;
-  min-height: 80px;
+  position: relative;
+  box-sizing: border-box;
+  display: grid;
+  height: 80px;
+  grid-template-columns: 420px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 22px;
-  padding: 0 clamp(32px, 5.7vw, 82px);
+  column-gap: 24px;
+  padding: 0 82px;
   border-bottom: 1px solid var(--mm-border);
   background: var(--mm-surface);
 }
 
 .populatedBrand {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   flex: 0 0 auto;
   align-items: baseline;
   gap: 22px;
   color: var(--mm-primary);
-  font-size: clamp(25px, 2.8vw, 40px);
+  font-size: 40px;
   font-weight: 700;
   line-height: 1;
   text-decoration: none;
@@ -81,12 +89,13 @@
 }
 
 .primaryNav {
+  position: relative;
+  z-index: 1;
   display: flex;
   min-width: 0;
   align-items: center;
-  justify-content: center;
-  gap: clamp(14px, 1.7vw, 24px);
-  margin-left: auto;
+  justify-content: flex-start;
+  gap: 24px;
 }
 
 .navItem,
@@ -95,7 +104,7 @@
   align-items: center;
   gap: 7px;
   color: #4d4d4d;
-  font-size: clamp(14px, 1.4vw, 20px);
+  font-size: 20px;
   font-weight: 500;
   line-height: 1.2;
   white-space: nowrap;
@@ -116,22 +125,23 @@
 }
 
 .headerActions {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 10px;
 }
 
 .addPetAction {
   display: inline-flex;
-  min-height: 32px;
+  min-height: 34px;
   align-items: center;
   justify-content: center;
-  padding: 5px 14px;
+  padding: 5px 16px;
   border: 1px solid var(--mm-border);
   border-radius: 18px;
   color: var(--mm-text);
-  font-size: clamp(12px, 1.15vw, 15px);
+  font-size: 15px;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -164,15 +174,18 @@
   align-items: end;
 }
 
-.populatedListIntro {
-  display: flex;
+.petListToolbar {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 24px;
+  column-gap: 24px;
   margin: 0;
   color: #7c7c7c;
 }
 
-.populatedListIntro h1 {
+.petListToolbar h1 {
   margin: 0;
   color: #7c7c7c;
   font-size: 20px;
@@ -181,11 +194,12 @@
   white-space: nowrap;
 }
 
-.populatedListIntro p {
+.petListToolbar p {
   margin: 0;
   color: #4d4d4d;
   font-size: 12px;
   line-height: 1.5;
+  text-align: center;
 }
 
 .eyebrow {
@@ -304,122 +318,343 @@
   background: #fffafa;
 }
 
-.petGrid {
+.petListGrid {
+  position: relative;
+  z-index: 1;
   display: grid;
   max-width: 1229px;
   gap: 20px;
   margin: 10px auto 0;
 }
 
-.petCard {
-  display: flex;
+.petListCard {
   position: relative;
-  min-width: 0;
+  isolation: isolate;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) minmax(180px, 210px);
+  column-gap: 40px;
   align-items: center;
-  gap: clamp(22px, 4vw, 84px);
   min-height: 177px;
-  padding: 18px clamp(30px, 8vw, 102px);
+  padding: 18px 60px;
   border: 1px solid #a1a3ab;
   border-radius: 14px;
   background: var(--mm-surface);
   box-shadow: 0 8px 24px rgb(0 0 0 / 6%);
 }
 
-.avatarFrame,
-.petPreview {
+.petListAvatar {
   display: grid;
+  width: 180px;
+  height: 110px;
   overflow: hidden;
   place-items: center;
-  border-radius: 50%;
-  background: #eef3ec;
-}
-
-.avatarFrame {
-  width: 76px;
-  height: 76px;
-  flex: 0 0 76px;
-}
-
-.populatedShell .avatarFrame {
-  width: 112px;
-  height: 60px;
-  flex-basis: 112px;
   border-radius: 12px;
   background: #f2f2f2;
 }
 
-.petAvatar {
+.petListAvatarImage {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-}
-
-.populatedShell .petCard .petAvatar {
   object-fit: contain;
 }
 
-.petDetails {
+.petListDetails {
   min-width: 0;
 }
 
-.petCard h2 {
-  margin: 0 0 10px;
+.petListDetails h2 {
+  margin: 0 0 8px;
   color: var(--mm-text);
-  font-size: clamp(20px, 2vw, 28px);
+  font-size: 32px;
   font-weight: 600;
   line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
-.petMetadata {
+.petListMetadata {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 18px;
+  gap: 6px 10px;
   margin: 0;
   padding: 0;
   color: var(--mm-text);
-  font-size: clamp(15px, 1.7vw, 20px);
+  font-size: 24px;
   line-height: 1.35;
   list-style: none;
 }
 
-.petMetadata li + li::before {
-  margin-right: 18px;
+.petListMetadata li {
+  overflow-wrap: anywhere;
+}
+
+.petListMetadata li + li::before {
+  margin-right: 10px;
   color: var(--mm-text);
   content: "•";
 }
 
-.updatedAt {
-  margin: 12px 0 0;
-  color: #a1a3ab;
-  font-size: clamp(14px, 1.7vw, 18px);
-  line-height: 1.4;
-  text-align: center;
-}
-
-.healthStatus {
-  margin: 12px 0 0;
+.petListHealthStatus {
+  margin: 8px 0 0;
   color: var(--mm-primary);
-  font-size: clamp(14px, 1.5vw, 18px);
+  font-size: 24px;
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
-.cardAside {
+.petListActions {
   display: grid;
-  min-width: 176px;
-  margin-left: auto;
+  min-width: 0;
+  align-content: center;
+  gap: 16px;
   justify-items: center;
 }
 
-.profilePreviewButton {
-  min-height: 38px;
-  padding: 8px 18px;
+.petListPreviewButton {
+  min-height: 52px;
+  padding: 12px 24px;
   border: 0;
   border-radius: 22px;
   background: color-mix(in srgb, var(--mm-primary) 72%, white);
   color: white;
   cursor: not-allowed;
-  font-size: 14px;
+  font-size: 20px;
   font-weight: 500;
+}
+
+.petListUpdatedAt {
+  max-width: 210px;
+  margin: 0;
+  color: #a1a3ab;
+  font-size: 18px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.petListHeaderDecorations,
+.petListPanelDecorations,
+.petListCardDecorations {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.petListHeaderDecorations {
+  z-index: 0;
+  overflow: hidden;
+}
+
+.petListHeaderMaple,
+.petListHeaderLeaf,
+.petListBottomLeaf {
+  position: absolute;
+  fill: #b9cdb7;
+  opacity: .34;
+}
+
+.petListHeaderMaple {
+  top: 24px;
+  left: 50px;
+  width: 18px;
+  transform: rotate(-12deg);
+}
+
+.petListHeaderLeaf {
+  top: 21px;
+  right: 58px;
+  width: 20px;
+  fill: #aec5ac;
+  transform: rotate(-18deg);
+}
+
+.petListHeaderLeaf path:last-child,
+.petListBottomLeaf path:last-child,
+.petListFishbone path:first-child,
+.petListCurve path {
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.petListPanelDecorations {
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.petListDot {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  opacity: .38;
+}
+
+.petListDotGreen {
+  top: 455px;
+  right: 4px;
+  background: #c5d4c3;
+}
+
+.petListDotBeige {
+  top: 565px;
+  left: 42%;
+  background: #eee2cf;
+}
+
+.petListDotLower {
+  bottom: 44px;
+  left: 15%;
+  background: #c5d4c3;
+}
+
+.petListBone {
+  position: absolute;
+  top: 335px;
+  right: 10.5%;
+  width: 28px;
+  height: 15px;
+  fill: #dfc9a8;
+  opacity: .32;
+  transform: rotate(-32deg);
+}
+
+.petListFishbone {
+  position: absolute;
+  top: 740px;
+  left: 31%;
+  width: 27px;
+  color: #d7bf9c;
+  fill: currentcolor;
+  opacity: .3;
+  transform: rotate(8deg);
+}
+
+.petListBottomLeaf {
+  right: 38px;
+  bottom: 18px;
+  width: 42px;
+  color: #aec5ac;
+  fill: currentcolor;
+  opacity: .3;
+  transform: rotate(-18deg);
+}
+
+.petListCurve {
+  position: absolute;
+  right: -40px;
+  bottom: -4px;
+  width: 410px;
+  height: 78px;
+  color: #decdb5;
+  opacity: .33;
+  transform: rotate(-18deg);
+}
+
+.petListCurve path {
+  stroke-width: 1.2;
+}
+
+.petListCardDecorations {
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.petListCard > :not(.petListCardDecorations) {
+  position: relative;
+  z-index: 1;
+}
+
+.petListCardMenu {
+  position: absolute;
+  top: 13px;
+  right: 17px;
+  display: flex;
+  gap: 4px;
+}
+
+.petListCardMenu i {
+  display: block;
+  width: 4px;
+  height: 4px;
+  border: 1px solid #a1a3ab;
+  border-radius: 50%;
+  opacity: .72;
+}
+
+.petListSpeciesMark {
+  position: absolute;
+  right: 24px;
+  bottom: 16px;
+  display: block;
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  opacity: .38;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@media (max-width: 1200px) {
+  .populatedHeader {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 0 40px;
+  }
+
+  .primaryNav {
+    display: none;
+  }
+
+  .populatedBrand {
+    gap: 16px;
+    font-size: 32px;
+  }
+
+  .populatedBrand span + span {
+    font-size: 14px;
+  }
+
+  .petListShell {
+    width: calc(100% - 48px);
+    min-height: calc(100dvh - 104px);
+    padding-right: 40px;
+    padding-left: 40px;
+  }
+
+  .petListCard {
+    grid-template-columns: 150px minmax(0, 1fr) 150px;
+    column-gap: 32px;
+    min-height: 154px;
+    padding: 18px 48px;
+  }
+
+  .petListAvatar {
+    width: 150px;
+    height: 90px;
+  }
+
+  .petListDetails h2 {
+    font-size: 26px;
+  }
+
+  .petListMetadata,
+  .petListHealthStatus {
+    font-size: 18px;
+  }
+
+  .petListPreviewButton {
+    min-height: 42px;
+    padding: 8px 16px;
+    font-size: 16px;
+  }
+
+  .petListUpdatedAt {
+    font-size: 16px;
+  }
 }
 
 .logoutArea {
@@ -556,12 +791,20 @@
 }
 
 @media (max-width: 850px) {
-  .populatedHeader { padding: 0 24px; }
+  .populatedHeader { grid-template-columns: 1fr auto; padding: 0 24px; }
   .primaryNav { display: none; }
   .populatedBrand { font-size: 28px; }
-  .populatedShell { width: calc(100% - 32px); padding: 18px 28px 56px; }
-  .petCard { gap: 28px; padding: 22px 28px; }
-  .updatedAt { max-width: 180px; }
+  .petListShell { width: calc(100% - 32px); min-height: calc(100dvh - 100px); padding: 18px 28px 56px; }
+  .petListCard { grid-template-columns: 130px minmax(0, 1fr) 145px; column-gap: 24px; min-height: 156px; padding: 20px 24px; }
+  .petListAvatar { width: 130px; height: 82px; }
+  .petListDetails h2 { font-size: 24px; }
+  .petListMetadata, .petListHealthStatus { font-size: 17px; }
+  .petListPreviewButton { min-height: 40px; padding: 8px 14px; font-size: 15px; }
+  .petListUpdatedAt { max-width: 145px; font-size: 14px; }
+  .petListHeaderLeaf,
+  .petListPanelDecorations .petListBone,
+  .petListPanelDecorations .petListFishbone,
+  .petListPanelDecorations .petListCurve { display: none; }
 }
 
 @media (max-width: 640px) {
@@ -572,23 +815,27 @@
   .listIntro { margin-top: 44px; align-items: flex-start; flex-direction: column; }
   .listIntro .primaryAction { width: 100%; }
   .emptyState, .statusCard { min-height: 280px; margin-top: 48px; padding: 26px 20px; }
-  .petGrid { grid-template-columns: 1fr; margin-top: 28px; }
-  .populatedHeader { min-height: 64px; padding: 0 16px; }
+  .populatedHeader { display: flex; min-height: 64px; height: auto; padding: 0 16px; }
   .populatedBrand { gap: 0; font-size: 25px; }
   .populatedBrand span + span, .populatedHeader .logoutArea { display: none; }
   .headerActions { margin-left: auto; }
   .addPetAction { padding: 5px 10px; font-size: 12px; }
-  .populatedShell { width: calc(100% - 20px); min-height: calc(100dvh - 74px); margin-top: 10px; padding: 18px; border-radius: 24px; }
-  .populatedListIntro { align-items: flex-start; flex-direction: column; gap: 6px; }
-  .populatedListIntro h1 { font-size: 18px; }
-  .populatedListIntro p { font-size: 12px; }
-  .petCard { align-items: flex-start; flex-wrap: wrap; gap: 18px; min-height: 0; padding: 22px; }
-  .populatedShell .avatarFrame { width: 92px; height: 54px; flex-basis: 92px; }
-  .petDetails { flex: 1 1 160px; }
-  .petMetadata { gap: 6px 16px; margin-top: 8px; font-size: 16px; }
-  .petMetadata li + li::before { margin-right: 16px; }
-  .cardAside { width: 100%; min-width: 0; margin: 0; justify-items: start; }
-  .updatedAt { width: 100%; max-width: none; margin: 8px 0 0; font-size: 14px; text-align: left; }
+  .petListShell { width: calc(100% - 20px); min-height: calc(100dvh - 74px); margin-top: 10px; padding: 18px; border-radius: 24px; }
+  .petListToolbar { display: flex; align-items: flex-start; flex-direction: column; gap: 8px; }
+  .petListToolbar h1 { font-size: 18px; }
+  .petListToolbar p { font-size: 12px; text-align: left; }
+  .petListGrid { grid-template-columns: 1fr; margin-top: 28px; }
+  .petListCard { grid-template-columns: 92px minmax(0, 1fr); align-items: start; column-gap: 18px; row-gap: 18px; min-height: 0; padding: 22px; }
+  .petListAvatar { width: 92px; height: 54px; }
+  .petListDetails h2 { text-align: left; font-size: 22px; }
+  .petListMetadata { gap: 6px 16px; margin-top: 8px; font-size: 16px; }
+  .petListMetadata li + li::before { margin-right: 16px; }
+  .petListHealthStatus { font-size: 16px; }
+  .petListActions { grid-column: 1 / -1; width: 100%; justify-items: start; }
+  .petListUpdatedAt { max-width: none; font-size: 14px; text-align: left; }
+  .petListHeaderDecorations,
+  .petListPanelDecorations,
+  .petListCardDecorations { display: none; }
   .createPetShell .petHeader { align-items: center; }
   .backLink { font-size: 14px; }
   .formGrid { grid-template-columns: 1fr; gap: 16px; }

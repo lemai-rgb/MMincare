@@ -1,25 +1,24 @@
 import Image from "next/image";
 
 import { getPetAvatarSource, type PetSpecies } from "@/lib/pets";
-import styles from "@/styles/dashboard.module.css";
-
 type PetAvatarProps = {
   species: PetSpecies;
   pictureUrl?: string | null;
+  className?: string;
 };
 
-export function PetAvatar({ species, pictureUrl }: PetAvatarProps) {
+export function PetAvatar({ species, pictureUrl, className }: PetAvatarProps) {
   if (pictureUrl) {
     return (
       // picture_url is an existing stored URL/path; upload configuration is outside this checkpoint.
       // eslint-disable-next-line @next/next/no-img-element
-      <img className={styles.petAvatar} src={pictureUrl} alt="" />
+      <img className={className} src={pictureUrl} alt="" />
     );
   }
 
   return (
     <Image
-      className={styles.petAvatar}
+      className={className}
       src={getPetAvatarSource(species)}
       alt=""
       width={species === "Cat" ? 666 : 474}

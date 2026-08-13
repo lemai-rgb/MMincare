@@ -104,7 +104,7 @@ export function CreatePetForm({ initialSpecies }: CreatePetFormProps) {
         <form className={styles.form} noValidate onSubmit={handleSubmit}>
           <div className={styles.leftColumn}>
             <div className={styles.avatarBox} aria-hidden="true">
-              {species ? <PetAvatar species={species} pictureUrl={pictureUrl || null} /> : <span className={styles.avatarPrompt}>+ Thêm ảnh</span>}
+              {species ? <PetAvatar className={styles.petAvatar} species={species} pictureUrl={pictureUrl || null} /> : <span className={styles.avatarPrompt}>+ Thêm ảnh</span>}
             </div>
             <p className={styles.avatarTitle}>Ảnh đại diện</p>
             <p className={styles.avatarHelp}>(Nếu chưa có ảnh, MMinCare sẽ dùng avatar mặc định theo loài)</p>

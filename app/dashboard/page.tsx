@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { PetAvatar } from "@/components/pets/PetAvatar";
+import { PetListCardDecorations, PetListHeaderDecorations, PetListPanelDecorations } from "@/components/pets/PetListDecorations";
 import { parseSpecies } from "@/lib/authRedirect";
 import { getPetGenderLabel, getPetSpeciesLabel, type Pet } from "@/lib/pets";
 import { createClient } from "@/lib/supabase/server";
@@ -58,6 +59,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     return (
       <main className={`${styles.page} ${styles.populatedPage}`}>
         <header className={styles.populatedHeader}>
+          <PetListHeaderDecorations />
           <Link className={styles.populatedBrand} href="/">
             <span>MMinCare</span>
             <span>Care more, worry less</span>
@@ -71,42 +73,44 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </nav>
 
           <div className={styles.headerActions}>
-            <Link className={styles.addPetAction} href="/pets/new">+ Thêm hồ sơ thú cưng</Link>
             <LogoutButton />
           </div>
         </header>
 
-        <section className={styles.populatedShell} aria-labelledby="dashboard-title">
-          <div className={styles.populatedListIntro}>
+        <section className={styles.petListShell} aria-labelledby="dashboard-title">
+          <PetListPanelDecorations />
+          <div className={styles.petListToolbar}>
             <h1 id="dashboard-title">Thú cưng của bạn</h1>
             <p>Chọn một bé để xem hồ sơ sức khỏe, lịch tiêm và nhắc hẹn chăm sóc.</p>
+            <Link className={styles.addPetAction} href="/pets/new">+ Thêm hồ sơ thú cưng</Link>
           </div>
 
-          <section className={styles.petGrid} aria-label="Danh sách thú cưng">
+          <section className={styles.petListGrid} aria-label="Danh sách thú cưng">
             {pets.map((pet) => {
               const age = getPetAgeLabel(pet.date_of_birth);
               const updatedAt = formatUpdatedAt(pet.updated_at ?? pet.created_at);
 
               return (
-                <article className={styles.petCard} key={pet.pet_id}>
-                  <div className={styles.avatarFrame}>
-                    <PetAvatar species={pet.species} pictureUrl={pet.picture_url} />
+                <article className={styles.petListCard} key={pet.pet_id}>
+                  <PetListCardDecorations species={pet.species} />
+                  <div className={styles.petListAvatar}>
+                    <PetAvatar className={styles.petListAvatarImage} species={pet.species} pictureUrl={pet.picture_url} />
                   </div>
-                  <div className={styles.petDetails}>
+                  <div className={styles.petListDetails}>
                     <h2>{pet.name}</h2>
-                    <ul className={styles.petMetadata} aria-label={`Thông tin của ${pet.name}`}>
+                    <ul className={styles.petListMetadata} aria-label={`Thông tin của ${pet.name}`}>
                       <li>{getPetSpeciesLabel(pet.species)}</li>
                       {pet.breed && <li>{pet.breed}</li>}
                       <li>{getPetGenderLabel(pet.gender)}</li>
                       {age && <li>{age}</li>}
                     </ul>
-                    <p className={styles.healthStatus}>Chưa có thông tin sức khỏe</p>
+                    <p className={styles.petListHealthStatus}>Chưa có thông tin sức khỏe</p>
                   </div>
-                  <div className={styles.cardAside}>
-                    <button className={styles.profilePreviewButton} type="button" disabled aria-disabled="true">
+                  <div className={styles.petListActions}>
+                    <button className={styles.petListPreviewButton} type="button" disabled aria-disabled="true">
                       Xem hồ sơ →
                     </button>
-                    {updatedAt && <p className={styles.updatedAt}>Cập nhật gần nhất: {updatedAt}</p>}
+                    {updatedAt && <p className={styles.petListUpdatedAt}>Cập nhật gần nhất: {updatedAt}</p>}
                   </div>
                 </article>
               );
