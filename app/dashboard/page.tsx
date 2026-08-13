@@ -46,7 +46,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             <h1 id="dashboard-title">Thú cưng của tôi</h1>
             <p>Quản lý hồ sơ sức khỏe của các bé tại một nơi.</p>
           </div>
-          <Link className={styles.primaryAction} href={newPetHref}>Thêm thú cưng</Link>
+          {pets.length > 0 && (
+            <Link className={styles.primaryAction} href={newPetHref}>Thêm thú cưng</Link>
+          )}
         </div>
 
         {species && pets.length === 0 && !petsError && (
