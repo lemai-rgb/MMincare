@@ -13,13 +13,16 @@ export async function GET(request: NextRequest) {
   const safeNext = getSafeAuthNext(request.nextUrl.searchParams.get("next"));
   const supabase = await createClient();
   let confirmationError = true;
+  let confirmationErrorCode: string | undefined;
 
   if (tokenHash && type && CONFIRMATION_TYPES.has(type)) {
     const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
     confirmationError = Boolean(error);
+    confirmationErrorCode = error?.code;
   } else if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     confirmationError = Boolean(error);
+    confirmationErrorCode = error?.code;
   }
 
   if (!confirmationError) {
@@ -31,5 +34,6 @@ export async function GET(request: NextRequest) {
 
   const errorUrl = new URL("/auth/confirm/error", request.url);
   errorUrl.searchParams.set("next", safeNext);
+  if (confirmationErrorCode) errorUrl.searchParams.set("error_code", confirmationErrorCode);
   return NextResponse.redirect(errorUrl);
 }

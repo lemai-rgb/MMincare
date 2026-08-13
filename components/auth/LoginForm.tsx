@@ -13,7 +13,9 @@ import { AuthFormCard } from "./AuthFormCard";
 import { AuthInput } from "./AuthInput";
 import { PasswordInput } from "./PasswordInput";
 
-export function LoginForm() {
+type LoginFormProps = { next?: string };
+
+export function LoginForm({ next = "/dashboard" }: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -53,7 +55,7 @@ export function LoginForm() {
       return;
     }
 
-    router.replace("/dashboard");
+    router.replace(next);
     router.refresh();
   }
 
