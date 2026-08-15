@@ -412,15 +412,26 @@
 }
 
 .petListPreviewButton {
+  display: inline-flex;
   min-height: 52px;
   padding: 12px 24px;
   border: 0;
   border-radius: 22px;
   background: color-mix(in srgb, var(--mm-primary) 72%, white);
   color: white;
-  cursor: not-allowed;
+  cursor: pointer;
   font-size: 20px;
   font-weight: 500;
+  text-decoration: none;
+}
+
+.petListPreviewButton:hover {
+  background: var(--mm-primary);
+}
+
+.petListPreviewButton:focus-visible {
+  outline: 2px solid var(--mm-primary-dark);
+  outline-offset: 3px;
 }
 
 .petListUpdatedAt {

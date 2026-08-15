@@ -107,9 +107,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                     <p className={styles.petListHealthStatus}>Chưa có thông tin sức khỏe</p>
                   </div>
                   <div className={styles.petListActions}>
-                    <button className={styles.petListPreviewButton} type="button" disabled aria-disabled="true">
+                    <Link className={styles.petListPreviewButton} href={`/pets/${pet.pet_id}`}>
                       Xem hồ sơ →
-                    </button>
+                    </Link>
                     {updatedAt && <p className={styles.petListUpdatedAt}>Cập nhật gần nhất: {updatedAt}</p>}
                   </div>
                 </article>

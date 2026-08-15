@@ -1,0 +1,368 @@
+.page {
+  min-height: 100dvh;
+  background: #faf9f6;
+  color: #262a25;
+}
+
+.header {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  align-items: center;
+  min-height: 80px;
+  padding: 0 clamp(28px, 5vw, 116px);
+  background: #fff;
+  border-bottom: 1px solid #eeeae2;
+  overflow: hidden;
+}
+
+.brand {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 28px;
+  width: fit-content;
+  color: #6f8e70;
+  text-decoration: none;
+}
+
+.brand span:first-child {
+  font-size: clamp(26px, 2.25vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+}
+
+.brand span:last-child {
+  color: #7c7a73;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.brand:focus-visible,
+.backLink:focus-visible,
+.navigation a:focus-visible {
+  outline: 2px solid #587c5a;
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.navigation {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: clamp(18px, 2vw, 38px);
+  color: #484943;
+  font-size: 15px;
+}
+
+.navigation > span,
+.navigation a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.navigation > span span,
+.navigation a span {
+  width: 6px;
+  height: 6px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+}
+
+.activeNavItem {
+  color: #5f825f !important;
+  font-weight: 600;
+}
+
+.shell {
+  position: relative;
+  isolation: isolate;
+  width: min(calc(100% - 78px), 1378px);
+  min-height: calc(100dvh - 100px);
+  margin: 10px auto 20px;
+  padding: 16px clamp(28px, 4.6vw, 66px) 74px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #eeeae2;
+  border-radius: 32px;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  color: #5e825f;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.backIcon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid #d5dfd4;
+  border-radius: 50%;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.eyebrow {
+  margin: 26px 0 6px;
+  color: #6c8e6c;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.content > h1 {
+  margin: 0;
+  color: #3e573f;
+  font-size: clamp(28px, 3vw, 40px);
+  letter-spacing: -0.03em;
+}
+
+.intro {
+  margin: 8px 0 22px;
+  color: #6f706a;
+  font-size: 15px;
+}
+
+.profileCard {
+  position: relative;
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 28px;
+  align-items: center;
+  min-height: 174px;
+  padding: 26px 34px;
+  background: #fff;
+  border: 1px solid #d9ddd7;
+  border-radius: 16px;
+  box-shadow: 0 10px 22px rgb(62 87 63 / 5%);
+}
+
+.avatarWrap {
+  display: grid;
+  width: 132px;
+  height: 112px;
+  place-items: center;
+  overflow: hidden;
+  background: #f4f5f2;
+  border-radius: 14px;
+}
+
+.avatar {
+  display: block;
+  width: 94px;
+  height: 94px;
+  object-fit: contain;
+}
+
+.profileDetails {
+  min-width: 0;
+}
+
+.profileDetails h2 {
+  margin: 0 0 10px;
+  color: #20231f;
+  font-size: 29px;
+  line-height: 1.1;
+}
+
+.metadata {
+  margin: 0;
+  color: #343631;
+  font-size: 17px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.profileFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 34px;
+  margin: 14px 0 0;
+}
+
+.profileFacts div {
+  display: grid;
+  gap: 2px;
+}
+
+.profileFacts dt {
+  color: #96978f;
+  font-size: 12px;
+}
+
+.profileFacts dd {
+  margin: 0;
+  color: #69896b;
+  font-size: 14px;
+}
+
+.updatedAt {
+  position: absolute;
+  right: 28px;
+  bottom: 18px;
+  margin: 0;
+  color: #a4a69e;
+  font-size: 12px;
+}
+
+.sectionTabs {
+  display: flex;
+  gap: 6px;
+  margin: 32px 0 16px;
+  border-bottom: 1px solid #e5e7e1;
+}
+
+.sectionTabs span {
+  padding: 0 18px 12px;
+  color: #85867f;
+  font-size: 14px;
+}
+
+.sectionTabs .selectedTab {
+  color: #5f825f;
+  font-weight: 700;
+  border-bottom: 2px solid #6f8e70;
+}
+
+.placeholderGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.placeholderCard {
+  min-height: 142px;
+  padding: 22px;
+  background: rgb(255 255 255 / 88%);
+  border: 1px solid #e4e8e1;
+  border-radius: 14px;
+}
+
+.placeholderCard h2 {
+  margin: 0;
+  color: #3e573f;
+  font-size: 17px;
+}
+
+.placeholderCard p {
+  min-height: 42px;
+  margin: 10px 0 14px;
+  color: #72746d;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.placeholderCard span {
+  color: #6f8e70;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (max-width: 1000px) {
+  .header {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+
+  .navigation {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .shell {
+    width: min(calc(100% - 32px), 900px);
+  }
+
+  .placeholderGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .header {
+    min-height: 0;
+    padding: 16px 20px;
+  }
+
+  .brand {
+    gap: 12px;
+  }
+
+  .brand span:first-child {
+    font-size: 28px;
+  }
+
+  .brand span:last-child {
+    font-size: 12px;
+  }
+
+  .navigation {
+    gap: 20px;
+    font-size: 14px;
+  }
+
+  .shell {
+    width: calc(100% - 24px);
+    min-height: calc(100dvh - 24px);
+    margin-top: 12px;
+    padding: 14px 18px 44px;
+    border-radius: 22px;
+  }
+
+  .eyebrow {
+    margin-top: 22px;
+  }
+
+  .profileCard {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    min-height: 0;
+    padding: 22px;
+  }
+
+  .avatarWrap {
+    width: 118px;
+    height: 98px;
+  }
+
+  .updatedAt {
+    position: static;
+    margin-top: 16px;
+  }
+
+  .sectionTabs {
+    overflow-x: auto;
+  }
+
+  .sectionTabs span {
+    flex: 0 0 auto;
+    padding-right: 13px;
+    padding-left: 13px;
+  }
+}
