@@ -230,15 +230,24 @@
 }
 
 .editButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 48px;
   padding: 12px 20px;
   color: #789176;
   background: #fcfbf9;
   border: 1px solid #dde5da;
   border-radius: 14px;
-  cursor: not-allowed;
+  cursor: pointer;
   font: inherit;
   font-size: 16px;
+  text-decoration: none;
+}
+
+.editButton:focus-visible {
+  outline: 2px solid #6e8b6b;
+  outline-offset: 3px;
 }
 
 .profileAside p {

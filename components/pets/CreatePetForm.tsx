@@ -8,24 +8,29 @@ import type { FormEvent } from "react";
 
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { PetAvatar } from "@/components/pets/PetAvatar";
-import { PET_GENDERS, PET_SPECIES, type PetGender, type PetSpecies } from "@/lib/pets";
+import { PET_GENDERS, PET_SPECIES, type Pet, type PetGender, type PetSpecies } from "@/lib/pets";
 import { createClient } from "@/lib/supabase/client";
 import styles from "@/styles/createPet.module.css";
 
-type CreatePetFormProps = { initialSpecies?: PetSpecies };
+type CreatePetFormProps = {
+  initialSpecies?: PetSpecies;
+  mode?: "create" | "edit";
+  petId?: string;
+  initialPet?: Pick<Pet, "name" | "species" | "gender" | "breed" | "date_of_birth" | "picture_url">;
+};
 type FieldErrors = { name?: string; species?: string; gender?: string; dateOfBirth?: string };
 
 const speciesLabels: Record<PetSpecies, string> = { Cat: "Mèo", Dog: "Chó" };
 const genderLabels: Record<PetGender, string> = { Male: "Đực", Female: "Cái", Unknown: "Chưa rõ" };
 
-export function CreatePetForm({ initialSpecies }: CreatePetFormProps) {
+export function CreatePetForm({ initialSpecies, mode = "create", petId, initialPet }: CreatePetFormProps) {
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [species, setSpecies] = useState<PetSpecies | "">(initialSpecies ?? "");
-  const [gender, setGender] = useState<PetGender | "">("");
-  const [breed, setBreed] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
-  const [pictureUrl, setPictureUrl] = useState("");
+  const [name, setName] = useState(initialPet?.name ?? "");
+  const [species, setSpecies] = useState<PetSpecies | "">(initialPet?.species ?? initialSpecies ?? "");
+  const [gender, setGender] = useState<PetGender | "">(initialPet?.gender ?? "");
+  const [breed, setBreed] = useState(initialPet?.breed ?? "");
+  const [dateOfBirth, setDateOfBirth] = useState(initialPet?.date_of_birth ?? "");
+  const [pictureUrl, setPictureUrl] = useState(initialPet?.picture_url ?? "");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -60,23 +65,25 @@ export function CreatePetForm({ initialSpecies }: CreatePetFormProps) {
       return;
     }
 
-    const { error } = await supabase.from("pets").insert({
-      owner_id: authData.user.id,
+    const petValues = {
       name: normalizedName,
       species,
       gender,
       breed: breed.trim() || null,
       date_of_birth: dateOfBirth || null,
       picture_url: pictureUrl.trim() || null,
-    });
+    };
+    const result = mode === "edit" && petId
+      ? await supabase.from("pets").update(petValues).eq("pet_id", petId).eq("owner_id", authData.user.id).select("pet_id").maybeSingle()
+      : await supabase.from("pets").insert({ owner_id: authData.user.id, ...petValues }).select("pet_id").maybeSingle();
 
-    if (error) {
+    if (result.error || !result.data) {
       setFormError("Không thể lưu hồ sơ thú cưng lúc này. Vui lòng thử lại.");
       setIsSaving(false);
       return;
     }
 
-    router.replace("/dashboard");
+    router.replace(mode === "edit" && petId ? `/pets/${encodeURIComponent(petId)}` : "/dashboard");
     router.refresh();
   }
 
@@ -91,14 +98,14 @@ export function CreatePetForm({ initialSpecies }: CreatePetFormProps) {
       </header>
 
       <section className={styles.shell} aria-labelledby="create-pet-title">
-        <Link className={styles.backLink} href="/dashboard">
+        <Link className={styles.backLink} href={mode === "edit" && petId ? `/pets/${encodeURIComponent(petId)}` : "/dashboard"}>
           <Image src="/images/pets/figma-back-arrow.svg" alt="" width={20} height={16} aria-hidden="true" />
           Quay lại
         </Link>
 
         <div className={styles.titleBlock}>
-          <h1 id="create-pet-title">Tạo hồ sơ cho bé</h1>
-          <p>Điền thông tin cơ bản để MMinCare bắt đầu theo dõi sức khỏe cho bé.</p>
+          <h1 id="create-pet-title">{mode === "edit" ? "Chỉnh sửa hồ sơ thú cưng" : "Tạo hồ sơ cho bé"}</h1>
+          <p>{mode === "edit" ? "Cập nhật thông tin hồ sơ của bé." : "Điền thông tin cơ bản để MMinCare bắt đầu theo dõi sức khỏe cho bé."}</p>
         </div>
 
         <form className={styles.form} noValidate onSubmit={handleSubmit}>
@@ -155,8 +162,8 @@ export function CreatePetForm({ initialSpecies }: CreatePetFormProps) {
           {formError && <p className={styles.formError} role="alert">{formError}</p>}
 
           <div className={styles.actions}>
-            <Link className={styles.cancelButton} href="/dashboard">Hủy</Link>
-            <button className={styles.saveButton} type="submit" disabled={isSaving}>{isSaving ? "Đang lưu…" : "Lưu hồ sơ"}</button>
+            <Link className={styles.cancelButton} href={mode === "edit" && petId ? `/pets/${encodeURIComponent(petId)}` : "/dashboard"}>Hủy</Link>
+            <button className={styles.saveButton} type="submit" disabled={isSaving}>{isSaving ? "Đang lưu…" : mode === "edit" ? "Lưu thay đổi" : "Lưu hồ sơ"}</button>
           </div>
         </form>
       </section>

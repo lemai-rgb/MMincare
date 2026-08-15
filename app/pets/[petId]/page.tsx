@@ -66,12 +66,11 @@ function getPetAgeLabel(dateOfBirth: string | null) {
   if (Number.isNaN(birthDate.getTime())) return undefined;
 
   const now = new Date();
-  let age = now.getFullYear() - birthDate.getFullYear();
-  const hasHadBirthday = now.getMonth() > birthDate.getMonth()
-    || (now.getMonth() === birthDate.getMonth() && now.getDate() >= birthDate.getDate());
-
-  if (!hasHadBirthday) age -= 1;
-  return age < 1 ? "Dưới 1 tuổi" : `${age} tuổi`;
+  const totalMonths = Math.max(0, (now.getFullYear() - birthDate.getFullYear()) * 12
+    + now.getMonth() - birthDate.getMonth()
+    - (now.getDate() < birthDate.getDate() ? 1 : 0));
+  if (totalMonths < 12) return totalMonths === 0 ? "Dưới 1 tháng" : `${totalMonths} tháng`;
+  return `${Math.floor(totalMonths / 12)} tuổi`;
 }
 
 function formatUpdatedAt(value: string) {
@@ -159,7 +158,7 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
             </div>
 
             <div className={styles.profileAside}>
-              <button className={styles.editButton} type="button" disabled aria-disabled="true">Chỉnh sửa</button>
+              <Link className={styles.editButton} href={`/pets/${encodeURIComponent(pet.pet_id)}/edit`}>Chỉnh sửa</Link>
               {updatedAt && <p>Cập nhật gần nhất: {updatedAt}</p>}
             </div>
           </section>
