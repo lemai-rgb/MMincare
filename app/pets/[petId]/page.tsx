@@ -199,7 +199,7 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
             </>
           )}
 
-          {activeTab === "medical" && <PetMedicalHistory />}
+          {activeTab === "medical" && <PetMedicalHistory petId={pet.pet_id} species={pet.species} />}
           {(activeTab === "reminders" || activeTab === "health") && <PendingDetailTab tab={activeTab} />}
         </div>
       </section>

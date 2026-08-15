@@ -467,6 +467,342 @@
   color: #85857e;
 }
 
+.medicalNotice,
+.medicalError,
+.medicalLoading {
+  margin: 0 0 18px;
+  text-align: center;
+}
+
+.medicalNotice {
+  color: #5e7c5d;
+}
+
+.medicalError {
+  color: #a55f57;
+}
+
+.medicalLoading {
+  color: #85857e;
+}
+
+.medicalTimeline {
+  display: grid;
+  gap: 26px;
+}
+
+.medicalMonth {
+  display: grid;
+  gap: 10px;
+}
+
+.medicalMonth h2 {
+  margin: 0;
+  color: #7c7c7c;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.medicalEntryList {
+  display: grid;
+  gap: 10px;
+}
+
+.medicalEntryCard {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-height: 82px;
+  padding: 14px 20px;
+  background: #fff;
+  border: 1px solid #e8e2da;
+  border-radius: 18px;
+}
+
+.medicalEntryCard h3,
+.medicalEntryCard p,
+.medicalEntryCard span {
+  margin: 0;
+}
+
+.medicalEntryCard h3 {
+  color: #252525;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.medicalEntryCard p {
+  margin-top: 4px;
+  color: #6e8b6b;
+  font-size: 14px;
+}
+
+.medicalEntryCard span:not([class]) {
+  display: block;
+  margin-top: 4px;
+  color: #85857e;
+  font-size: 13px;
+}
+
+.vaccineIcon,
+.medicalIcon {
+  position: relative;
+  display: block;
+  width: 34px;
+  height: 34px;
+  color: #6e8b6b;
+}
+
+.vaccineIcon::before {
+  position: absolute;
+  top: 15px;
+  left: 3px;
+  width: 28px;
+  height: 8px;
+  border: 1.5px solid currentColor;
+  border-radius: 5px;
+  content: "";
+  transform: rotate(-45deg);
+}
+
+.vaccineIcon::after {
+  position: absolute;
+  top: 6px;
+  left: 19px;
+  width: 10px;
+  height: 10px;
+  border-top: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  content: "";
+  transform: rotate(45deg);
+}
+
+.medicalIcon {
+  border: 1.5px solid currentColor;
+  border-radius: 7px;
+}
+
+.medicalIcon::before,
+.medicalIcon::after {
+  position: absolute;
+  content: "";
+}
+
+.medicalIcon::before {
+  top: 8px;
+  left: 8px;
+  width: 15px;
+  height: 2px;
+  background: currentColor;
+  box-shadow: 0 6px currentColor, 0 12px currentColor;
+}
+
+.medicalIcon::after {
+  top: -5px;
+  left: 10px;
+  width: 12px;
+  height: 8px;
+  border: 1.5px solid currentColor;
+  border-bottom: 0;
+  border-radius: 5px 5px 0 0;
+}
+
+.vaccineFormPanel,
+.reminderSuggestion {
+  max-width: 920px;
+  margin: -36px auto 0;
+  padding: 28px 34px;
+  background: #fff;
+  border: 1px solid #e8e2da;
+  border-radius: 24px;
+}
+
+.vaccineFormPanel {
+  display: flex;
+  min-width: 0;
+  min-height: 520px;
+  flex-direction: column;
+}
+
+.formPanelHeader h2,
+.formPanelHeader p {
+  margin: 0;
+}
+
+.formPanelHeader h2 {
+  color: #252525;
+  font-size: 24px;
+}
+
+.formPanelHeader p {
+  margin-top: 6px;
+  color: #85857e;
+  font-size: 14px;
+}
+
+.vaccineFormGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(160px, .7fr);
+  gap: 18px 20px;
+  margin-top: 24px;
+}
+
+.vaccineFormGrid label,
+.reminderSuggestion label {
+  display: grid;
+  gap: 8px;
+  color: #42433f;
+  font-size: 15px;
+}
+
+.vaccineFormGrid label span {
+  color: #c66d62;
+}
+
+.vaccineFormGrid input,
+.vaccineFormGrid select,
+.vaccineFormGrid textarea,
+.reminderSuggestion input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: #333;
+  background: #fff;
+  border: 1px solid #e5e1dc;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 15px;
+}
+
+.vaccineFormGrid select {
+  appearance: auto;
+}
+
+.vaccineFormGrid textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.fullWidthField {
+  grid-column: 1 / -1;
+}
+
+.formPanelActions,
+.suggestionActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 24px;
+}
+
+.formPanelActions button,
+.suggestionActions button {
+  min-height: 42px;
+  padding: 8px 20px;
+  color: #252525;
+  background: #faf8f5;
+  border: 1px solid #e8e2da;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.formPanelActions button:last-child,
+.suggestionActions button:last-child {
+  color: #fff;
+  background: #6e8b6b;
+  border-color: #6e8b6b;
+}
+
+.formPanelActions button:disabled,
+.suggestionActions button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.reminderSuggestion {
+  max-width: 760px;
+  background: #eff7ef;
+  border-color: #d4e2d1;
+}
+
+.reminderSuggestion h2,
+.reminderSuggestion p {
+  margin: 0;
+}
+
+.reminderSuggestion h2 {
+  color: #5e7c5d;
+  font-size: 24px;
+}
+
+.reminderSuggestion > p {
+  max-width: 650px;
+  margin-top: 18px;
+  color: #5e7c5d;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.reminderSuggestion label {
+  max-width: 260px;
+  margin-top: 22px;
+  color: #5e7c5d;
+}
+
+.suggestionMuted,
+.suggestionWarning {
+  color: #7c7c7c !important;
+  font-size: 15px !important;
+}
+
+.suggestionWarning {
+  margin-top: 10px !important;
+}
+
+.medicalWorkspace {
+  display: grid;
+  grid-template-columns: minmax(260px, .85fr) minmax(0, 1.15fr);
+  align-items: start;
+  gap: 28px;
+  margin-top: -36px;
+}
+
+.medicalWorkspace .vaccineFormPanel,
+.medicalWorkspace .reminderSuggestion {
+  width: 100%;
+  margin: 0;
+}
+
+.medicalRecordPreview {
+  display: grid;
+  gap: 12px;
+}
+
+.medicalRecordPreview h2 {
+  margin: 0;
+  color: #252525;
+  font-size: 20px;
+}
+
+.medicalRecordPreview > p {
+  margin: 0;
+  padding: 28px 18px;
+  color: #85857e;
+  background: #f0f5ef;
+  border: 1px solid #e8e2da;
+  border-radius: 18px;
+  text-align: center;
+}
+
+.medicalRecordPreview .medicalEntryCard {
+  background: #f0f5ef;
+}
+
 .summaryGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -727,5 +1063,56 @@
   .quickActions {
     min-height: 0;
     padding: 22px;
+  }
+}
+
+@media (max-width: 800px) {
+  .medicalHistory {
+    margin-top: -22px;
+  }
+
+  .medicalToolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .addRecordButton {
+    width: 100%;
+  }
+
+  .addRecordPopover {
+    right: auto;
+    left: 0;
+  }
+
+  .vaccineFormPanel,
+  .reminderSuggestion {
+    margin-top: -22px;
+    padding: 22px;
+  }
+
+  .medicalWorkspace {
+    grid-template-columns: 1fr;
+    margin-top: -22px;
+  }
+}
+
+@media (max-width: 560px) {
+  .vaccineFormGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .fullWidthField {
+    grid-column: auto;
+  }
+
+  .formPanelActions,
+  .suggestionActions {
+    flex-direction: column-reverse;
+  }
+
+  .formPanelActions button,
+  .suggestionActions button {
+    width: 100%;
   }
 }
