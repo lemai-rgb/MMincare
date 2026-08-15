@@ -28,19 +28,6 @@ function getPetAgeLabel(dateOfBirth: string | null) {
   return age < 1 ? "Dưới 1 tuổi" : `${age} tuổi`;
 }
 
-function formatDate(value: string | null) {
-  if (!value) return undefined;
-
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return undefined;
-
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
-}
-
 function formatUpdatedAt(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return undefined;
@@ -52,12 +39,12 @@ function formatUpdatedAt(value: string) {
   }).format(date);
 }
 
-function PlaceholderCard({ title, description }: { title: string; description: string }) {
+function SummaryCard({ title, value, action }: { title: string; value: string; action?: string }) {
   return (
-    <section className={styles.placeholderCard}>
+    <section className={styles.summaryCard}>
       <h2>{title}</h2>
-      <p>{description}</p>
-      <span>Sắp cập nhật</span>
+      <p>{value}</p>
+      {action && <span className={styles.summaryAction}>{action}</span>}
     </section>
   );
 }
@@ -76,12 +63,11 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
     .eq("owner_id", claimsData.claims.sub)
     .maybeSingle();
 
-  // Redirecting instead of rendering an error prevents disclosure of another owner's pet.
+  // Do not disclose whether a missing row belongs to another owner.
   if (petError || !petRow) redirect("/dashboard");
 
   const pet = petRow as Pet;
   const age = getPetAgeLabel(pet.date_of_birth);
-  const birthDate = formatDate(pet.date_of_birth);
   const updatedAt = formatUpdatedAt(pet.updated_at ?? pet.created_at);
   const metadata = [
     getPetSpeciesLabel(pet.species),
@@ -102,7 +88,6 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
         <nav className={styles.navigation} aria-label="Điều hướng chính">
           <Link className={styles.activeNavItem} href="/dashboard">Thú cưng<span aria-hidden="true" /></Link>
           <span>Nhắc hẹn<span aria-hidden="true" /></span>
-          <span>Hồ sơ y tế<span aria-hidden="true" /></span>
           <span>Tài khoản<span aria-hidden="true" /></span>
         </nav>
       </header>
@@ -112,46 +97,60 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
 
         <div className={styles.content}>
           <Link className={styles.backLink} href="/dashboard">
-            <span className={styles.backIcon} aria-hidden="true">←</span>
-            Quay lại danh sách thú cưng
+            <span className={styles.backArrow} aria-hidden="true" />
+            Thú cưng của bạn
           </Link>
 
-          <p className={styles.eyebrow}>Hồ sơ thú cưng</p>
-          <h1 id="pet-detail-title">Thông tin của {pet.name}</h1>
-          <p className={styles.intro}>Theo dõi các thông tin cơ bản và lịch chăm sóc của bé tại một nơi.</p>
+          <p className={styles.subtitle} id="pet-detail-title">
+            Tổng quan hồ sơ sức khỏe, lịch tiêm và nhắc hẹn chăm sóc của {pet.name}.
+          </p>
 
           <section className={styles.profileCard} aria-label={`Hồ sơ của ${pet.name}`}>
             <div className={styles.avatarWrap}>
               <PetAvatar className={styles.avatar} species={pet.species} pictureUrl={pet.picture_url} />
             </div>
+
             <div className={styles.profileDetails}>
-              <h2>{pet.name}</h2>
+              <h1>{pet.name}</h1>
               <p className={styles.metadata}>{metadata.join(" • ")}</p>
-              <dl className={styles.profileFacts}>
-                <div>
-                  <dt>Ngày sinh</dt>
-                  <dd>{birthDate ?? "Chưa cập nhật"}</dd>
-                </div>
-                <div>
-                  <dt>Tình trạng hồ sơ</dt>
-                  <dd>Thông tin cơ bản</dd>
-                </div>
-              </dl>
+              <span className={styles.vaccineStatus}>Chưa có thông tin tiêm phòng</span>
             </div>
-            {updatedAt && <p className={styles.updatedAt}>Cập nhật gần nhất: {updatedAt}</p>}
+
+            <div className={styles.profileAside}>
+              <button className={styles.editButton} type="button" disabled aria-disabled="true">Chỉnh sửa</button>
+              {updatedAt && <p>Cập nhật gần nhất: {updatedAt}</p>}
+            </div>
           </section>
 
-          <div className={styles.sectionTabs} aria-label="Các mục hồ sơ">
-            <span className={styles.selectedTab}>Tổng quan</span>
-            <span>Tiêm phòng</span>
-            <span>Khám bệnh</span>
+          <div className={styles.tabBar} aria-label="Các mục hồ sơ">
+            <span className={styles.activeTab}>Tổng quan</span>
+            <span>Hồ sơ y tế</span>
+            <span>Nhắc hẹn</span>
             <span>Sức khỏe</span>
           </div>
 
-          <section className={styles.placeholderGrid} aria-label="Thông tin chăm sóc">
-            <PlaceholderCard title="Tiêm phòng" description="Lịch sử và nhắc hẹn tiêm phòng của bé sẽ xuất hiện tại đây." />
-            <PlaceholderCard title="Khám bệnh" description="Thông tin các lần khám bệnh sẽ được cập nhật trong phiên bản tiếp theo." />
-            <PlaceholderCard title="Sức khỏe" description="Nhật ký theo dõi sức khỏe sẽ sớm được bổ sung vào hồ sơ." />
+          <section className={styles.summaryGrid} aria-label="Tổng quan chăm sóc">
+            <SummaryCard title="Mũi tiêm gần nhất" value="Chưa có dữ liệu" />
+            <SummaryCard title="Nhắc hẹn sắp tới" value="Chưa có lịch nhắc hẹn" />
+            <SummaryCard title="Lần khám gần nhất" value="Chưa có dữ liệu" action="Thêm bản ghi đầu tiên" />
+          </section>
+
+          <section className={styles.overviewGrid} aria-label="Hoạt động và thao tác nhanh">
+            <section className={styles.historyCard}>
+              <div className={styles.cardHeading}>
+                <h2>Lịch sử gần đây</h2>
+                <span>Xem tất cả</span>
+              </div>
+              <p className={styles.emptyActivity}>Chưa có hoạt động nào</p>
+            </section>
+
+            <section className={styles.quickActions}>
+              <h2>Thao tác nhanh</h2>
+              <button type="button" disabled aria-disabled="true">＋ Thêm mũi tiêm</button>
+              <button type="button" disabled aria-disabled="true">＋ Thêm lịch khám</button>
+              <button type="button" disabled aria-disabled="true">＋ Tạo nhắc hẹn</button>
+              <button type="button" disabled aria-disabled="true">＋ Thêm ghi chú sức khỏe</button>
+            </section>
           </section>
         </div>
       </section>
