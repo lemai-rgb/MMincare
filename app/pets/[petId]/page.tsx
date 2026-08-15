@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { PetAvatar } from "@/components/pets/PetAvatar";
 import { PetListHeaderDecorations, PetListPanelDecorations } from "@/components/pets/PetListDecorations";
+import { PetMedicalHistory } from "@/components/pets/PetMedicalHistory";
 import { getPetGenderLabel, getPetSpeciesLabel, type Pet } from "@/lib/pets";
 import { createClient } from "@/lib/supabase/server";
 import styles from "@/styles/petDetail.module.css";
@@ -11,7 +12,51 @@ export const dynamic = "force-dynamic";
 
 type PetDetailPageProps = {
   params: Promise<{ petId: string }>;
+  searchParams: Promise<{ tab?: string | string[] }>;
 };
+
+type PetDetailTab = "overview" | "medical" | "reminders" | "health";
+
+const detailTabs: Array<{ id: PetDetailTab; label: string }> = [
+  { id: "overview", label: "Tổng quan" },
+  { id: "medical", label: "Hồ sơ y tế" },
+  { id: "reminders", label: "Nhắc hẹn" },
+  { id: "health", label: "Sức khỏe" },
+];
+
+function getDetailTab(value: string | string[] | undefined): PetDetailTab {
+  const tab = Array.isArray(value) ? value[0] : value;
+  if (tab === "medical" || tab === "reminders" || tab === "health") return tab;
+  return "overview";
+}
+
+function PetDetailTabs({ petId, activeTab }: { petId: string; activeTab: PetDetailTab }) {
+  return (
+    <nav className={styles.tabBar} aria-label="Các mục hồ sơ">
+      {detailTabs.map((tab) => {
+        const href = tab.id === "overview" ? `/pets/${petId}` : `/pets/${petId}?tab=${tab.id}`;
+        const className = tab.id === activeTab ? styles.activeTab : styles.tabLink;
+
+        return (
+          <Link aria-current={tab.id === activeTab ? "page" : undefined} className={className} href={href} key={tab.id}>
+            {tab.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+function PendingDetailTab({ tab }: { tab: Exclude<PetDetailTab, "overview" | "medical"> }) {
+  const label = tab === "reminders" ? "Nhắc hẹn" : "Sức khỏe";
+
+  return (
+    <section className={styles.pendingTab} aria-live="polite">
+      <h2>{label}</h2>
+      <p>Nội dung này sẽ được cập nhật trong checkpoint tiếp theo.</p>
+    </section>
+  );
+}
 
 function getPetAgeLabel(dateOfBirth: string | null) {
   if (!dateOfBirth) return undefined;
@@ -49,13 +94,15 @@ function SummaryCard({ title, value, action }: { title: string; value: string; a
   );
 }
 
-export default async function PetDetailPage({ params }: PetDetailPageProps) {
+export default async function PetDetailPage({ params, searchParams }: PetDetailPageProps) {
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
 
   if (claimsError || !claimsData?.claims?.sub) redirect("/login");
 
   const { petId } = await params;
+  const query = await searchParams;
+  const activeTab = getDetailTab(query.tab);
   const { data: petRow, error: petError } = await supabase
     .from("pets")
     .select("pet_id, owner_id, name, species, gender, breed, date_of_birth, picture_url, created_at, updated_at")
@@ -122,36 +169,38 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
             </div>
           </section>
 
-          <div className={styles.tabBar} aria-label="Các mục hồ sơ">
-            <span className={styles.activeTab}>Tổng quan</span>
-            <span>Hồ sơ y tế</span>
-            <span>Nhắc hẹn</span>
-            <span>Sức khỏe</span>
-          </div>
+          <PetDetailTabs activeTab={activeTab} petId={pet.pet_id} />
 
-          <section className={styles.summaryGrid} aria-label="Tổng quan chăm sóc">
-            <SummaryCard title="Mũi tiêm gần nhất" value="Chưa có dữ liệu" />
-            <SummaryCard title="Nhắc hẹn sắp tới" value="Chưa có lịch nhắc hẹn" />
-            <SummaryCard title="Lần khám gần nhất" value="Chưa có dữ liệu" action="Thêm bản ghi đầu tiên" />
-          </section>
+          {activeTab === "overview" && (
+            <>
+              <section className={styles.summaryGrid} aria-label="Tổng quan chăm sóc">
+                <SummaryCard title="Mũi tiêm gần nhất" value="Chưa có dữ liệu" />
+                <SummaryCard title="Nhắc hẹn sắp tới" value="Chưa có lịch nhắc hẹn" />
+                <SummaryCard title="Lần khám gần nhất" value="Chưa có dữ liệu" action="Thêm bản ghi đầu tiên" />
+              </section>
 
-          <section className={styles.overviewGrid} aria-label="Hoạt động và thao tác nhanh">
-            <section className={styles.historyCard}>
-              <div className={styles.cardHeading}>
-                <h2>Lịch sử gần đây</h2>
-                <span>Xem tất cả</span>
-              </div>
-              <p className={styles.emptyActivity}>Chưa có hoạt động nào</p>
-            </section>
+              <section className={styles.overviewGrid} aria-label="Hoạt động và thao tác nhanh">
+                <section className={styles.historyCard}>
+                  <div className={styles.cardHeading}>
+                    <h2>Lịch sử gần đây</h2>
+                    <span>Xem tất cả</span>
+                  </div>
+                  <p className={styles.emptyActivity}>Chưa có hoạt động nào</p>
+                </section>
 
-            <section className={styles.quickActions}>
-              <h2>Thao tác nhanh</h2>
-              <button type="button" disabled aria-disabled="true">＋ Thêm mũi tiêm</button>
-              <button type="button" disabled aria-disabled="true">＋ Thêm lịch khám</button>
-              <button type="button" disabled aria-disabled="true">＋ Tạo nhắc hẹn</button>
-              <button type="button" disabled aria-disabled="true">＋ Thêm ghi chú sức khỏe</button>
-            </section>
-          </section>
+                <section className={styles.quickActions}>
+                  <h2>Thao tác nhanh</h2>
+                  <button type="button" disabled aria-disabled="true">＋ Thêm mũi tiêm</button>
+                  <button type="button" disabled aria-disabled="true">＋ Thêm lịch khám</button>
+                  <button type="button" disabled aria-disabled="true">＋ Tạo nhắc hẹn</button>
+                  <button type="button" disabled aria-disabled="true">＋ Thêm ghi chú sức khỏe</button>
+                </section>
+              </section>
+            </>
+          )}
+
+          {activeTab === "medical" && <PetMedicalHistory />}
+          {(activeTab === "reminders" || activeTab === "health") && <PendingDetailTab tab={activeTab} />}
         </div>
       </section>
     </main>
