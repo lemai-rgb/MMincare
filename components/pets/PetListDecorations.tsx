@@ -42,12 +42,12 @@ export function PetListPanelDecorations() {
 }
 
 export function PetListCardDecorations({ species }: { species: PetSpecies }) {
-  const icon = species === "Cat" ? "/images/pets/cat-card-mark.svg" : "/images/pets/dog-card-mark.svg";
+  const icon = species === "Cat" ? "/images/pets/cat-avatar.png" : "/images/pets/dog-avatar.png";
 
   return (
     <div className={styles.petListCardDecorations} aria-hidden="true" role="presentation">
       <span className={styles.petListCardMenu}><i /><i /><i /></span>
-      <Image className={styles.petListSpeciesMark} src={icon} alt="" width={52} height={52} />
+      <Image className={styles.petListSpeciesMark} src={icon} alt="" width={68} height={68} />
     </div>
   );
 }

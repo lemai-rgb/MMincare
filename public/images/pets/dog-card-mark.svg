@@ -1,8 +1,0 @@
-<svg width="255" height="258" viewBox="112 99 255 258" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <filter id="pet-mark-green" color-interpolation-filters="sRGB">
-      <feColorMatrix type="matrix" values="0 0 0 0 0.68 0 0 0 0 0.77 0 0 0 0 0.67 0 0 0 1 0" />
-    </filter>
-  </defs>
-  <image href="dog-avatar.png" x="0" y="0" width="474" height="421" filter="url(#pet-mark-green)" />
-</svg>
