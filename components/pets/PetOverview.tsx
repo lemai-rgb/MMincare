@@ -1,17 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
-import { VaccineCreateForm, type VaccineSavedResult } from "@/components/pets/VaccineCreateForm";
 import type { MedicalHistoryEntry } from "@/lib/medicalHistory";
-import type { PetSpecies } from "@/lib/pets";
 import styles from "@/styles/petDetail.module.css";
 
 type PetOverviewProps = {
   petId: string;
-  species: PetSpecies;
-  isVaccineModalOpen: boolean;
 };
 
 function formatDate(value: string) {
@@ -20,11 +16,9 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
 }
 
-export function PetOverview({ petId, species, isVaccineModalOpen }: PetOverviewProps) {
-  const router = useRouter();
+export function PetOverview({ petId }: PetOverviewProps) {
   const [entries, setEntries] = useState<MedicalHistoryEntry[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -38,41 +32,9 @@ export function PetOverview({ petId, species, isVaccineModalOpen }: PetOverviewP
     return () => controller.abort();
   }, [petId]);
 
-  useEffect(() => {
-    if (!isVaccineModalOpen) return;
-    const previous = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") router.replace(`/pets/${encodeURIComponent(petId)}?tab=overview`);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    closeButtonRef.current?.focus();
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-      previous?.focus();
-    };
-  }, [isVaccineModalOpen, petId, router]);
-
   const vaccineEntries = useMemo(() => entries.filter((entry) => entry.type === "vaccine"), [entries]);
   const latestVaccine = vaccineEntries[0];
   const recentEntries = entries.slice(0, 3);
-
-  function openModal() {
-    router.replace(`/pets/${encodeURIComponent(petId)}?tab=overview&action=add-vaccine`);
-  }
-
-  function closeModal() {
-    router.replace(`/pets/${encodeURIComponent(petId)}?tab=overview`);
-  }
-
-  function handleSaved(result: VaccineSavedResult) {
-    setEntries((current) => [result.entry, ...current.filter((entry) => entry.id !== result.entry.id)]);
-    setNotice("Đã lưu mũi tiêm.");
-    closeModal();
-    router.refresh();
-  }
 
   function showComingSoon() {
     setNotice("Tính năng này sắp có.");
@@ -94,22 +56,14 @@ export function PetOverview({ petId, species, isVaccineModalOpen }: PetOverviewP
 
         <section className={styles.quickActions}>
           <h2>Thao tác nhanh</h2>
-          <button onClick={openModal} type="button">＋ Thêm mũi tiêm</button>
-          <button onClick={showComingSoon} type="button">＋ Thêm lịch khám</button>
-          <button onClick={showComingSoon} type="button">＋ Tạo nhắc hẹn</button>
-          <button onClick={showComingSoon} type="button">＋ Thêm ghi chú sức khỏe</button>
+          <Link href={`/pets/${encodeURIComponent(petId)}/vaccines/new`}>＋ Thêm mũi tiêm</Link>
+          <button aria-describedby="quick-action-coming-soon" disabled onClick={showComingSoon} type="button">＋ Thêm lịch khám</button>
+          <button aria-describedby="quick-action-coming-soon" disabled onClick={showComingSoon} type="button">＋ Tạo nhắc hẹn</button>
+          <button aria-describedby="quick-action-coming-soon" disabled onClick={showComingSoon} type="button">＋ Thêm ghi chú sức khỏe</button>
+          <span className={styles.comingSoonLabel} id="quick-action-coming-soon">Sắp có</span>
           {notice && <p className={styles.quickActionNotice} role="status">{notice}</p>}
         </section>
       </section>
-
-      {isVaccineModalOpen && (
-        <div className={styles.dialogBackdrop} onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}>
-          <section aria-labelledby="quick-vaccine-title" aria-modal="true" className={styles.vaccineDialog} role="dialog">
-            <div className={styles.dialogHeader}><h2 id="quick-vaccine-title">Thêm mũi tiêm</h2><button aria-label="Đóng" className={styles.dialogClose} onClick={closeModal} ref={closeButtonRef} type="button">×</button></div>
-            <VaccineCreateForm onCancel={closeModal} onSaved={handleSaved} petId={petId} species={species} />
-          </section>
-        </div>
-      )}
     </>
   );
 }

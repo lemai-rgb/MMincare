@@ -830,7 +830,8 @@
   white-space: nowrap;
 }
 
-.quickActions button {
+.quickActions button,
+.quickActions a {
   cursor: pointer;
 }
 
@@ -892,7 +893,8 @@
 }
 
 .dialogClose:focus-visible,
-.quickActions button:focus-visible {
+.quickActions button:focus-visible,
+.quickActions a:focus-visible {
   outline: 2px solid #6e8b6b;
   outline-offset: 3px;
 }
@@ -1024,7 +1026,9 @@
   text-align: center;
 }
 
-.quickActions button {
+.quickActions button,
+.quickActions a {
+  display: block;
   min-height: 47px;
   padding: 9px 15px;
   color: #171717;
@@ -1035,6 +1039,52 @@
   font: inherit;
   font-size: 16px;
   text-align: center;
+}
+
+.quickActions a {
+  text-decoration: none;
+}
+
+.quickActions button:disabled {
+  cursor: not-allowed;
+  opacity: .62;
+}
+
+.comingSoonLabel {
+  color: #9b9da5;
+  font-size: 12px;
+  text-align: right;
+}
+
+.createPageHeader {
+  max-width: 650px;
+  margin: 38px auto 22px;
+  text-align: center;
+}
+
+.createPageHeader h1,
+.createPageHeader p {
+  margin: 0;
+}
+
+.createPageHeader h1 {
+  color: #252525;
+  font-size: clamp(28px, 3vw, 38px);
+}
+
+.createPageHeader p {
+  margin-top: 8px;
+  color: #85857e;
+  font-size: 16px;
+}
+
+.createFormCentered {
+  width: min(100%, 760px);
+  margin: 0 auto;
+}
+
+.createFormCentered .vaccineFormPanel {
+  min-height: 0;
 }
 
 @media (max-width: 1080px) {

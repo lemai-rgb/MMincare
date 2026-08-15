@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 type PetDetailPageProps = {
   params: Promise<{ petId: string }>;
-  searchParams: Promise<{ tab?: string | string[]; action?: string | string[] }>;
+  searchParams: Promise<{ tab?: string | string[] }>;
 };
 
 type PetDetailTab = "overview" | "medical" | "reminders" | "health";
@@ -94,7 +94,6 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
   const { petId } = await params;
   const query = await searchParams;
   const activeTab = getDetailTab(query.tab);
-  const action = Array.isArray(query.action) ? query.action[0] : query.action;
   const { data: petRow, error: petError } = await supabase
     .from("pets")
     .select("pet_id, owner_id, name, species, gender, breed, date_of_birth, picture_url, created_at, updated_at")
@@ -168,7 +167,7 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
           <PetDetailTabs activeTab={activeTab} petId={pet.pet_id} />
 
           {activeTab === "overview" && (
-            <PetOverview isVaccineModalOpen={action === "add-vaccine"} petId={pet.pet_id} species={pet.species} />
+            <PetOverview petId={pet.pet_id} />
           )}
 
           {activeTab === "medical" && <PetMedicalHistory petId={pet.pet_id} species={pet.species} />}
