@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 type PetDetailPageProps = {
   params: Promise<{ petId: string }>;
-  searchParams: Promise<{ tab?: string | string[] }>;
+  searchParams: Promise<{ tab?: string | string[]; form?: string | string[] }>;
 };
 
 type PetDetailTab = "overview" | "medical" | "reminders" | "health";
@@ -48,13 +48,13 @@ function PetDetailTabs({ petId, activeTab }: { petId: string; activeTab: PetDeta
   );
 }
 
-function PendingDetailTab({ tab }: { tab: Exclude<PetDetailTab, "overview" | "medical"> }) {
+function PendingDetailTab({ tab, form }: { tab: Exclude<PetDetailTab, "overview" | "medical">; form?: string }) {
   const label = tab === "reminders" ? "Nhắc hẹn" : "Sức khỏe";
 
   return (
     <section className={styles.pendingTab} aria-live="polite">
       <h2>{label}</h2>
-      <p>Nội dung này sẽ được cập nhật trong checkpoint tiếp theo.</p>
+      <p>{form ? "Tính năng này sắp có." : "Nội dung này sẽ được cập nhật trong checkpoint tiếp theo."}</p>
     </section>
   );
 }
@@ -93,6 +93,7 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
   const { petId } = await params;
   const query = await searchParams;
   const activeTab = getDetailTab(query.tab);
+  const form = Array.isArray(query.form) ? query.form[0] : query.form;
   const { data: petRow, error: petError } = await supabase
     .from("pets")
     .select("pet_id, owner_id, name, species, gender, breed, date_of_birth, picture_url, created_at, updated_at")
@@ -169,8 +170,8 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
             <PetOverview petId={pet.pet_id} />
           )}
 
-          {activeTab === "medical" && <PetMedicalHistory petId={pet.pet_id} species={pet.species} />}
-          {(activeTab === "reminders" || activeTab === "health") && <PendingDetailTab tab={activeTab} />}
+          {activeTab === "medical" && <PetMedicalHistory form={form} petId={pet.pet_id} species={pet.species} />}
+          {(activeTab === "reminders" || activeTab === "health") && <PendingDetailTab form={form} tab={activeTab} />}
         </div>
       </section>
     </main>

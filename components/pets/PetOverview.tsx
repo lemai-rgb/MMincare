@@ -18,7 +18,6 @@ function formatDate(value: string) {
 
 export function PetOverview({ petId }: PetOverviewProps) {
   const [entries, setEntries] = useState<MedicalHistoryEntry[]>([]);
-  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -36,10 +35,6 @@ export function PetOverview({ petId }: PetOverviewProps) {
   const latestVaccine = vaccineEntries[0];
   const recentEntries = entries.slice(0, 3);
 
-  function showComingSoon() {
-    setNotice("Tính năng này sắp có.");
-  }
-
   return (
     <>
       <section className={styles.summaryGrid} aria-label="Tổng quan chăm sóc">
@@ -56,12 +51,10 @@ export function PetOverview({ petId }: PetOverviewProps) {
 
         <section className={styles.quickActions}>
           <h2>Thao tác nhanh</h2>
-          <Link href={`/pets/${encodeURIComponent(petId)}/vaccines/new`}>＋ Thêm mũi tiêm</Link>
-          <button aria-describedby="quick-action-coming-soon" disabled onClick={showComingSoon} type="button">＋ Thêm lịch khám</button>
-          <button aria-describedby="quick-action-coming-soon" disabled onClick={showComingSoon} type="button">＋ Tạo nhắc hẹn</button>
-          <button aria-describedby="quick-action-coming-soon" disabled onClick={showComingSoon} type="button">＋ Thêm ghi chú sức khỏe</button>
-          <span className={styles.comingSoonLabel} id="quick-action-coming-soon">Sắp có</span>
-          {notice && <p className={styles.quickActionNotice} role="status">{notice}</p>}
+          <Link href={`/pets/${encodeURIComponent(petId)}?tab=medical&form=vaccine`}>＋ Thêm mũi tiêm</Link>
+          <Link href={`/pets/${encodeURIComponent(petId)}?tab=medical&form=medical-record`}>＋ Thêm lịch khám</Link>
+          <Link href={`/pets/${encodeURIComponent(petId)}?tab=reminders&form=reminder`}>＋ Tạo nhắc hẹn</Link>
+          <Link href={`/pets/${encodeURIComponent(petId)}?tab=health&form=health-log`}>＋ Thêm ghi chú sức khỏe</Link>
         </section>
       </section>
     </>

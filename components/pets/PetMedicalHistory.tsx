@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { VaccineCreateForm, type VaccineSavedResult } from "@/components/pets/VaccineCreateForm";
 import type { MedicalHistoryEntry } from "@/lib/medicalHistory";
@@ -33,9 +34,10 @@ function groupLabel(value: string) {
   return new Intl.DateTimeFormat("vi-VN", { month: "long", year: "numeric" }).format(date);
 }
 
-export function PetMedicalHistory({ petId, species }: { petId: string; species: PetSpecies }) {
+export function PetMedicalHistory({ form, petId, species }: { form?: string; petId: string; species: PetSpecies }) {
+  const router = useRouter();
   const [filter, setFilter] = useState<MedicalHistoryFilter>("all");
-  const [view, setView] = useState<MedicalView>({ kind: "history" });
+  const [view, setView] = useState<MedicalView>(form === "vaccine" ? { kind: "add-vaccine" } : { kind: "history" });
   const [entries, setEntries] = useState<MedicalHistoryEntry[]>([]);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,6 +46,8 @@ export function PetMedicalHistory({ petId, species }: { petId: string; species: 
   const [notice, setNotice] = useState<string | null>(null);
   const [reminderDate, setReminderDate] = useState("");
   const requestController = useRef<AbortController | null>(null);
+
+  const formNotice = form === "medical-record" ? "Thêm lần khám: Sắp có." : null;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -80,11 +84,13 @@ export function PetMedicalHistory({ petId, species }: { petId: string; species: 
     setIsAddMenuOpen(false);
     setError(null);
     setView({ kind: "add-vaccine" });
+    router.replace(`/pets/${encodeURIComponent(petId)}?tab=medical&form=vaccine`);
   }
 
   function goToHistory(message?: string) {
     setView({ kind: "history" });
     if (message) setNotice(message);
+    router.replace(`/pets/${encodeURIComponent(petId)}?tab=medical`);
   }
 
   function handleVaccineSaved(result: VaccineSavedResult) {
@@ -92,9 +98,10 @@ export function PetMedicalHistory({ petId, species }: { petId: string; species: 
     setError(null);
     setEntries((current) => [result.entry, ...current.filter((item) => item.id !== result.entry.id)]);
     setReminderDate(result.suggestedNextDueDate ?? "");
-    setView(result.suggestedNextDueDate
-      ? { kind: "suggestion", entry: result.entry, date: result.suggestedNextDueDate, warning: result.warning }
-      : { kind: "saved-no-suggestion", entry: result.entry, warning: result.warning });
+    setView({ kind: "history" });
+    setNotice("Đã lưu mũi tiêm.");
+    router.replace(`/pets/${encodeURIComponent(petId)}?tab=medical`);
+    router.refresh();
   }
 
   async function createReminder() {
@@ -150,7 +157,7 @@ export function PetMedicalHistory({ petId, species }: { petId: string; species: 
             </div>
           </div>
 
-          {notice && <p className={styles.medicalNotice} role="status">{notice}</p>}
+          {(notice || formNotice) && <p className={styles.medicalNotice} role="status">{notice || formNotice}</p>}
           {error && <p className={styles.medicalError} role="alert">{error}</p>}
           {isLoading && <p className={styles.medicalLoading}>Đang tải hồ sơ y tế…</p>}
           {!isLoading && !error && groupedEntries.length === 0 && (
