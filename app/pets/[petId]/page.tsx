@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { PetAvatar } from "@/components/pets/PetAvatar";
 import { PetListHeaderDecorations, PetListPanelDecorations } from "@/components/pets/PetListDecorations";
 import { PetMedicalHistory } from "@/components/pets/PetMedicalHistory";
+import { PetOverview } from "@/components/pets/PetOverview";
 import { getPetGenderLabel, getPetSpeciesLabel, type Pet } from "@/lib/pets";
 import { createClient } from "@/lib/supabase/server";
 import styles from "@/styles/petDetail.module.css";
@@ -12,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 type PetDetailPageProps = {
   params: Promise<{ petId: string }>;
-  searchParams: Promise<{ tab?: string | string[] }>;
+  searchParams: Promise<{ tab?: string | string[]; action?: string | string[] }>;
 };
 
 type PetDetailTab = "overview" | "medical" | "reminders" | "health";
@@ -84,16 +85,6 @@ function formatUpdatedAt(value: string) {
   }).format(date);
 }
 
-function SummaryCard({ title, value, action }: { title: string; value: string; action?: string }) {
-  return (
-    <section className={styles.summaryCard}>
-      <h2>{title}</h2>
-      <p>{value}</p>
-      {action && <span className={styles.summaryAction}>{action}</span>}
-    </section>
-  );
-}
-
 export default async function PetDetailPage({ params, searchParams }: PetDetailPageProps) {
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
@@ -103,6 +94,7 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
   const { petId } = await params;
   const query = await searchParams;
   const activeTab = getDetailTab(query.tab);
+  const action = Array.isArray(query.action) ? query.action[0] : query.action;
   const { data: petRow, error: petError } = await supabase
     .from("pets")
     .select("pet_id, owner_id, name, species, gender, breed, date_of_birth, picture_url, created_at, updated_at")
@@ -114,6 +106,10 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
   if (petError || !petRow) redirect("/dashboard");
 
   const pet = petRow as Pet;
+  const { count: vaccineCount } = await supabase
+    .from("vaccine_records")
+    .select("vaccine_record_id", { count: "exact", head: true })
+    .eq("pet_id", pet.pet_id);
   const age = getPetAgeLabel(pet.date_of_birth);
   const updatedAt = formatUpdatedAt(pet.updated_at ?? pet.created_at);
   const metadata = [
@@ -160,7 +156,7 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
             <div className={styles.profileDetails}>
               <h1>{pet.name}</h1>
               <p className={styles.metadata}>{metadata.join(" • ")}</p>
-              <span className={styles.vaccineStatus}>Chưa có thông tin tiêm phòng</span>
+              <span className={styles.vaccineStatus}>{vaccineCount ? `${vaccineCount} bản ghi tiêm phòng` : "Chưa có thông tin tiêm phòng"}</span>
             </div>
 
             <div className={styles.profileAside}>
@@ -172,31 +168,7 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
           <PetDetailTabs activeTab={activeTab} petId={pet.pet_id} />
 
           {activeTab === "overview" && (
-            <>
-              <section className={styles.summaryGrid} aria-label="Tổng quan chăm sóc">
-                <SummaryCard title="Mũi tiêm gần nhất" value="Chưa có dữ liệu" />
-                <SummaryCard title="Nhắc hẹn sắp tới" value="Chưa có lịch nhắc hẹn" />
-                <SummaryCard title="Lần khám gần nhất" value="Chưa có dữ liệu" action="Thêm bản ghi đầu tiên" />
-              </section>
-
-              <section className={styles.overviewGrid} aria-label="Hoạt động và thao tác nhanh">
-                <section className={styles.historyCard}>
-                  <div className={styles.cardHeading}>
-                    <h2>Lịch sử gần đây</h2>
-                    <span>Xem tất cả</span>
-                  </div>
-                  <p className={styles.emptyActivity}>Chưa có hoạt động nào</p>
-                </section>
-
-                <section className={styles.quickActions}>
-                  <h2>Thao tác nhanh</h2>
-                  <button type="button" disabled aria-disabled="true">＋ Thêm mũi tiêm</button>
-                  <button type="button" disabled aria-disabled="true">＋ Thêm lịch khám</button>
-                  <button type="button" disabled aria-disabled="true">＋ Tạo nhắc hẹn</button>
-                  <button type="button" disabled aria-disabled="true">＋ Thêm ghi chú sức khỏe</button>
-                </section>
-              </section>
-            </>
+            <PetOverview isVaccineModalOpen={action === "add-vaccine"} petId={pet.pet_id} species={pet.species} />
           )}
 
           {activeTab === "medical" && <PetMedicalHistory petId={pet.pet_id} species={pet.species} />}
