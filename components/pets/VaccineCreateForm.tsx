@@ -95,7 +95,9 @@ export function VaccineCreateForm({ petId, species, onCancel, onSaved }: Vaccine
       if (!response.ok || !payload.vaccine_record) throw new Error(payload.error || "Không thể lưu mũi tiêm.");
       onSaved({ entry: toEntry(payload.vaccine_record), suggestedNextDueDate: payload.suggested_next_due_date ?? null, warning: payload.warning ?? null });
     } catch (requestError: unknown) {
-      if (!controller.signal.aborted) setError(requestError instanceof Error ? requestError.message : "Không thể lưu mũi tiêm.");
+      if (!controller.signal.aborted) {
+        setError(requestError instanceof TypeError ? "Không thể kết nối máy chủ. Vui lòng thử lại." : requestError instanceof Error ? requestError.message : "Không thể lưu mũi tiêm.");
+      }
     } finally {
       if (!controller.signal.aborted) setIsSaving(false);
     }

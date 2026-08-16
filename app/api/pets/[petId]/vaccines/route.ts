@@ -15,6 +15,27 @@ function errorResponse(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 
+function logSupabaseError(operation: string, error: { code?: string; message?: string; details?: string; hint?: string } | null) {
+  if (process.env.NODE_ENV !== "production" && error) {
+    console.error(`[vaccine-records] ${operation}`, {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+  }
+}
+
+function mapInsertError(error: { code?: string; message?: string } | null) {
+  const code = error?.code ?? "";
+  const message = (error?.message ?? "").toLowerCase();
+  if (code === "42P01" || message.includes("does not exist")) return "Hệ thống chưa sẵn sàng lưu hồ sơ tiêm phòng.";
+  if (code === "42501" || message.includes("row-level security") || message.includes("permission denied")) return "Bạn không có quyền thêm hồ sơ cho thú cưng này.";
+  if (code === "23503") return "Thông tin thú cưng hoặc tài khoản không hợp lệ.";
+  if (code === "23514" || code === "22P02" || code === "22007") return "Dữ liệu mũi tiêm không hợp lệ.";
+  return "Không thể lưu mũi tiêm lúc này.";
+}
+
 function isIsoDate(value: unknown): value is string {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const parsed = new Date(`${value}T00:00:00Z`);
@@ -62,23 +83,30 @@ export async function POST(request: Request, { params }: RouteContext) {
     .eq("pet_id", petId)
     .eq("owner_id", userId)
     .maybeSingle();
+  if (petError) logSupabaseError("pet ownership lookup", petError);
   if (petError || !pet) return errorResponse("Không tìm thấy thú cưng.", 404);
+
+  const insertPayload = {
+    created_by: userId,
+    pet_id: pet.pet_id,
+    vaccine_name: vaccineName,
+    vaccine_date: vaccineDate,
+    dose_number: doseNumber,
+    clinic_name: clinicName || null,
+    note: note || null,
+  };
 
   const { data: vaccineRecord, error: insertError } = await supabase
     .from("vaccine_records")
-    .insert({
-      created_by: userId,
-      pet_id: pet.pet_id,
-      vaccine_name: vaccineName,
-      vaccine_date: vaccineDate,
-      dose_number: doseNumber,
-      clinic_name: clinicName || null,
-      note: note || null,
-    })
+    .insert(insertPayload)
     .select("vaccine_record_id, vaccine_name, vaccine_date, dose_number, clinic_name, note")
     .single();
 
-  if (insertError || !vaccineRecord) return errorResponse("Không thể lưu mũi tiêm lúc này.", 500);
+  if (insertError) {
+    logSupabaseError("vaccine_records insert", insertError);
+    return errorResponse(mapInsertError(insertError), insertError.code === "42501" ? 403 : 500);
+  }
+  if (!vaccineRecord) return errorResponse("Không thể lưu mũi tiêm lúc này.", 500);
 
   let suggestedNextDueDate: string | null = null;
   if (pet.date_of_birth) {
