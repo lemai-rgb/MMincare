@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -249,7 +250,9 @@ function MedicalRecordPreview({ entries }: { entries: MedicalHistoryEntry[] }) {
 function MedicalEntryCard({ entry }: { entry: MedicalHistoryEntry }) {
   return (
     <article className={styles.medicalEntryCard}>
-      <span className={entry.type === "vaccine" ? styles.vaccineIcon : styles.medicalIcon} aria-hidden="true" />
+      {entry.type === "vaccine"
+        ? <span className={styles.vaccineIcon}><Image alt="" aria-hidden="true" height={27} src="/icons/vaccine-syringe.svg" width={41} /></span>
+        : <span className={styles.medicalIcon} aria-hidden="true" />}
       <div><h3>{entry.title}</h3><p>{formatDate(entry.eventDate)}{entry.clinicName ? ` • ${entry.clinicName}` : ""}</p>{entry.description && <span>{entry.description}</span>}</div>
     </article>
   );
