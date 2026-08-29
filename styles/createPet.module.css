@@ -223,6 +223,48 @@
   font-size: 14px;
 }
 
+.formSuccess {
+  grid-column: 1 / -1;
+  margin: 5px 0 0;
+  color: var(--mm-primary-dark);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.successShell {
+  display: grid;
+  min-height: 520px;
+  place-items: center;
+}
+
+.successCard {
+  position: relative;
+  z-index: 1;
+  max-width: 620px;
+  text-align: center;
+}
+
+.successMark {
+  display: inline-grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--mm-primary);
+  color: #fff;
+  font-size: 32px;
+}
+
+.successCard h1 { margin: 24px 0 10px; font-size: 32px; }
+.successCard p { margin: 0; color: var(--mm-text-secondary); font-size: 18px; }
+
+.successActions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 30px;
+}
+
 .actions {
   grid-column: 1;
   display: flex;
