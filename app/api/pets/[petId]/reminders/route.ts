@@ -9,7 +9,14 @@ function response(message: string, status: number) {
 }
 
 function validDate(value: unknown): value is string {
-  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+function validUuid(value: unknown): value is string {
+  return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
@@ -18,41 +25,65 @@ export async function POST(request: Request, { params }: RouteContext) {
   const userId = claimsData?.claims?.sub;
   if (claimsError || !userId) return response("Bạn cần đăng nhập để tạo nhắc hẹn.", 401);
 
-  let body: { type?: unknown; due_date?: unknown; source_vaccine_record_id?: unknown };
+  let payload: unknown;
   try {
-    body = await request.json();
+    payload = await request.json();
   } catch {
     return response("Dữ liệu gửi lên không hợp lệ.", 400);
   }
-  if (body.type !== "Vaccine" || !validDate(body.due_date) || typeof body.source_vaccine_record_id !== "string") {
+
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return response("Dữ liệu gửi lên không hợp lệ.", 400);
+  }
+
+  const body = payload as Record<string, unknown>;
+  if (
+    body.type !== "Vaccine"
+    || !validDate(body.due_date)
+    || !validUuid(body.source_vaccine_record_id)
+    || (body.note !== undefined && typeof body.note !== "string")
+  ) {
     return response("Thông tin nhắc hẹn chưa đầy đủ.", 400);
   }
 
   const { petId } = await params;
-  const { data: pet } = await supabase.from("pets").select("pet_id").eq("pet_id", petId).eq("owner_id", userId).maybeSingle();
-  if (!pet) return response("Không tìm thấy thú cưng.", 404);
+  if (!validUuid(petId)) return response("Mã thú cưng không hợp lệ.", 400);
 
-  const { data: vaccine } = await supabase
+  const { data: pet, error: petError } = await supabase
+    .from("pets")
+    .select("pet_id")
+    .eq("pet_id", petId)
+    .eq("owner_id", userId)
+    .maybeSingle();
+  if (petError) return response("Không thể kiểm tra quyền sở hữu thú cưng lúc này.", 500);
+  if (!pet) return response("Bạn không có quyền tạo nhắc hẹn cho thú cưng này.", 403);
+
+  const { data: vaccine, error: vaccineError } = await supabase
     .from("vaccine_records")
     .select("vaccine_record_id")
     .eq("vaccine_record_id", body.source_vaccine_record_id)
     .eq("pet_id", petId)
     .maybeSingle();
-  if (!vaccine) return response("Mũi tiêm không thuộc thú cưng này.", 400);
+  if (vaccineError) return response("Không thể kiểm tra mũi tiêm lúc này.", 500);
+  if (!vaccine) return response("Không tìm thấy mũi tiêm thuộc thú cưng này.", 404);
 
-  const { data: reminder, error } = await supabase
+  const note = typeof body.note === "string" ? body.note.trim() || null : null;
+
+  const { data: reminder, error: insertError } = await supabase
     .from("reminders")
     .insert({
       user_id: userId,
       pet_id: petId,
       type: "Vaccine",
       due_date: body.due_date,
+      note,
       source_vaccine_record_id: body.source_vaccine_record_id,
       status: "Upcoming",
     })
-    .select("reminder_id, due_date, type, status, source_vaccine_record_id")
+    .select("reminder_id, due_date, type, status, note, source_vaccine_record_id")
     .single();
 
-  if (error || !reminder) return response("Không thể tạo nhắc hẹn lúc này.", 500);
+  if (insertError || !reminder) return response("Không thể tạo nhắc hẹn lúc này.", 500);
+
   return NextResponse.json({ reminder }, { status: 201 });
 }

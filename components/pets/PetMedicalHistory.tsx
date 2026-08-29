@@ -34,6 +34,12 @@ function groupLabel(value: string) {
   return new Intl.DateTimeFormat("vi-VN", { month: "long", year: "numeric" }).format(date);
 }
 
+function validDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
 export function PetMedicalHistory({ form, petId, species }: { form?: string; petId: string; species: PetSpecies }) {
   const router = useRouter();
   const [filter, setFilter] = useState<MedicalHistoryFilter>("all");
@@ -46,6 +52,7 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
   const [notice, setNotice] = useState<string | null>(null);
   const [reminderDate, setReminderDate] = useState("");
   const requestController = useRef<AbortController | null>(null);
+  const reminderSubmissionGuard = useRef(false);
 
   const formNotice = form === "medical-record" ? "Thêm lần khám: Sắp có." : null;
 
@@ -89,6 +96,8 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
 
   function goToHistory(message?: string) {
     setView({ kind: "history" });
+    setError(null);
+    setReminderDate("");
     if (message) setNotice(message);
     router.replace(`/pets/${encodeURIComponent(petId)}?tab=medical`);
   }
@@ -98,18 +107,30 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
     setError(null);
     setEntries((current) => [result.entry, ...current.filter((item) => item.id !== result.entry.id)]);
     setReminderDate(result.suggestedNextDueDate ?? "");
-    setView({ kind: "history" });
-    setNotice("Đã lưu mũi tiêm.");
+    setView(result.suggestedNextDueDate !== null
+      ? {
+          kind: "suggestion",
+          entry: result.entry,
+          date: result.suggestedNextDueDate,
+          warning: result.warning,
+        }
+      : {
+          kind: "saved-no-suggestion",
+          entry: result.entry,
+          warning: result.warning,
+        });
+    setNotice(null);
     router.replace(`/pets/${encodeURIComponent(petId)}?tab=medical`);
-    router.refresh();
   }
 
   async function createReminder() {
     if (view.kind !== "suggestion" && view.kind !== "saved-no-suggestion") return;
-    if (!reminderDate) {
+    if (reminderSubmissionGuard.current) return;
+    if (!validDate(reminderDate)) {
       setError("Hãy chọn ngày nhắc hẹn trước khi tiếp tục.");
       return;
     }
+    reminderSubmissionGuard.current = true;
     setError(null);
     setIsSaving(true);
     const controller = new AbortController();
@@ -124,12 +145,20 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
       });
       const payload = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(payload.error || "Không thể tạo nhắc hẹn.");
-      goToHistory("Đã tạo nhắc hẹn.");
-    } catch (requestError: unknown) {
-      if (!controller.signal.aborted) setError(requestError instanceof Error ? requestError.message : "Không thể tạo nhắc hẹn.");
+      goToHistory("Đã tạo nhắc hẹn thành công");
+    } catch {
+      if (!controller.signal.aborted) {
+        setError("Mũi tiêm đã được lưu nhưng chưa thể tạo nhắc hẹn.");
+      }
     } finally {
+      reminderSubmissionGuard.current = false;
       if (!controller.signal.aborted) setIsSaving(false);
     }
+  }
+
+  function deferReminder() {
+    if (reminderSubmissionGuard.current) return;
+    goToHistory("Đã lưu mũi tiêm.");
   }
 
   return (
@@ -199,7 +228,7 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
           <label>Ngày nhắc hẹn<input onChange={(event) => setReminderDate(event.target.value)} type="date" value={reminderDate} /></label>
           {view.warning && <p className={styles.suggestionWarning}>{view.warning}</p>}
           {error && <p className={styles.medicalError} role="alert">{error}</p>}
-          <div className={styles.suggestionActions}><button disabled={isSaving} onClick={() => goToHistory("Đã lưu mũi tiêm.")} type="button">Để sau</button><button disabled={isSaving || !reminderDate} onClick={createReminder} type="button">{isSaving ? "Đang lưu…" : "Tạo nhắc hẹn"}</button></div>
+          <div className={styles.suggestionActions}><button disabled={isSaving} onClick={deferReminder} type="button">Để sau</button><button disabled={isSaving || !reminderDate} onClick={createReminder} type="button">{isSaving ? "Đang lưu…" : "Tạo nhắc hẹn"}</button></div>
           </section>
         </div>
       )}
