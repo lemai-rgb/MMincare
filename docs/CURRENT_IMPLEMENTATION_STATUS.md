@@ -10,9 +10,9 @@
 
 ## 1. Kết luận nhanh
 
-Project đã có vertical slice dùng dữ liệu Supabase thật cho email/password Authentication, danh sách/tạo/xem/sửa pet, timeline lịch sử y tế, tạo Vaccine Record và bước Owner xác nhận tạo Reminder sau tiêm.
+Project đã có vertical slice dùng dữ liệu Supabase thật cho email/password Authentication, danh sách/tạo/xem/sửa pet, timeline lịch sử y tế, tạo Vaccine Record, Owner xác nhận tạo Reminder, danh sách Reminder tổng hợp và đánh dấu Reminder hoàn thành.
 
-Phạm vi Core MVP vẫn chưa hoàn tất end-to-end. Google OAuth là **Not Implemented — Phase 1 checkpoint B**; quên mật khẩu, upload ảnh pet, tạo lần khám, attachment, chi tiết bản ghi y tế, danh sách/hoàn thành Reminder và Caretaker/shared pet cũng chưa được triển khai đầy đủ.
+Phạm vi Core MVP vẫn chưa hoàn tất end-to-end. Google OAuth là **Not Implemented — Phase 1 checkpoint B**; quên mật khẩu, upload ảnh pet, tạo lần khám, attachment, chi tiết bản ghi y tế, tạo Reminder thủ công và Caretaker/shared pet cũng chưa được triển khai đầy đủ.
 
 Client và API từ chối `vaccine_date` ở tương lai. Hành vi này **đúng requirement hiện hành**: Vaccine Record chỉ biểu diễn mũi tiêm đã xảy ra; ngày dự kiến trong tương lai phải được quản lý qua Reminder. ADL-005, ADL-010, DEC-08 và ADL-012 hiện đều ở mức Partial theo phạm vi chi tiết bên dưới. Schema, migrations và policies được mô tả trong repository chỉ là target implementation; trạng thái Supabase thực tế là **Unverified Live**.
 
@@ -49,13 +49,16 @@ Client và API từ chối `vaccine_date` ở tương lai. Hành vi này **đún
 | `/pets/new` | Page | Auth qua proxy | Tạo pet thật |
 | `/pets/[petId]` | Page | Auth + owner predicate | Overview và các tab pet |
 | `/pets/[petId]/edit` | Page | Auth + owner predicate | Sửa pet thật |
+| `/reminders` | Page | Auth qua proxy | Danh sách Reminder toàn bộ pet, filter và complete flow |
 | `/auth/confirm` | GET Route Handler | Public callback | OTP/PKCE confirmation, safe redirect |
 | `/auth/confirm/error` | Page | Public | Confirmation error state |
 | `/api/pets/[petId]/medical-history` | GET Route Handler | Auth + owner predicate | Timeline vaccine/medical record thật |
 | `/api/pets/[petId]/vaccines` | POST Route Handler | Auth + owner predicate | Insert Vaccine Record, thử tính suggested date |
 | `/api/pets/[petId]/reminders` | POST Route Handler | Auth + owner predicate | Insert Reminder sau Owner xác nhận |
+| `/api/reminders` | GET Route Handler | Auth + owner predicate/RLS | Aggregate Owner pets, reminders và nguồn Vaccine |
+| `/api/reminders/[reminderId]/complete` | PATCH Route Handler | Auth + owner predicate/RLS | Chuyển stored status sang `Completed` và ghi `completed_at` |
 
-`proxy.ts` chỉ liệt kê `/dashboard` và `/pets/new` trong protected prefixes. Dynamic pet pages và các API nhạy cảm tự kiểm tra session/owner trong implementation.
+`proxy.ts` liệt kê `/dashboard`, `/pets/new` và `/reminders` trong protected prefixes. Dynamic pet pages và các API nhạy cảm tự kiểm tra session/owner trong implementation.
 
 ## 4. Màn hình và luồng đã code hoàn chỉnh
 
@@ -84,6 +87,8 @@ Client và API từ chối `vaccine_date` ở tương lai. Hành vi này **đún
 - Form vaccine POST vào Route Handler; backend kiểm tra Auth/Owner, required fields/dose, ghi `created_by`, insert Vaccine Record và tra schedule rule.
 - Sau khi vaccine được lưu, component hiện giữ record vừa tạo, warning và suggested date. Có hai post-save state: có gợi ý thì prefill nhưng cho sửa; không có gợi ý thì cho nhập ngày thủ công.
 - Reminder chỉ được POST sau khi Owner bấm xác nhận; “Để sau” chỉ đóng prompt. Nếu Reminder lỗi, Vaccine Record vẫn được xem là đã lưu và post-save state được giữ lại.
+- `/reminders` hiển thị Reminder của tất cả pet thuộc Owner, suy ra Upcoming/Overdue/Completed, filter theo trạng thái/pet và có loading/empty/error states.
+- Complete flow có modal xác nhận, synchronous guard, user-scoped PATCH, toast và giữ Reminder trong tab Tất cả/Hoàn thành.
 - Luồng trên chỉ mở ngay sau khi vừa tạo Vaccine Record. Timeline chưa có detail/action để mở lại Vaccine Record cũ và tạo Reminder bổ sung.
 
 ## 5. Màn hình/luồng đang làm dở hoặc chỉ có UI mock
@@ -93,15 +98,15 @@ Client và API từ chối `vaccine_date` ở tương lai. Hành vi này **đún
 | Google OAuth | **Not Implemented — Phase 1 checkpoint B**; component nút không khả dụng, không được render và chưa có OAuth callback/action |
 | Quên mật khẩu | Nút không có handler/route |
 | Account/Profile | Chỉ là nav text, không có route |
-| Dashboard nav Nhắc hẹn/Hồ sơ y tế | Chỉ là `span`, không điều hướng |
-| Pet detail — Nhắc hẹn | Placeholder; chưa GET/list/complete Reminder |
+| Dashboard nav Hồ sơ y tế | Chỉ là `span`, không điều hướng; Nhắc hẹn đã dẫn tới `/reminders` |
+| Pet detail — Nhắc hẹn | Tab theo từng pet vẫn là placeholder; danh sách tổng hợp đã có tại `/reminders` |
 | Pet detail — Sức khỏe | Placeholder; chưa có Health Log UI/API |
 | Thêm lần khám | Action disabled; `form=medical-record` chỉ hiện “Sắp có” |
 | Chi tiết medical/vaccine record | Timeline card không mở detail; không có detail route/API tương ứng |
 | Upload ảnh pet | Chỉ lưu URL; chưa upload/validate file với Storage |
 | Medical Record/Attachment — ADL-012 | **Partial / application flow mostly missing**; target schema có quan hệ và constraints nhưng chưa có create/upload API, UI, Storage integration hoặc retry flow |
 | Caretaker/shared pets | Chưa có UI/API/data flow; các query hiện chỉ phục vụ Owner |
-| Reminder — ADL-010 / DEC-08 | **Partial**; chưa có form tạo chung, list hoặc complete flow. Schema/API hỗ trợ nhiều Reminder cho một Vaccine Record, nhưng UI chưa tạo được Reminder bổ sung từ Vaccine Record cũ |
+| Reminder — ADL-010 / DEC-08 | **Partial**; list/filter/complete đã có nhưng chưa có form tạo chung hoặc tạo Reminder bổ sung từ Vaccine Record cũ |
 
 ## 6. Mock data, hard-coded data và dữ liệu thật
 
@@ -112,7 +117,7 @@ Client và API từ chối `vaccine_date` ở tương lai. Hành vi này **đún
 - `vaccine_records`: count/list/insert.
 - `medical_records`: read-only trong aggregate history.
 - `vaccine_schedule_rules`: code có query để tính gợi ý; kết quả có thể null.
-- `reminders`: POST insert sau xác nhận; chưa có read/list UI.
+- `reminders`: POST insert sau xác nhận, aggregate GET list và PATCH complete dùng Owner-scoped SSR client/RLS.
 
 ### Hard-coded/static
 
@@ -132,6 +137,8 @@ Không tìm thấy mock server, JSON fixture hay in-memory mock database.
 - Không thấy service-role credential trong source đã đọc.
 - Auth SSR dùng cookie store/claims; Route Handlers đều kiểm tra Auth và các thao tác theo pet có owner predicate.
 - Target schema và incremental migration đã có `vaccine_schedule_rules`, chuẩn hóa stored reminder status thành `Upcoming`/`Completed`, Owner policies cho medical records/attachments/reminders, deny-all Phase 2 và revoke RPC nguy hiểm.
+- Reminder List bổ sung contract `{ reminders, pets }`; mỗi reminder trả `display_status`/`is_overdue` được suy ra, pet name, nguồn Vaccine nếu có và `completed_at`. `Overdue` không được persist.
+- Migration `reminders_owner_complete` bổ sung nullable `completed_at`, column-level UPDATE grant và Owner UPDATE policy; migration chỉ được tạo local, chưa apply remote.
 
 ### Khoảng trống/rủi ro
 
@@ -179,7 +186,7 @@ Không tìm thấy mock server, JSON fixture hay in-memory mock database.
 | Quyết định | Trạng thái | Đối chiếu implementation |
 |---|---|---|
 | ADL-005 — Onboarding species | **Partial** | Chỉ nhận `cat\|dog` và bảo toàn lựa chọn, nhưng confirmation helper vẫn dùng đích tạm `/dashboard?species=...` thay vì đi thẳng tới `/pets/new?species=...`. |
-| ADL-010 — In-app Reminder | **Partial** | Có POST tạo Reminder sau khi Owner xác nhận; chưa có list, display-status flow, complete flow hoặc general-create UI. |
+| ADL-010 — In-app Reminder | **Partial** | Có POST, list/filter/display-status và complete flow; chưa có general-create UI hoặc notification delivery. |
 | DEC-08 — Vaccine Record `1 — 0..N` Reminder | **Partial** | Schema/API cho phép insert nhiều Reminder cùng `source_vaccine_record_id`; UI chỉ tạo trong post-save state và chưa có action tạo Reminder bổ sung từ Vaccine Record cũ. |
 | ADL-012 — Medical Record độc lập Attachment | **Partial / application flow mostly missing** | Target schema có quan hệ `0..N`, constraints và RLS target; chưa có create/upload API, UI, Storage integration, giữ `record_id` sau lỗi hoặc retry attachment. |
 
@@ -200,7 +207,7 @@ Audit bắt đầu với thay đổi chưa commit tại `components/pets/PetMedi
 1. **Harden Vaccine → Reminder theo requirement hiện hành.** Giữ validation từ chối future `vaccine_date`; thêm test client/API cho hành vi reject, synchronous submit guard/idempotency và test lỗi Reminder không làm sai trạng thái Vaccine Record.
 2. **Giải quyết access/data cho `vaccine_schedule_rules`.** Chọn read-only policy/RPC tin cậy cho lookup, nạp rule chỉ sau khi nguồn chuyên môn được duyệt, và test rõ fallback null.
 3. **Triển khai Medical Record và record detail.** Thêm create/read detail, validation và attachment Storage với giới hạn type/5MB cùng RLS.
-4. **Hoàn thiện Reminder UI/API.** Thêm list, display status suy ra, tạo độc lập, mark Completed và action tạo Reminder bổ sung từ Vaccine Record cũ; giữ Owner-only ở checkpoint hiện tại.
+4. **Hoàn thiện phần Reminder còn lại.** Thêm tạo độc lập và action tạo Reminder bổ sung từ Vaccine Record cũ; giữ Owner-only ở checkpoint hiện tại.
 5. **Thêm automated tests và runtime smoke environment.** Bao phủ Auth/safe redirect, RLS ownership, pet CRUD, vaccine calculation/future-date rejection, post-save và supplemental Reminder, medical-history sort/filter; sau đó chạy build và localhost e2e trên database test riêng.
 
 ## 11. Mức độ hoàn thành User Story trọng tâm
@@ -215,4 +222,4 @@ Audit bắt đầu với thay đổi chưa commit tại `components/pets/PetMedi
 | US-06 Vaccine | Một phần lớn đã có; insert, calculation/post-save Reminder UI và future-date rejection phù hợp requirement; còn thiếu automated/runtime verification và hardening |
 | US-07 Medical Record | **Partial / application flow mostly missing**; mới đọc record nếu dữ liệu tồn tại, chưa có create/attachment flow theo ADL-012 |
 | US-08 Medical History | Phần lớn đã có; thiếu record detail |
-| US-10 Reminder | **Partial**; tạo ngay sau vaccine đã có, chưa có list/complete/general create hoặc tạo Reminder bổ sung từ Vaccine Record cũ |
+| US-10 Reminder | **Partial**; create-from-vaccine, list/filter và complete đã có; chưa có general create hoặc tạo Reminder bổ sung từ Vaccine Record cũ |
