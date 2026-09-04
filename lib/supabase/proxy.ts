@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseEnv } from "./env";
 
 const AUTH_ROUTES = new Set(["/login", "/register"]);
-const PROTECTED_PREFIXES = ["/dashboard", "/pets/new"];
+const PROTECTED_PREFIXES = ["/dashboard", "/pets/new", "/reminders"];
 
 function redirectWithSessionHeaders(url: URL, sessionResponse: NextResponse) {
   const redirectResponse = NextResponse.redirect(url);

@@ -67,7 +67,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
           <nav className={styles.primaryNav} aria-label="Điều hướng chính">
             <Link className={styles.activeNavItem} href="/dashboard">Thú cưng<span className={styles.navChevron} aria-hidden="true" /></Link>
-            <span className={styles.navItem}>Nhắc hẹn<span className={styles.navChevron} aria-hidden="true" /></span>
+            <Link className={styles.navItem} href="/reminders">Nhắc hẹn<span className={styles.navChevron} aria-hidden="true" /></Link>
             <span className={styles.navItem}>Hồ sơ y tế<span className={styles.navChevron} aria-hidden="true" /></span>
             <span className={styles.navItem}>Tài khoản<span className={styles.navChevron} aria-hidden="true" /></span>
           </nav>

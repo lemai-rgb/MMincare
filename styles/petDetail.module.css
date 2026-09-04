@@ -487,6 +487,14 @@
   color: #5e7c5d;
 }
 
+.medicalNoticeLink {
+  display: inline-flex;
+  margin-left: 12px;
+  color: var(--mm-primary-dark);
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+
 .medicalError {
   color: #a55f57;
 }

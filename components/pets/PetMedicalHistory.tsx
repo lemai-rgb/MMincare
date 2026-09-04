@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -51,6 +52,7 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [createdReminderId, setCreatedReminderId] = useState<string | null>(null);
   const [reminderDate, setReminderDate] = useState("");
   const requestController = useRef<AbortController | null>(null);
   const reminderSubmissionGuard = useRef(false);
@@ -95,10 +97,11 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
     router.replace(`/pets/${encodeURIComponent(petId)}?tab=medical&form=vaccine`);
   }
 
-  function goToHistory(message?: string) {
+  function goToHistory(message?: string, reminderId?: string) {
     setView({ kind: "history" });
     setError(null);
     setReminderDate("");
+    setCreatedReminderId(reminderId ?? null);
     if (message) setNotice(message);
     router.replace(`/pets/${encodeURIComponent(petId)}?tab=medical`);
   }
@@ -144,9 +147,9 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
         body: JSON.stringify({ type: "Vaccine", due_date: reminderDate, source_vaccine_record_id: view.entry.id }),
         signal: controller.signal,
       });
-      const payload = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(payload.error || "Không thể tạo nhắc hẹn.");
-      goToHistory("Đã tạo nhắc hẹn thành công");
+      const payload = (await response.json()) as { reminder?: { reminder_id: string }; error?: string };
+      if (!response.ok || !payload.reminder?.reminder_id) throw new Error(payload.error || "Không thể tạo nhắc hẹn.");
+      goToHistory("Đã tạo nhắc hẹn thành công", payload.reminder.reminder_id);
     } catch {
       if (!controller.signal.aborted) {
         setError("Mũi tiêm đã được lưu nhưng chưa thể tạo nhắc hẹn.");
@@ -187,7 +190,12 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
             </div>
           </div>
 
-          {(notice || formNotice) && <p className={styles.medicalNotice} role="status">{notice || formNotice}</p>}
+          {(notice || formNotice) && (
+            <p className={styles.medicalNotice} role="status">
+              {notice || formNotice}
+              {createdReminderId && <Link className={styles.medicalNoticeLink} href={`/reminders?highlight=${encodeURIComponent(createdReminderId)}`}>Xem nhắc hẹn</Link>}
+            </p>
+          )}
           {error && <p className={styles.medicalError} role="alert">{error}</p>}
           {isLoading && <p className={styles.medicalLoading}>Đang tải hồ sơ y tế…</p>}
           {!isLoading && !error && groupedEntries.length === 0 && (

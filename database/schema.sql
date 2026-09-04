@@ -438,6 +438,8 @@ using (
 )
 with check (
   user_id = (select auth.uid())
+  and status = 'Completed'
+  and completed_at is not null
   and exists (
     select 1 from public.pets
     where pets.pet_id = reminders.pet_id
@@ -473,4 +475,5 @@ grant select, insert, update on table public.pets to authenticated;
 grant select, insert on table public.vaccine_records to authenticated;
 grant select, insert on table public.medical_records to authenticated;
 grant select, insert on table public.medical_attachments to authenticated;
-grant select, insert, update on table public.reminders to authenticated;
+grant select, insert on table public.reminders to authenticated;
+grant update (status, completed_at) on table public.reminders to authenticated;

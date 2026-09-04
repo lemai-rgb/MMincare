@@ -129,7 +129,7 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
 
         <nav className={styles.navigation} aria-label="Điều hướng chính">
           <Link className={styles.activeNavItem} href="/dashboard">Thú cưng<span aria-hidden="true" /></Link>
-          <span>Nhắc hẹn<span aria-hidden="true" /></span>
+          <Link href="/reminders">Nhắc hẹn<span aria-hidden="true" /></Link>
           <span>Tài khoản<span aria-hidden="true" /></span>
         </nav>
       </header>
