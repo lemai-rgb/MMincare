@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { MedicalRecordCreateForm } from "@/components/pets/MedicalRecordCreateForm";
 import { VaccineCreateForm, type VaccineSavedResult } from "@/components/pets/VaccineCreateForm";
-import type { MedicalHistoryEntry } from "@/lib/medicalHistory";
+import type { MedicalHistoryAttachment, MedicalHistoryEntry } from "@/lib/medicalHistory";
 import type { PetSpecies } from "@/lib/pets";
 import styles from "@/styles/petDetail.module.css";
 
@@ -14,10 +15,13 @@ type MedicalHistoryFilter = "all" | "vaccines" | "visits";
 type MedicalView =
   | { kind: "history" }
   | { kind: "add-vaccine" }
+  | { kind: "add-medical-record" }
   | { kind: "suggestion"; entry: MedicalHistoryEntry; date: string; warning: string | null }
-  | { kind: "saved-no-suggestion"; entry: MedicalHistoryEntry; warning: string | null };
+  | { kind: "saved-no-suggestion"; entry: MedicalHistoryEntry; warning: string | null }
+  | { kind: "medical-reminder"; entry: MedicalHistoryEntry };
 
 type ApiHistoryResponse = { records?: MedicalHistoryEntry[]; error?: string };
+type SignedUrlResponse = { signed_url?: string; error?: string };
 const filters: Array<{ id: MedicalHistoryFilter; label: string }> = [
   { id: "all", label: "Tất cả" },
   { id: "vaccines", label: "Tiêm phòng" },
@@ -44,8 +48,12 @@ function validDate(value: string) {
 
 export function PetMedicalHistory({ form, petId, species }: { form?: string; petId: string; species: PetSpecies }) {
   const router = useRouter();
-  const [filter, setFilter] = useState<MedicalHistoryFilter>("all");
-  const [view, setView] = useState<MedicalView>(form === "vaccine" ? { kind: "add-vaccine" } : { kind: "history" });
+  const [filter, setFilter] = useState<MedicalHistoryFilter>(form === "medical-record" ? "visits" : "all");
+  const [view, setView] = useState<MedicalView>(
+    form === "vaccine"
+      ? { kind: "add-vaccine" }
+      : form === "medical-record" ? { kind: "add-medical-record" } : { kind: "history" },
+  );
   const [entries, setEntries] = useState<MedicalHistoryEntry[]>([]);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,18 +62,21 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
   const [notice, setNotice] = useState<string | null>(null);
   const [createdReminderId, setCreatedReminderId] = useState<string | null>(null);
   const [reminderDate, setReminderDate] = useState("");
+  const [reminderNote, setReminderNote] = useState("");
   const requestController = useRef<AbortController | null>(null);
   const reminderSubmissionGuard = useRef(false);
 
-  const formNotice = form === "medical-record" ? "Thêm lần khám: Sắp có." : null;
-
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`/api/pets/${encodeURIComponent(petId)}/medical-history`, { signal: controller.signal })
+    const endpoint = form === "medical-record" ? "medical-records" : "medical-history";
+    fetch(`/api/pets/${encodeURIComponent(petId)}/${endpoint}`, { signal: controller.signal })
       .then(async (response) => {
         const payload = (await response.json()) as ApiHistoryResponse;
         if (!response.ok) throw new Error(payload.error || "Không thể tải hồ sơ y tế.");
-        if (!controller.signal.aborted) setEntries(Array.isArray(payload.records) ? payload.records : []);
+        if (!controller.signal.aborted) {
+          setError(null);
+          setEntries(Array.isArray(payload.records) ? payload.records : []);
+        }
       })
       .catch((requestError: unknown) => {
         if (!controller.signal.aborted) setError(requestError instanceof Error ? requestError.message : "Không thể tải hồ sơ y tế.");
@@ -74,7 +85,7 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
         if (!controller.signal.aborted) setIsLoading(false);
       });
     return () => controller.abort();
-  }, [petId]);
+  }, [form, petId]);
 
   const visibleEntries = useMemo(
     () => entries.filter((entry) => filter === "all" || (filter === "vaccines" ? entry.type === "vaccine" : entry.type === "medical")),
@@ -90,6 +101,13 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
     return [...groups.entries()];
   }, [visibleEntries]);
 
+  const medicalVisitNumbers = useMemo(() => new Map(
+    entries
+      .filter((entry) => entry.type === "medical")
+      .sort((a, b) => a.eventDate.localeCompare(b.eventDate) || a.id.localeCompare(b.id))
+      .map((entry, index) => [entry.id, index + 1]),
+  ), [entries]);
+
   function openAddVaccine() {
     setIsAddMenuOpen(false);
     setError(null);
@@ -97,10 +115,19 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
     router.replace(`/pets/${encodeURIComponent(petId)}?tab=medical&form=vaccine`);
   }
 
+  function openAddMedicalRecord() {
+    setIsAddMenuOpen(false);
+    setError(null);
+    setFilter("visits");
+    setView({ kind: "add-medical-record" });
+    router.replace(`/pets/${encodeURIComponent(petId)}?tab=medical&form=medical-record`);
+  }
+
   function goToHistory(message?: string, reminderId?: string) {
     setView({ kind: "history" });
     setError(null);
     setReminderDate("");
+    setReminderNote("");
     setCreatedReminderId(reminderId ?? null);
     if (message) setNotice(message);
     router.replace(`/pets/${encodeURIComponent(petId)}?tab=medical`);
@@ -111,6 +138,7 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
     setError(null);
     setEntries((current) => [result.entry, ...current.filter((item) => item.id !== result.entry.id)]);
     setReminderDate(result.suggestedNextDueDate ?? "");
+    setReminderNote("");
     setView(result.suggestedNextDueDate !== null
       ? {
           kind: "suggestion",
@@ -125,10 +153,29 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
         });
     setNotice(null);
     router.replace(`/pets/${encodeURIComponent(petId)}?tab=medical`);
+    router.refresh();
+  }
+
+  function handleMedicalRecordSaved(entry: MedicalHistoryEntry) {
+    setEntries((current) => [entry, ...current.filter((item) => item.id !== entry.id)]
+      .sort((a, b) => b.eventDate.localeCompare(a.eventDate)));
+    router.refresh();
+  }
+
+  function handleMedicalRecordReady(entry: MedicalHistoryEntry) {
+    setError(null);
+    setNotice(null);
+    setReminderDate("");
+    setReminderNote("");
+    setView({ kind: "medical-reminder", entry });
+    router.replace(`/pets/${encodeURIComponent(petId)}?tab=medical`);
+    router.refresh();
   }
 
   async function createReminder() {
-    if (view.kind !== "suggestion" && view.kind !== "saved-no-suggestion") return;
+    const isVaccineSource = view.kind === "suggestion" || view.kind === "saved-no-suggestion";
+    const isMedicalSource = view.kind === "medical-reminder";
+    if (!isVaccineSource && !isMedicalSource) return;
     if (reminderSubmissionGuard.current) return;
     if (!validDate(reminderDate)) {
       setError("Hãy chọn ngày nhắc hẹn trước khi tiếp tục.");
@@ -141,18 +188,32 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
     requestController.current?.abort();
     requestController.current = controller;
     try {
+      const requestBody = isMedicalSource
+        ? {
+            type: "Recheck",
+            due_date: reminderDate,
+            note: reminderNote,
+            source_medical_record_id: view.entry.id,
+          }
+        : {
+            type: "Vaccine",
+            due_date: reminderDate,
+            source_vaccine_record_id: view.entry.id,
+          };
       const response = await fetch(`/api/pets/${encodeURIComponent(petId)}/reminders`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ type: "Vaccine", due_date: reminderDate, source_vaccine_record_id: view.entry.id }),
+        body: JSON.stringify(requestBody),
         signal: controller.signal,
       });
       const payload = (await response.json()) as { reminder?: { reminder_id: string }; error?: string };
       if (!response.ok || !payload.reminder?.reminder_id) throw new Error(payload.error || "Không thể tạo nhắc hẹn.");
-      goToHistory("Đã tạo nhắc hẹn thành công", payload.reminder.reminder_id);
+      goToHistory(isMedicalSource ? "Đã tạo nhắc tái khám." : "Đã tạo nhắc hẹn thành công", payload.reminder.reminder_id);
     } catch {
       if (!controller.signal.aborted) {
-        setError("Mũi tiêm đã được lưu nhưng chưa thể tạo nhắc hẹn.");
+        setError(isMedicalSource
+          ? "Lần khám đã được lưu nhưng chưa thể tạo nhắc hẹn."
+          : "Mũi tiêm đã được lưu nhưng chưa thể tạo nhắc hẹn.");
       }
     } finally {
       reminderSubmissionGuard.current = false;
@@ -162,11 +223,11 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
 
   function deferReminder() {
     if (reminderSubmissionGuard.current) return;
-    goToHistory("Đã lưu mũi tiêm.");
+    goToHistory(view.kind === "medical-reminder" ? "Đã lưu lần khám." : "Đã lưu mũi tiêm.");
   }
 
   return (
-    <section className={styles.medicalHistory} aria-labelledby="medical-history-title">
+    <section className={`${styles.medicalHistory} ${view.kind === "add-medical-record" || view.kind === "medical-reminder" ? styles.medicalRecordMode : ""}`} aria-labelledby="medical-history-title">
       {view.kind === "history" && (
         <>
           <div className={styles.medicalToolbar}>
@@ -184,15 +245,15 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
               {isAddMenuOpen && (
                 <div className={styles.addRecordPopover} role="menu">
                   <button onClick={openAddVaccine} role="menuitem" type="button">Thêm mũi tiêm</button>
-                  <button aria-disabled="true" disabled role="menuitem" type="button">Thêm lần khám</button>
+                  <button onClick={openAddMedicalRecord} role="menuitem" type="button">Thêm lần khám</button>
                 </div>
               )}
             </div>
           </div>
 
-          {(notice || formNotice) && (
+          {notice && (
             <p className={styles.medicalNotice} role="status">
-              {notice || formNotice}
+              {notice}
               {createdReminderId && <Link className={styles.medicalNoticeLink} href={`/reminders?highlight=${encodeURIComponent(createdReminderId)}`}>Xem nhắc hẹn</Link>}
             </p>
           )}
@@ -211,7 +272,7 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
                 <section className={styles.medicalMonth} key={month}>
                   <h2 id={month === groupedEntries[0][0] ? "medical-history-title" : undefined}>{groupLabel(monthEntries[0].eventDate)}</h2>
                   <div className={styles.medicalEntryList}>
-                    {monthEntries.map((entry) => <MedicalEntryCard entry={entry} key={entry.id} />)}
+                    {monthEntries.map((entry) => <MedicalEntryCard entry={entry} key={entry.id} visitNumber={medicalVisitNumbers.get(entry.id)} />)}
                   </div>
                 </section>
               ))}
@@ -227,41 +288,234 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
         </div>
       )}
 
+      {view.kind === "add-medical-record" && (
+        <div className={`${styles.medicalWorkspace} ${styles.medicalRecordWorkspace}`}>
+          <MedicalRecordPreview entries={entries} medicalOnly />
+          <MedicalRecordCreateForm
+            onCancel={() => goToHistory()}
+            onRecordSaved={handleMedicalRecordSaved}
+            onReadyForReminder={handleMedicalRecordReady}
+            petId={petId}
+          />
+        </div>
+      )}
+
       {(view.kind === "suggestion" || view.kind === "saved-no-suggestion") && (
         <div className={styles.medicalWorkspace}>
           <MedicalRecordPreview entries={entries} />
-          <section className={styles.reminderSuggestion} aria-live="polite">
-          <h2>Đã lưu mũi tiêm</h2>
-          <p>Hệ thống chỉ gợi ý ngày khi có đủ thông tin và quy tắc phù hợp. Bạn có thể chỉnh sửa ngày trước khi tạo nhắc hẹn.</p>
-          {view.kind === "saved-no-suggestion" && <p className={styles.suggestionMuted}>Chưa thể gợi ý lịch tiêm tiếp theo. Bạn có thể tự nhập ngày nhắc.</p>}
-          <label>Ngày nhắc hẹn<input onChange={(event) => setReminderDate(event.target.value)} type="date" value={reminderDate} /></label>
-          {view.warning && <p className={styles.suggestionWarning}>{view.warning}</p>}
-          {error && <p className={styles.medicalError} role="alert">{error}</p>}
-          <div className={styles.suggestionActions}><button disabled={isSaving} onClick={deferReminder} type="button">Để sau</button><button disabled={isSaving || !reminderDate} onClick={createReminder} type="button">{isSaving ? "Đang lưu…" : "Tạo nhắc hẹn"}</button></div>
-          </section>
+          <PostSaveReminderForm
+            entry={view.entry}
+            error={error}
+            isSaving={isSaving}
+            mode="vaccine"
+            noSuggestion={view.kind === "saved-no-suggestion"}
+            onDateChange={(value) => {
+              setReminderDate(value);
+              setError(null);
+            }}
+            onDefer={deferReminder}
+            onSubmit={() => void createReminder()}
+            reminderDate={reminderDate}
+            warning={view.warning}
+          />
+        </div>
+      )}
+
+      {view.kind === "medical-reminder" && (
+        <div className={`${styles.medicalWorkspace} ${styles.medicalRecordWorkspace}`}>
+          <MedicalRecordPreview entries={entries} medicalOnly />
+          <PostSaveReminderForm
+            entry={view.entry}
+            error={error}
+            isSaving={isSaving}
+            mode="medical"
+            onDateChange={(value) => {
+              setReminderDate(value);
+              setError(null);
+            }}
+            onDefer={deferReminder}
+            onNoteChange={(value) => {
+              setReminderNote(value);
+              setError(null);
+            }}
+            onSubmit={() => void createReminder()}
+            reminderDate={reminderDate}
+            reminderNote={reminderNote}
+          />
         </div>
       )}
     </section>
   );
 }
 
-function MedicalRecordPreview({ entries }: { entries: MedicalHistoryEntry[] }) {
-  const recentEntries = entries.slice(0, 3);
+function PostSaveReminderForm({
+  mode,
+  entry,
+  reminderDate,
+  reminderNote = "",
+  noSuggestion = false,
+  warning = null,
+  error,
+  isSaving,
+  onDateChange,
+  onNoteChange,
+  onDefer,
+  onSubmit,
+}: {
+  mode: "vaccine" | "medical";
+  entry: MedicalHistoryEntry;
+  reminderDate: string;
+  reminderNote?: string;
+  noSuggestion?: boolean;
+  warning?: string | null;
+  error: string | null;
+  isSaving: boolean;
+  onDateChange: (value: string) => void;
+  onNoteChange?: (value: string) => void;
+  onDefer: () => void;
+  onSubmit: () => void;
+}) {
+  const isMedical = mode === "medical";
+
   return (
-    <section className={styles.medicalRecordPreview} aria-label="Lịch sử gần đây">
-      <h2>Lịch sử gần đây</h2>
-      {recentEntries.length > 0 ? recentEntries.map((entry) => <MedicalEntryCard entry={entry} key={entry.id} />) : <p>Chưa có hồ sơ y tế</p>}
+    <section className={styles.reminderSuggestion} aria-live="polite">
+      <h2>{isMedical ? "Tạo nhắc tái khám" : "Đã lưu mũi tiêm"}</h2>
+      {isMedical ? (
+        <>
+          <p>Đã lưu lần khám.</p>
+          <p className={styles.suggestionMuted}>Tạo từ lần khám ngày {formatDate(entry.eventDate)}</p>
+          {entry.title !== "Lần khám bệnh" && <p className={styles.suggestionWarning}>{entry.title}</p>}
+        </>
+      ) : (
+        <p>Hệ thống chỉ gợi ý ngày khi có đủ thông tin và quy tắc phù hợp. Bạn có thể chỉnh sửa ngày trước khi tạo nhắc hẹn.</p>
+      )}
+      {!isMedical && noSuggestion && <p className={styles.suggestionMuted}>Chưa thể gợi ý lịch tiêm tiếp theo. Bạn có thể tự nhập ngày nhắc.</p>}
+      <label>
+        {isMedical ? "Ngày tái khám" : "Ngày nhắc hẹn"}
+        <input onChange={(event) => onDateChange(event.target.value)} required type="date" value={reminderDate} />
+      </label>
+      {isMedical && onNoteChange && (
+        <label className={styles.reminderNoteField}>
+          Ghi chú
+          <textarea maxLength={500} onChange={(event) => onNoteChange(event.target.value)} placeholder="Ghi chú cho lần tái khám" value={reminderNote} />
+        </label>
+      )}
+      {!isMedical && warning && <p className={styles.suggestionWarning}>{warning}</p>}
+      {error && <p className={styles.medicalError} role="alert">{error}</p>}
+      <div className={styles.suggestionActions}>
+        <button disabled={isSaving} onClick={onDefer} type="button">Để sau</button>
+        <button disabled={isSaving || !reminderDate} onClick={onSubmit} type="button">
+          {isSaving ? "Đang lưu…" : "Tạo nhắc hẹn"}
+        </button>
+      </div>
     </section>
   );
 }
 
-function MedicalEntryCard({ entry }: { entry: MedicalHistoryEntry }) {
+function MedicalRecordPreview({ entries, medicalOnly = false }: { entries: MedicalHistoryEntry[]; medicalOnly?: boolean }) {
+  const relevantEntries = medicalOnly ? entries.filter((entry) => entry.type === "medical") : entries;
+  const recentEntries = relevantEntries.slice(0, 3);
+  const visitNumbers = new Map(
+    relevantEntries
+      .filter((entry) => entry.type === "medical")
+      .sort((a, b) => a.eventDate.localeCompare(b.eventDate) || a.id.localeCompare(b.id))
+      .map((entry, index) => [entry.id, index + 1]),
+  );
+  return (
+    <section className={styles.medicalRecordPreview} aria-label="Lịch sử gần đây">
+      <h2>{medicalOnly ? "Lịch sử khám bệnh" : "Lịch sử gần đây"}</h2>
+      {recentEntries.length > 0
+        ? recentEntries.map((entry) => <MedicalEntryCard entry={entry} key={entry.id} visitNumber={visitNumbers.get(entry.id)} />)
+        : <p>{medicalOnly ? "Chưa có lần khám nào" : "Chưa có hồ sơ y tế"}</p>}
+    </section>
+  );
+}
+
+function MedicalEntryCard({ entry, visitNumber }: { entry: MedicalHistoryEntry; visitNumber?: number }) {
+  const title = entry.type === "medical" && entry.title === "Lần khám bệnh"
+    ? `Lần khám ngày ${formatDate(entry.eventDate)}`
+    : entry.title;
   return (
     <article className={styles.medicalEntryCard}>
       {entry.type === "vaccine"
         ? <span className={styles.vaccineIcon}><Image alt="" aria-hidden="true" height={27} src="/icons/vaccine-syringe.svg" width={41} /></span>
-        : <span className={styles.medicalIcon} aria-hidden="true" />}
-      <div><h3>{entry.title}</h3><p>{formatDate(entry.eventDate)}{entry.clinicName ? ` • ${entry.clinicName}` : ""}</p>{entry.description && <span>{entry.description}</span>}</div>
+        : <span className={styles.medicalIcon}><Image alt="" aria-hidden="true" height={34} src="/icons/medical-briefcase.svg" width={34} /></span>}
+      <div className={styles.medicalEntryContent}>
+        {entry.type === "medical" && <span>KHÁM BỆNH</span>}
+        <h3>{title}</h3>
+        <p>{formatDate(entry.eventDate)}{entry.clinicName ? ` • ${entry.clinicName}` : ""}</p>
+        {entry.type === "medical" && visitNumber && <span>{`Lần ${visitNumber}`}</span>}
+        {entry.description && <span>{entry.description}</span>}
+        {entry.type === "medical" && entry.addedByCurrentUser && <span>Thêm bởi bạn</span>}
+        {entry.type === "medical" && entry.attachments && entry.attachments.length > 0 && (
+          <div className={styles.medicalAttachmentList}>
+            {entry.attachments.map((attachment) => (
+              <MedicalAttachmentRow attachment={attachment} key={attachment.attachment_id} recordId={entry.id} />
+            ))}
+          </div>
+        )}
+      </div>
     </article>
+  );
+}
+
+function MedicalAttachmentRow({
+  attachment,
+  recordId,
+}: {
+  attachment: MedicalHistoryAttachment;
+  recordId: string;
+}) {
+  const [isOpening, setIsOpening] = useState(false);
+  const [openError, setOpenError] = useState<string | null>(null);
+  const openingGuard = useRef(false);
+
+  async function openAttachment() {
+    if (openingGuard.current) return;
+    openingGuard.current = true;
+    setIsOpening(true);
+    setOpenError(null);
+
+    const fileTab = window.open("about:blank", "_blank");
+    if (fileTab) {
+      fileTab.opener = null;
+      fileTab.document.title = "Đang mở file…";
+    }
+
+    try {
+      const response = await fetch(
+        `/api/medical-records/${encodeURIComponent(recordId)}/attachments?attachmentId=${encodeURIComponent(attachment.attachment_id)}`,
+      );
+      const payload = (await response.json()) as SignedUrlResponse;
+      if (!response.ok || !payload.signed_url) {
+        throw new Error(payload.error || "Không thể mở file khám bệnh lúc này.");
+      }
+
+      const signedUrl = new URL(payload.signed_url);
+      if (signedUrl.protocol !== "https:" && signedUrl.protocol !== "http:") {
+        throw new Error("Đường dẫn file không hợp lệ.");
+      }
+      if (!fileTab) throw new Error("Trình duyệt đang chặn tab mới.");
+      fileTab.location.replace(signedUrl.toString());
+    } catch (requestError) {
+      fileTab?.close();
+      setOpenError(requestError instanceof Error ? requestError.message : "Không thể mở file khám bệnh lúc này.");
+    } finally {
+      openingGuard.current = false;
+      setIsOpening(false);
+    }
+  }
+
+  return (
+    <div className={styles.medicalAttachmentItem}>
+      <div className={styles.medicalAttachmentRow}>
+        <Image alt="" aria-hidden="true" height={16} src="/file.svg" width={16} />
+        <span className={styles.medicalAttachmentName} title={attachment.file_name}>{attachment.file_name}</span>
+        <button disabled={isOpening} onClick={openAttachment} type="button">
+          {isOpening ? "Đang mở…" : "Xem file"}
+        </button>
+      </div>
+      {openError && <p className={styles.medicalAttachmentError} role="alert">{openError}</p>}
+    </div>
   );
 }

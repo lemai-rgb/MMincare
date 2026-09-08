@@ -17,6 +17,7 @@ type ReminderRow = {
   status: ReminderStoredStatus;
   note: string | null;
   source_vaccine_record_id: string | null;
+  source_medical_record_id: string | null;
   completed_at: string | null;
 };
 
@@ -45,7 +46,7 @@ export async function GET() {
   const petIds = pets.map((pet) => pet.pet_id);
   const reminderResult = await supabase
     .from("reminders")
-    .select("reminder_id, pet_id, due_date, type, status, note, source_vaccine_record_id, completed_at")
+    .select("reminder_id, pet_id, due_date, type, status, note, source_vaccine_record_id, source_medical_record_id, completed_at")
     .eq("user_id", userId)
     .in("pet_id", petIds)
     .order("due_date", { ascending: true });
@@ -58,7 +59,7 @@ export async function GET() {
   if (remindersError?.code === "42703" || remindersError?.code === "PGRST204") {
     const fallbackResult = await supabase
       .from("reminders")
-      .select("reminder_id, pet_id, due_date, type, status, note, source_vaccine_record_id")
+      .select("reminder_id, pet_id, due_date, type, status, note, source_vaccine_record_id, source_medical_record_id")
       .eq("user_id", userId)
       .in("pet_id", petIds)
       .order("due_date", { ascending: true });
@@ -71,24 +72,39 @@ export async function GET() {
   }
 
   const rows = reminderRows ?? [];
-  const sourceIds = [...new Set(rows.flatMap((row) => row.source_vaccine_record_id ? [row.source_vaccine_record_id] : []))];
+  const vaccineSourceIds = [...new Set(rows.flatMap((row) => row.source_vaccine_record_id ? [row.source_vaccine_record_id] : []))];
+  const medicalSourceIds = [...new Set(rows.flatMap((row) => row.source_medical_record_id ? [row.source_medical_record_id] : []))];
   const vaccineDateById = new Map<string, string>();
+  const medicalVisitDateById = new Map<string, string>();
 
-  if (sourceIds.length > 0) {
-    const { data: vaccineRows, error: vaccinesError } = await supabase
-      .from("vaccine_records")
-      .select("vaccine_record_id, vaccine_date")
-      .in("vaccine_record_id", sourceIds)
-      .in("pet_id", petIds);
+  const [vaccineSources, medicalSources] = await Promise.all([
+    vaccineSourceIds.length > 0
+      ? supabase
+          .from("vaccine_records")
+          .select("vaccine_record_id, vaccine_date")
+          .in("vaccine_record_id", vaccineSourceIds)
+          .in("pet_id", petIds)
+      : Promise.resolve({ data: [], error: null }),
+    medicalSourceIds.length > 0
+      ? supabase
+          .from("medical_records")
+          .select("record_id, visit_date")
+          .in("record_id", medicalSourceIds)
+          .in("pet_id", petIds)
+          .eq("created_by", userId)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
 
-    if (vaccinesError) {
-      return NextResponse.json({ error: "Không thể tải nguồn nhắc hẹn." }, { status: 500 });
-    }
-
-    (vaccineRows ?? []).forEach((row) => {
-      vaccineDateById.set(row.vaccine_record_id as string, row.vaccine_date as string);
-    });
+  if (vaccineSources.error || medicalSources.error) {
+    return NextResponse.json({ error: "Không thể tải nguồn nhắc hẹn." }, { status: 500 });
   }
+
+  (vaccineSources.data ?? []).forEach((row) => {
+    vaccineDateById.set(row.vaccine_record_id as string, row.vaccine_date as string);
+  });
+  (medicalSources.data ?? []).forEach((row) => {
+    medicalVisitDateById.set(row.record_id as string, row.visit_date as string);
+  });
 
   const petNameById = new Map(pets.map((pet) => [pet.pet_id, pet.name]));
   const today = new Date().toISOString().slice(0, 10);
@@ -101,6 +117,9 @@ export async function GET() {
       is_overdue: displayStatus === "Overdue",
       source_vaccine_date: row.source_vaccine_record_id
         ? vaccineDateById.get(row.source_vaccine_record_id) ?? null
+        : null,
+      source_medical_visit_date: row.source_medical_record_id
+        ? medicalVisitDateById.get(row.source_medical_record_id) ?? null
         : null,
     };
   });

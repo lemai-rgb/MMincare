@@ -57,12 +57,11 @@
 .populatedHeader {
   position: relative;
   box-sizing: border-box;
-  display: grid;
+  display: flex;
   height: 80px;
-  grid-template-columns: 420px minmax(0, 1fr) auto;
   align-items: center;
-  column-gap: 24px;
-  padding: 0 82px;
+  gap: 20px;
+  padding: 0 max(39px, calc((100% - 1378px) / 2));
   border-bottom: 1px solid var(--mm-border);
   background: var(--mm-surface);
 }
@@ -129,8 +128,11 @@
   position: relative;
   z-index: 1;
   display: flex;
+  min-width: 0;
   flex: 0 0 auto;
   align-items: center;
+  gap: 28px;
+  margin-left: auto;
 }
 
 .addPetAction {
@@ -613,7 +615,6 @@
 
 @media (max-width: 1200px) {
   .populatedHeader {
-    grid-template-columns: minmax(0, 1fr) auto;
     padding: 0 40px;
   }
 
@@ -803,7 +804,7 @@
 }
 
 @media (max-width: 850px) {
-  .populatedHeader { grid-template-columns: 1fr auto; padding: 0 24px; }
+  .populatedHeader { padding: 0 24px; }
   .primaryNav { display: none; }
   .populatedBrand { font-size: 28px; }
   .petListShell { width: calc(100% - 32px); min-height: calc(100dvh - 100px); padding: 18px 28px 56px; }

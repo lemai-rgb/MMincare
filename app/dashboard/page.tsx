@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { LogoutButton } from "@/components/auth/LogoutButton";
+import { AppHeader } from "@/components/layout/AppHeader";
 import { PetAvatar } from "@/components/pets/PetAvatar";
-import { PetListCardDecorations, PetListHeaderDecorations, PetListPanelDecorations } from "@/components/pets/PetListDecorations";
+import { PetListCardDecorations, PetListPanelDecorations } from "@/components/pets/PetListDecorations";
 import { parseSpecies } from "@/lib/authRedirect";
 import { getPetGenderLabel, getPetSpeciesLabel, type Pet } from "@/lib/pets";
 import { createClient } from "@/lib/supabase/server";
@@ -58,24 +58,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   if (hasPets) {
     return (
       <main className={`${styles.page} ${styles.populatedPage}`}>
-        <header className={styles.populatedHeader}>
-          <PetListHeaderDecorations />
-          <Link className={styles.populatedBrand} href="/">
-            <span>MMinCare</span>
-            <span>Care more, worry less</span>
-          </Link>
-
-          <nav className={styles.primaryNav} aria-label="Điều hướng chính">
-            <Link className={styles.activeNavItem} href="/dashboard">Thú cưng<span className={styles.navChevron} aria-hidden="true" /></Link>
-            <Link className={styles.navItem} href="/reminders">Nhắc hẹn<span className={styles.navChevron} aria-hidden="true" /></Link>
-            <span className={styles.navItem}>Hồ sơ y tế<span className={styles.navChevron} aria-hidden="true" /></span>
-            <span className={styles.navItem}>Tài khoản<span className={styles.navChevron} aria-hidden="true" /></span>
-          </nav>
-
-          <div className={styles.headerActions}>
-            <LogoutButton />
-          </div>
-        </header>
+        <AppHeader activeNav="pets" />
 
         <section className={styles.petListShell} aria-labelledby="dashboard-title">
           <PetListPanelDecorations />
@@ -124,12 +107,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   return (
     <main className={styles.page}>
       <section className={styles.petShell} aria-labelledby="dashboard-title">
-        <header className={styles.petHeader}>
-          <Link className={styles.brandLink} href="/">
-            <span>MMinCare</span>
-          </Link>
-          <LogoutButton />
-        </header>
+        <AppHeader activeNav="pets" />
 
         <div className={styles.listIntro}>
           <div>

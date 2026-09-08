@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { LogoutButton } from "@/components/auth/LogoutButton";
-import { PetListHeaderDecorations, PetListPanelDecorations } from "@/components/pets/PetListDecorations";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { PetListPanelDecorations } from "@/components/pets/PetListDecorations";
 import {
   getDaysOverdue,
   getReminderDisplayStatus,
@@ -44,10 +43,17 @@ function getReminderContent(reminder: ReminderListItem) {
 }
 
 function getSourceLabel(reminder: ReminderListItem) {
-  if (!reminder.source_vaccine_record_id) return "Nhắc hẹn tạo thủ công";
-  return reminder.source_vaccine_date
-    ? `Tạo từ mũi tiêm ngày ${formatDate(reminder.source_vaccine_date)}`
-    : "Tạo từ mũi tiêm";
+  if (reminder.source_medical_record_id) {
+    return reminder.source_medical_visit_date
+      ? `Tạo từ lần khám ngày ${formatDate(reminder.source_medical_visit_date)}`
+      : "Tạo từ lần khám";
+  }
+  if (reminder.source_vaccine_record_id) {
+    return reminder.source_vaccine_date
+      ? `Tạo từ mũi tiêm ngày ${formatDate(reminder.source_vaccine_date)}`
+      : "Tạo từ mũi tiêm";
+  }
+  return "Nhắc hẹn tạo thủ công";
 }
 
 function getConfirmationText(reminder: ReminderListItem) {
@@ -177,19 +183,7 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
 
   return (
     <main className={styles.page}>
-      <header className={styles.header}>
-        <PetListHeaderDecorations />
-        <Link className={styles.brand} href="/">
-          <span>MMinCare</span>
-          <span>Care more, worry less</span>
-        </Link>
-        <nav className={styles.navigation} aria-label="Điều hướng chính">
-          <Link href="/dashboard">Thú cưng<span aria-hidden="true" /></Link>
-          <Link aria-current="page" className={styles.activeNavItem} href="/reminders">Nhắc hẹn<span aria-hidden="true" /></Link>
-          <span>Tài khoản<span aria-hidden="true" /></span>
-        </nav>
-        <LogoutButton />
-      </header>
+      <AppHeader activeNav="reminders" />
 
       <section className={styles.shell} aria-labelledby="reminders-title">
         <PetListPanelDecorations />

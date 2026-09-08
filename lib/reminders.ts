@@ -22,6 +22,8 @@ export type ReminderListItem = {
   note: string | null;
   source_vaccine_record_id: string | null;
   source_vaccine_date: string | null;
+  source_medical_record_id: string | null;
+  source_medical_visit_date: string | null;
   completed_at: string | null;
 };
 

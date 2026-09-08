@@ -563,6 +563,67 @@
   font-size: 13px;
 }
 
+.medicalEntryContent {
+  min-width: 0;
+}
+
+.medicalAttachmentList {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.medicalAttachmentItem {
+  min-width: 0;
+}
+
+.medicalAttachmentRow {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  padding-top: 9px;
+  border-top: 1px solid #e8e2da;
+}
+
+.medicalAttachmentRow img {
+  flex: 0 0 auto;
+}
+
+.medicalAttachmentName {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: #5f625d;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.medicalAttachmentRow button {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  color: #5e7c5d;
+  background: #fff;
+  border: 1px solid #9db09a;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.medicalAttachmentRow button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.medicalAttachmentError {
+  margin: 6px 0 0;
+  color: #a45149;
+  font-size: 12px;
+}
+
 .vaccineIcon {
   display: flex;
   width: 41px;
@@ -578,38 +639,17 @@
 }
 
 .medicalIcon {
-  position: relative;
+  display: flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+}
+
+.medicalIcon img {
   display: block;
   width: 34px;
   height: 34px;
-  color: #6e8b6b;
-  border: 1.5px solid currentColor;
-  border-radius: 7px;
-}
-
-.medicalIcon::before,
-.medicalIcon::after {
-  position: absolute;
-  content: "";
-}
-
-.medicalIcon::before {
-  top: 8px;
-  left: 8px;
-  width: 15px;
-  height: 2px;
-  background: currentColor;
-  box-shadow: 0 6px currentColor, 0 12px currentColor;
-}
-
-.medicalIcon::after {
-  top: -5px;
-  left: 10px;
-  width: 12px;
-  height: 8px;
-  border: 1.5px solid currentColor;
-  border-bottom: 0;
-  border-radius: 5px 5px 0 0;
 }
 
 .vaccineFormPanel,
@@ -674,7 +714,8 @@
 .vaccineFormGrid input,
 .vaccineFormGrid select,
 .vaccineFormGrid textarea,
-.reminderSuggestion input {
+.reminderSuggestion input,
+.reminderSuggestion textarea {
   width: 100%;
   min-height: 44px;
   padding: 10px 12px;
@@ -693,6 +734,116 @@
 .vaccineFormGrid textarea {
   min-height: 84px;
   resize: vertical;
+}
+
+.medicalFileField {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  color: #42433f;
+  font-size: 15px;
+}
+
+.medicalFilePicker {
+  display: flex !important;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px !important;
+  padding: 10px 12px;
+  color: #6e8b6b !important;
+  background: #fff;
+  border: 1px dashed #b9c8b6;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.medicalFileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.medicalFileField:has(.medicalFileInput:focus-visible) .medicalFilePicker,
+.medicalFileField:has(.medicalFileInput:focus-visible) .medicalSelectedFile {
+  outline: 2px solid #6e8b6b;
+  outline-offset: 2px;
+}
+
+.medicalSelectedFile {
+  display: flex;
+  width: 100%;
+  height: 64px;
+  min-width: 0;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px dashed #b9c8b6;
+  border-radius: 10px;
+}
+
+.medicalSelectedFile label {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.medicalSelectedFile label span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.medicalSelectedFile button {
+  flex: 0 0 auto;
+  padding: 0;
+  color: #a15850;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.medicalSelectedFile button:disabled,
+.medicalFileField:has(.medicalFileInput:disabled) .medicalFilePicker,
+.medicalFileField:has(.medicalFileInput:disabled) .medicalSelectedFile {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.medicalFieldError {
+  margin: 0;
+  color: #a15850;
+  font-size: 13px;
+}
+
+.medicalFileHelp {
+  min-height: 30px;
+  margin: 0;
+  color: #85857e;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.medicalFileField .medicalFieldError {
+  min-height: 30px;
+  line-height: 1.3;
 }
 
 .fullWidthField {
@@ -764,6 +915,15 @@
   color: #5e7c5d;
 }
 
+.reminderSuggestion .reminderNoteField {
+  max-width: 100%;
+}
+
+.reminderNoteField textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
 .suggestionMuted,
 .suggestionWarning {
   color: #7c7c7c !important;
@@ -788,8 +948,63 @@
   margin: 0;
 }
 
+.medicalRecordWorkspace {
+  width: min(100%, 1260px);
+  grid-template-columns: minmax(400px, 450px) minmax(0, 1fr);
+  gap: 40px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.medicalRecordMode {
+  width: 100%;
+  max-width: 1260px;
+}
+
+.medicalRecordWorkspace .medicalRecordFormPanel {
+  width: 100%;
+  max-width: 760px;
+  min-height: 520px;
+  padding: 34px 38px;
+}
+
+.medicalRecordFormGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+  row-gap: 18px;
+}
+
+.medicalRecordFormGrid > label,
+.medicalRecordFormGrid > .medicalFileField {
+  min-width: 0;
+}
+
+.medicalRecordFormGrid input {
+  min-height: 48px;
+}
+
+.medicalRecordFormGrid input[type="date"] {
+  height: 64px;
+}
+
+.medicalRecordFormGrid textarea {
+  height: 84px;
+  min-height: 84px;
+}
+
+.medicalRecordFormGrid .medicalFilePicker {
+  width: 100%;
+  height: 64px;
+  box-sizing: border-box;
+}
+
+.medicalRecordFormPanel .formPanelActions button {
+  min-height: 44px;
+}
+
 .medicalRecordPreview {
   display: grid;
+  width: 100%;
   gap: 12px;
 }
 
@@ -1152,6 +1367,37 @@
   .overviewGrid {
     max-width: 520px;
     gap: 24px;
+  }
+}
+
+@media (min-width: 1100px) and (max-width: 1279px) {
+  .medicalRecordWorkspace {
+    width: 100%;
+    grid-template-columns: minmax(400px, 430px) minmax(0, 1fr);
+    gap: 36px;
+  }
+
+  .medicalRecordWorkspace .medicalRecordFormPanel {
+    padding: 32px;
+  }
+}
+
+@media (max-width: 1099px) {
+  .medicalRecordWorkspace {
+    width: 100%;
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+}
+
+@media (max-width: 719px) {
+  .medicalRecordFormGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .medicalRecordFormGrid .fullWidthField {
+    grid-column: auto;
   }
 }
 

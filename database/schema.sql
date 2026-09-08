@@ -110,12 +110,16 @@ create table public.reminders (
   user_id uuid not null references public.users (user_id) on delete restrict,
   pet_id uuid not null references public.pets (pet_id) on delete restrict,
   source_vaccine_record_id uuid references public.vaccine_records (vaccine_record_id) on delete restrict,
+  source_medical_record_id uuid references public.medical_records (record_id) on delete restrict,
   due_date date not null,
   type public.reminder_type not null,
   status public.reminder_status not null default 'Upcoming',
   note text,
   completed_at timestamptz,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint reminders_single_source_check check (
+    num_nonnulls(source_vaccine_record_id, source_medical_record_id) <= 1
+  )
 );
 
 create table public.health_logs (
@@ -185,6 +189,8 @@ create index reminders_pet_due_date_idx
   on public.reminders (pet_id, due_date);
 create index reminders_source_vaccine_record_id_idx
   on public.reminders (source_vaccine_record_id);
+create index reminders_source_medical_record_id_idx
+  on public.reminders (source_medical_record_id);
 create index health_logs_pet_logged_at_idx
   on public.health_logs (pet_id, logged_at desc);
 create index health_logs_created_by_idx
@@ -356,11 +362,14 @@ with check (
 
 create policy medical_records_owner_select on public.medical_records
 for select to authenticated
-using (exists (
-  select 1 from public.pets
-  where pets.pet_id = medical_records.pet_id
-    and pets.owner_id = (select auth.uid())
-));
+using (
+  medical_records.created_by = (select auth.uid())
+  and exists (
+    select 1 from public.pets
+    where pets.pet_id = medical_records.pet_id
+      and pets.owner_id = (select auth.uid())
+  )
+);
 
 create policy medical_records_owner_insert on public.medical_records
 for insert to authenticated
@@ -416,12 +425,31 @@ with check (
     where pets.pet_id = reminders.pet_id
       and pets.owner_id = (select auth.uid())
   )
+  and num_nonnulls(
+    reminders.source_vaccine_record_id,
+    reminders.source_medical_record_id
+  ) <= 1
   and (
     source_vaccine_record_id is null
-    or exists (
-      select 1 from public.vaccine_records
-      where vaccine_records.vaccine_record_id = reminders.source_vaccine_record_id
-        and vaccine_records.pet_id = reminders.pet_id
+    or (
+      reminders.type = 'Vaccine'
+      and exists (
+        select 1 from public.vaccine_records
+        where vaccine_records.vaccine_record_id = reminders.source_vaccine_record_id
+          and vaccine_records.pet_id = reminders.pet_id
+      )
+    )
+  )
+  and (
+    source_medical_record_id is null
+    or (
+      reminders.type = 'Recheck'
+      and exists (
+        select 1 from public.medical_records
+        where medical_records.record_id = reminders.source_medical_record_id
+          and medical_records.pet_id = reminders.pet_id
+          and medical_records.created_by = (select auth.uid())
+      )
     )
   )
 );
@@ -476,4 +504,65 @@ grant select, insert on table public.vaccine_records to authenticated;
 grant select, insert on table public.medical_records to authenticated;
 grant select, insert on table public.medical_attachments to authenticated;
 grant select, insert on table public.reminders to authenticated;
+revoke update on table public.reminders from anon;
+revoke update on table public.reminders from authenticated;
 grant update (status, completed_at) on table public.reminders to authenticated;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'medical-record-attachments',
+  'medical-record-attachments',
+  false,
+  5242880,
+  array['image/jpeg', 'image/png', 'application/pdf']::text[]
+);
+
+create policy medical_record_attachments_owner_select
+on storage.objects for select to authenticated
+using (
+  storage.objects.bucket_id = 'medical-record-attachments'
+  and (storage.foldername(storage.objects.name))[1] = (select auth.uid())::text
+  and exists (
+    select 1
+    from public.medical_records
+    join public.pets on pets.pet_id = medical_records.pet_id
+    where medical_records.record_id::text = (storage.foldername(storage.objects.name))[2]
+      and medical_records.created_by = (select auth.uid())
+      and pets.owner_id = (select auth.uid())
+  )
+);
+
+create policy medical_record_attachments_owner_insert
+on storage.objects for insert to authenticated
+with check (
+  storage.objects.bucket_id = 'medical-record-attachments'
+  and (storage.foldername(storage.objects.name))[1] = (select auth.uid())::text
+  and exists (
+    select 1
+    from public.medical_records
+    join public.pets on pets.pet_id = medical_records.pet_id
+    where medical_records.record_id::text = (storage.foldername(storage.objects.name))[2]
+      and medical_records.created_by = (select auth.uid())
+      and pets.owner_id = (select auth.uid())
+  )
+);
+
+create policy medical_record_attachments_owner_delete
+on storage.objects for delete to authenticated
+using (
+  storage.objects.bucket_id = 'medical-record-attachments'
+  and (storage.foldername(storage.objects.name))[1] = (select auth.uid())::text
+  and exists (
+    select 1
+    from public.medical_records
+    join public.pets on pets.pet_id = medical_records.pet_id
+    where medical_records.record_id::text = (storage.foldername(storage.objects.name))[2]
+      and medical_records.created_by = (select auth.uid())
+      and pets.owner_id = (select auth.uid())
+  )
+  and not exists (
+    select 1
+    from public.medical_attachments
+    where medical_attachments.file_url = storage.objects.name
+  )
+);

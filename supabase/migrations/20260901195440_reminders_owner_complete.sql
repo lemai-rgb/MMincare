@@ -5,6 +5,7 @@ alter table public.reminders
 
 alter table public.reminders enable row level security;
 
+revoke update on table public.reminders from anon;
 revoke update on table public.reminders from authenticated;
 grant update (status, completed_at) on table public.reminders to authenticated;
 
