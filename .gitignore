@@ -6,6 +6,7 @@ node_modules/
 
 # Next.js
 .next/
+/.next/
 out/
 build/
 
@@ -13,6 +14,7 @@ build/
 .env
 .env.*
 !.env.example
+.env*.local
 
 # Logs
 *.log
@@ -30,3 +32,8 @@ next-env.d.ts
 # System files
 .DS_Store
 Thumbs.db
+desktop.ini
+.agents/
+
+# Supabase CLI cache
+supabase/.temp/

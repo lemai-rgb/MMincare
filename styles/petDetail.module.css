@@ -1,0 +1,1538 @@
+.page {
+  min-height: 100dvh;
+  background: #faf8f5;
+  color: #20211f;
+}
+
+.header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  min-height: 80px;
+  padding: 0 clamp(44px, 5.7vw, 82px);
+  overflow: hidden;
+  background: #fff;
+  border-bottom: 1px solid #e8e2da;
+}
+
+.brand {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 48px;
+  color: #6e8b6b;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.brand span:first-child {
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.055em;
+}
+
+.brand span:last-child {
+  color: #7c7c7c;
+  font-size: 16px;
+}
+
+.brand:focus-visible,
+.backLink:focus-visible,
+.navigation a:focus-visible {
+  outline: 2px solid #6e8b6b;
+  outline-offset: 4px;
+  border-radius: 5px;
+}
+
+.navigation {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: clamp(32px, 4vw, 64px);
+  margin-left: auto;
+  color: #4d4d4d;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.navigation > span,
+.navigation a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.navigation > span span,
+.navigation a span {
+  width: 0;
+  height: 0;
+  border-top: 6px solid currentColor;
+  border-right: 5px solid transparent;
+  border-left: 5px solid transparent;
+}
+
+.activeNavItem {
+  color: #6e8b6b !important;
+  font-weight: 600;
+}
+
+.shell {
+  position: relative;
+  isolation: isolate;
+  width: min(calc(100% - 78px), 1378px);
+  min-height: calc(100dvh - 100px);
+  margin: 10px auto 20px;
+  padding: 16px clamp(30px, 4.6vw, 68px) 70px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e8e2da;
+  border-radius: 32px;
+  box-shadow: inset 0 12px 32px rgb(0 0 0 / 6%);
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 17px;
+  min-height: 30px;
+  color: #7c7c7c;
+  font-size: 20px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.backArrow {
+  position: relative;
+  display: block;
+  width: 30px;
+  height: 18px;
+}
+
+.backArrow::before,
+.backArrow::after {
+  position: absolute;
+  top: 50%;
+  content: "";
+}
+
+.backArrow::before {
+  left: 0;
+  width: 12px;
+  height: 12px;
+  border-bottom: 2px solid currentColor;
+  border-left: 2px solid currentColor;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.backArrow::after {
+  left: 2px;
+  width: 27px;
+  border-top: 2px solid currentColor;
+  transform: translateY(-50%);
+}
+
+.subtitle {
+  max-width: 980px;
+  margin: 18px auto 28px;
+  color: #2d2d2d;
+  font-family: var(--font-intel-one-mono), ui-monospace, monospace;
+  font-size: clamp(19px, 1.75vw, 24px);
+  line-height: 1.35;
+  text-align: center;
+}
+
+.profileCard {
+  position: relative;
+  display: grid;
+  grid-template-columns: 145px minmax(0, 1fr) 190px;
+  gap: 28px;
+  align-items: center;
+  width: min(100%, 850px);
+  min-height: 220px;
+  margin: 0 auto;
+  padding: 24px 20px 24px 34px;
+  background: #fff;
+  border: 1px solid #e8e2da;
+  border-radius: 32px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 5%);
+}
+
+.avatarWrap {
+  display: grid;
+  width: 145px;
+  height: 145px;
+  place-items: center;
+  overflow: hidden;
+  background: #fbfcfa;
+  border-radius: 28px;
+}
+
+.avatar {
+  display: block;
+  width: 112px;
+  height: 112px;
+  object-fit: contain;
+}
+
+.profileDetails {
+  min-width: 0;
+  text-align: center;
+}
+
+.profileDetails h1 {
+  margin: 0 0 12px;
+  color: #000;
+  font-size: 32px;
+  line-height: 1.15;
+}
+
+.metadata {
+  margin: 0;
+  color: #000;
+  font-size: 24px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.vaccineStatus {
+  display: inline-flex;
+  margin-top: 20px;
+  padding: 10px 14px;
+  color: #6e8b6b;
+  background: #eff7ef;
+  border-radius: 24px;
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.profileAside {
+  display: flex;
+  align-self: stretch;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  width: 190px;
+  min-width: 0;
+  max-width: 100%;
+  gap: 28px;
+  padding: 28px 0 0;
+}
+
+.editButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 20px;
+  color: #789176;
+  background: #fcfbf9;
+  border: 1px solid #dde5da;
+  border-radius: 14px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+  text-decoration: none;
+}
+
+.editButton:focus-visible {
+  outline: 2px solid #6e8b6b;
+  outline-offset: 3px;
+}
+
+.profileAside p {
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  color: #a1a3ab;
+  font-size: 15px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.tabBar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: center;
+  width: min(100%, 850px);
+  min-height: 62px;
+  margin: 64px auto 74px;
+  padding: 7px 40px;
+  color: #b7b7b7;
+  background: rgb(237 245 236 / 93%);
+  border: 1px solid #e8e2da;
+  border-radius: 32px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 6%);
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.tabBar a {
+  display: block;
+  padding: 7px 10px;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tabBar .activeTab {
+  color: #7c7c7c;
+  background: #fffdf9;
+  border: 1px solid #e8c99c;
+  border-radius: 24px;
+}
+
+.tabLink:focus-visible,
+.filterChip:focus-visible,
+.activeFilterChip:focus-visible,
+.addRecordButton:focus-visible {
+  outline: 2px solid #6e8b6b;
+  outline-offset: 3px;
+}
+
+.medicalHistory {
+  max-width: 980px;
+  margin: -36px auto 0;
+}
+
+.medicalToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 52px;
+  margin-bottom: 34px;
+}
+
+.filterChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.filterChip,
+.activeFilterChip {
+  min-height: 36px;
+  padding: 7px 18px;
+  border: 1px solid #e6e2dc;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+}
+
+.filterChip {
+  color: #777771;
+  background: #fff;
+}
+
+.activeFilterChip {
+  color: #5e7c5d;
+  background: #eff7ef;
+  border-color: #cdddc9;
+  font-weight: 600;
+}
+
+.addRecordMenu {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.addRecordButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 190px;
+  min-height: 38px;
+  padding: 7px 22px;
+  color: #171717;
+  background: #faf8f5;
+  border: 1px solid #eee9e2;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+}
+
+.addRecordButton span {
+  font-size: 21px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.addRecordPopover {
+  position: absolute;
+  z-index: 3;
+  top: calc(100% + 8px);
+  right: 0;
+  display: grid;
+  width: 190px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #e8e2da;
+  border-radius: 14px;
+  box-shadow: 0 12px 24px rgb(0 0 0 / 10%);
+}
+
+.addRecordPopover button {
+  min-height: 38px;
+  padding: 8px 10px;
+  color: #a0a09a;
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  cursor: not-allowed;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+}
+
+.medicalEmptyState {
+  display: grid;
+  min-height: 300px;
+  padding: 42px 24px;
+  place-items: center;
+  text-align: center;
+  background: rgb(255 255 255 / 78%);
+  border: 1px solid #e8e2da;
+  border-radius: 28px;
+}
+
+.medicalEmptyMark {
+  position: relative;
+  display: block;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 4px;
+  border: 1px solid #c9d9c7;
+  border-radius: 16px;
+  background: #f6fbf5;
+}
+
+.medicalEmptyMark::before,
+.medicalEmptyMark::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  border-top: 2px solid #789176;
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.medicalEmptyMark::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.medicalEmptyState h2 {
+  margin: 0;
+  color: #33342f;
+  font-size: 21px;
+}
+
+.medicalEmptyState p {
+  max-width: 420px;
+  margin: 10px 0 0;
+  color: #85857e;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.pendingTab {
+  max-width: 850px;
+  min-height: 230px;
+  margin: -36px auto 0;
+  padding: 54px 24px;
+  text-align: center;
+  background: rgb(255 255 255 / 78%);
+  border: 1px solid #e8e2da;
+  border-radius: 28px;
+}
+
+.pendingTab h2,
+.pendingTab p {
+  margin: 0;
+}
+
+.pendingTab h2 {
+  font-size: 21px;
+}
+
+.pendingTab p {
+  margin-top: 10px;
+  color: #85857e;
+}
+
+.medicalNotice,
+.medicalError,
+.medicalLoading {
+  margin: 0 0 18px;
+  text-align: center;
+}
+
+.medicalNotice {
+  color: #5e7c5d;
+}
+
+.medicalNoticeLink {
+  display: inline-flex;
+  margin-left: 12px;
+  color: var(--mm-primary-dark);
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+
+.medicalError {
+  color: #a55f57;
+}
+
+.medicalLoading {
+  color: #85857e;
+}
+
+.medicalTimeline {
+  display: grid;
+  gap: 26px;
+}
+
+.medicalMonth {
+  display: grid;
+  gap: 10px;
+}
+
+.medicalMonth h2 {
+  margin: 0;
+  color: #7c7c7c;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.medicalEntryList {
+  display: grid;
+  gap: 10px;
+}
+
+.medicalEntryCard {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-height: 82px;
+  padding: 14px 20px;
+  background: #fff;
+  border: 1px solid #e8e2da;
+  border-radius: 18px;
+}
+
+.medicalEntryCard h3,
+.medicalEntryCard p,
+.medicalEntryCard span {
+  margin: 0;
+}
+
+.medicalEntryCard h3 {
+  color: #252525;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.medicalEntryCard p {
+  margin-top: 4px;
+  color: #6e8b6b;
+  font-size: 14px;
+}
+
+.medicalEntryCard span:not([class]) {
+  display: block;
+  margin-top: 4px;
+  color: #85857e;
+  font-size: 13px;
+}
+
+.medicalEntryContent {
+  min-width: 0;
+}
+
+.medicalAttachmentList {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.medicalAttachmentItem {
+  min-width: 0;
+}
+
+.medicalAttachmentRow {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  padding-top: 9px;
+  border-top: 1px solid #e8e2da;
+}
+
+.medicalAttachmentRow img {
+  flex: 0 0 auto;
+}
+
+.medicalAttachmentName {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: #5f625d;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.medicalAttachmentRow button {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  color: #5e7c5d;
+  background: #fff;
+  border: 1px solid #9db09a;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.medicalAttachmentRow button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.medicalAttachmentError {
+  margin: 6px 0 0;
+  color: #a45149;
+  font-size: 12px;
+}
+
+.vaccineIcon {
+  display: flex;
+  width: 41px;
+  height: 27px;
+  align-items: center;
+  justify-content: center;
+}
+
+.vaccineIcon img {
+  display: block;
+  width: 41px;
+  height: 27px;
+}
+
+.medicalIcon {
+  display: flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+}
+
+.medicalIcon img {
+  display: block;
+  width: 34px;
+  height: 34px;
+}
+
+.vaccineFormPanel,
+.reminderSuggestion {
+  max-width: 920px;
+  margin: -36px auto 0;
+  padding: 28px 34px;
+  background: #fff;
+  border: 1px solid #e8e2da;
+  border-radius: 24px;
+}
+
+.vaccineFormPanel {
+  display: flex;
+  min-width: 0;
+  min-height: 520px;
+  flex-direction: column;
+}
+
+.formPanelHeader h2,
+.formPanelHeader p {
+  margin: 0;
+}
+
+.formPanelHeader h2 {
+  color: #252525;
+  font-size: 24px;
+}
+
+.formPanelHeader p {
+  margin-top: 6px;
+  color: #85857e;
+  font-size: 14px;
+}
+
+.vaccineFormGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(160px, .7fr);
+  gap: 18px 20px;
+  margin-top: 24px;
+}
+
+.vaccineFormGrid label,
+.reminderSuggestion label {
+  display: grid;
+  gap: 8px;
+  color: #42433f;
+  font-size: 15px;
+}
+
+.fieldLabel {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fieldLabel > span {
+  color: #c66d62;
+}
+
+.vaccineFormGrid input,
+.vaccineFormGrid select,
+.vaccineFormGrid textarea,
+.reminderSuggestion input,
+.reminderSuggestion textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: #333;
+  background: #fff;
+  border: 1px solid #e5e1dc;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 15px;
+}
+
+.vaccineFormGrid select {
+  appearance: auto;
+}
+
+.vaccineFormGrid textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.medicalFileField {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  color: #42433f;
+  font-size: 15px;
+}
+
+.medicalFilePicker {
+  display: flex !important;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px !important;
+  padding: 10px 12px;
+  color: #6e8b6b !important;
+  background: #fff;
+  border: 1px dashed #b9c8b6;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.medicalFileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.medicalFileField:has(.medicalFileInput:focus-visible) .medicalFilePicker,
+.medicalFileField:has(.medicalFileInput:focus-visible) .medicalSelectedFile {
+  outline: 2px solid #6e8b6b;
+  outline-offset: 2px;
+}
+
+.medicalSelectedFile {
+  display: flex;
+  width: 100%;
+  height: 64px;
+  min-width: 0;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px dashed #b9c8b6;
+  border-radius: 10px;
+}
+
+.medicalSelectedFile label {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.medicalSelectedFile label span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.medicalSelectedFile button {
+  flex: 0 0 auto;
+  padding: 0;
+  color: #a15850;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.medicalSelectedFile button:disabled,
+.medicalFileField:has(.medicalFileInput:disabled) .medicalFilePicker,
+.medicalFileField:has(.medicalFileInput:disabled) .medicalSelectedFile {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.medicalFieldError {
+  margin: 0;
+  color: #a15850;
+  font-size: 13px;
+}
+
+.medicalFileHelp {
+  min-height: 30px;
+  margin: 0;
+  color: #85857e;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.medicalFileField .medicalFieldError {
+  min-height: 30px;
+  line-height: 1.3;
+}
+
+.fullWidthField {
+  grid-column: 1 / -1;
+}
+
+.formPanelActions,
+.suggestionActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 24px;
+}
+
+.formPanelActions button,
+.suggestionActions button {
+  min-height: 42px;
+  padding: 8px 20px;
+  color: #252525;
+  background: #faf8f5;
+  border: 1px solid #e8e2da;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.formPanelActions button:last-child,
+.suggestionActions button:last-child {
+  color: #fff;
+  background: #6e8b6b;
+  border-color: #6e8b6b;
+}
+
+.formPanelActions button:disabled,
+.suggestionActions button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.reminderSuggestion {
+  max-width: 760px;
+  background: #eff7ef;
+  border-color: #d4e2d1;
+}
+
+.reminderSuggestion h2,
+.reminderSuggestion p {
+  margin: 0;
+}
+
+.reminderSuggestion h2 {
+  color: #5e7c5d;
+  font-size: 24px;
+}
+
+.reminderSuggestion > p {
+  max-width: 650px;
+  margin-top: 18px;
+  color: #5e7c5d;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.reminderSuggestion label {
+  max-width: 260px;
+  margin-top: 22px;
+  color: #5e7c5d;
+}
+
+.reminderSuggestion .reminderNoteField {
+  max-width: 100%;
+}
+
+.reminderNoteField textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.suggestionMuted,
+.suggestionWarning {
+  color: #7c7c7c !important;
+  font-size: 15px !important;
+}
+
+.suggestionWarning {
+  margin-top: 10px !important;
+}
+
+.medicalWorkspace {
+  display: grid;
+  grid-template-columns: minmax(260px, .85fr) minmax(0, 1.15fr);
+  align-items: start;
+  gap: 28px;
+  margin-top: -36px;
+}
+
+.medicalWorkspace .vaccineFormPanel,
+.medicalWorkspace .reminderSuggestion {
+  width: 100%;
+  margin: 0;
+}
+
+.medicalRecordWorkspace {
+  width: min(100%, 1260px);
+  grid-template-columns: minmax(400px, 450px) minmax(0, 1fr);
+  gap: 40px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.medicalRecordMode {
+  width: 100%;
+  max-width: 1260px;
+}
+
+.medicalRecordWorkspace .medicalRecordFormPanel {
+  width: 100%;
+  max-width: 760px;
+  min-height: 520px;
+  padding: 34px 38px;
+}
+
+.medicalRecordFormGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+  row-gap: 18px;
+}
+
+.medicalRecordFormGrid > label,
+.medicalRecordFormGrid > .medicalFileField {
+  min-width: 0;
+}
+
+.medicalRecordFormGrid input {
+  min-height: 48px;
+}
+
+.medicalRecordFormGrid input[type="date"] {
+  height: 64px;
+}
+
+.medicalRecordFormGrid textarea {
+  height: 84px;
+  min-height: 84px;
+}
+
+.medicalRecordFormGrid .medicalFilePicker {
+  width: 100%;
+  height: 64px;
+  box-sizing: border-box;
+}
+
+.medicalRecordFormPanel .formPanelActions button {
+  min-height: 44px;
+}
+
+.medicalRecordPreview {
+  display: grid;
+  width: 100%;
+  gap: 12px;
+}
+
+.medicalRecordPreview h2 {
+  margin: 0;
+  color: #252525;
+  font-size: 20px;
+}
+
+.medicalRecordPreview > p {
+  margin: 0;
+  padding: 28px 18px;
+  color: #85857e;
+  background: #f0f5ef;
+  border: 1px solid #e8e2da;
+  border-radius: 18px;
+  text-align: center;
+}
+
+.medicalRecordPreview .medicalEntryCard {
+  background: #f0f5ef;
+}
+
+.overviewHistoryList {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.overviewHistoryList p {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0;
+  color: #5e7c5d;
+  font-size: 15px;
+}
+
+.overviewHistoryList span {
+  color: #9b9da5;
+  white-space: nowrap;
+}
+
+.quickActions button,
+.quickActions a {
+  cursor: pointer;
+}
+
+.quickActionNotice {
+  margin: 0;
+  color: #6e8b6b;
+  font-size: 13px;
+  text-align: center;
+}
+
+.dialogBackdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  overflow-y: auto;
+  padding: 24px;
+  place-items: center;
+  background: rgb(32 33 31 / 38%);
+}
+
+.vaccineDialog {
+  width: min(100%, 760px);
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e8e2da;
+  border-radius: 26px;
+  box-shadow: 0 24px 70px rgb(32 33 31 / 20%);
+}
+
+.dialogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 28px 0;
+}
+
+.dialogHeader h2 {
+  margin: 0;
+  color: #252525;
+  font-size: 23px;
+}
+
+.dialogClose {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  color: #5e7c5d;
+  background: #faf8f5;
+  border: 1px solid #e8e2da;
+  border-radius: 50%;
+  cursor: pointer;
+  font: inherit;
+  font-size: 25px;
+  line-height: 1;
+}
+
+.dialogClose:focus-visible,
+.quickActions button:focus-visible,
+.quickActions a:focus-visible {
+  outline: 2px solid #6e8b6b;
+  outline-offset: 3px;
+}
+
+.vaccineDialog .vaccineFormPanel {
+  min-height: 0;
+  padding: 22px 28px 28px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (max-width: 560px) {
+  .dialogBackdrop {
+    padding: 12px;
+  }
+
+  .vaccineDialog {
+    max-height: calc(100dvh - 24px);
+    border-radius: 20px;
+  }
+
+  .dialogHeader {
+    padding: 18px 20px 0;
+  }
+
+  .vaccineDialog .vaccineFormPanel {
+    padding: 18px 20px 22px;
+  }
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(18px, 4vw, 82px);
+  max-width: 1270px;
+  margin: 0 auto;
+}
+
+.summaryCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 142px;
+  padding: 16px 22px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #e8e2da;
+  border-radius: 24px;
+}
+
+.summaryCard h2,
+.historyCard h2,
+.quickActions h2 {
+  margin: 0;
+  color: #000;
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.summaryCard p {
+  margin: auto 0;
+  color: #6e8b6b;
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.summaryGrid > :last-child p {
+  color: #d5b681;
+}
+
+.summaryAction {
+  color: #6e8b6b;
+  font-size: 16px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.overviewGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 680px) minmax(310px, 350px);
+  justify-content: center;
+  gap: clamp(24px, 7.5vw, 132px);
+  max-width: 1160px;
+  margin: 58px auto 0;
+}
+
+.historyCard,
+.quickActions {
+  min-height: 300px;
+  padding: 28px 36px;
+  background: #fff;
+  border: 1px solid #e8e2da;
+  border-radius: 28px;
+}
+
+.cardHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cardHeading span {
+  color: #000;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.emptyActivity {
+  display: grid;
+  min-height: 170px;
+  margin: 0;
+  place-items: center;
+  color: #8c8c8c;
+  font-size: 17px;
+  text-align: center;
+}
+
+.quickActions {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 14px 22px;
+}
+
+.quickActions h2 {
+  margin: 0 0 10px;
+  text-align: center;
+}
+
+.quickActions button,
+.quickActions a {
+  display: block;
+  min-height: 47px;
+  padding: 9px 15px;
+  color: #171717;
+  background: #faf9f7;
+  border: 1px solid #f0ece6;
+  border-radius: 24px;
+  cursor: not-allowed;
+  font: inherit;
+  font-size: 16px;
+  text-align: center;
+}
+
+.quickActions a {
+  text-decoration: none;
+}
+
+.quickActions button:disabled {
+  cursor: not-allowed;
+  opacity: .62;
+}
+
+.comingSoonLabel {
+  color: #9b9da5;
+  font-size: 12px;
+  text-align: right;
+}
+
+.createPageHeader {
+  max-width: 650px;
+  margin: 38px auto 22px;
+  text-align: center;
+}
+
+.createPageHeader h1,
+.createPageHeader p {
+  margin: 0;
+}
+
+.createPageHeader h1 {
+  color: #252525;
+  font-size: clamp(28px, 3vw, 38px);
+}
+
+.createPageHeader p {
+  margin-top: 8px;
+  color: #85857e;
+  font-size: 16px;
+}
+
+.createFormCentered {
+  width: min(100%, 760px);
+  margin: 0 auto;
+}
+
+.createFormCentered .vaccineFormPanel {
+  min-height: 0;
+}
+
+@media (max-width: 1080px) {
+  .header {
+    padding-right: 36px;
+    padding-left: 36px;
+  }
+
+  .brand {
+    gap: 22px;
+  }
+
+  .navigation {
+    gap: 24px;
+    font-size: 17px;
+  }
+
+  .summaryGrid {
+    gap: 20px;
+  }
+
+  .overviewGrid {
+    grid-template-columns: minmax(0, 1fr) 330px;
+    gap: 28px;
+  }
+}
+
+@media (max-width: 800px) {
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+
+  .navigation {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .shell {
+    width: min(calc(100% - 32px), 720px);
+  }
+
+  .profileCard {
+    grid-template-columns: 130px minmax(0, 1fr);
+  }
+
+  .profileAside {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    padding-top: 0;
+  }
+
+  .summaryGrid,
+  .overviewGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .overviewGrid {
+    max-width: 520px;
+    gap: 24px;
+  }
+}
+
+@media (min-width: 1100px) and (max-width: 1279px) {
+  .medicalRecordWorkspace {
+    width: 100%;
+    grid-template-columns: minmax(400px, 430px) minmax(0, 1fr);
+    gap: 36px;
+  }
+
+  .medicalRecordWorkspace .medicalRecordFormPanel {
+    padding: 32px;
+  }
+}
+
+@media (max-width: 1099px) {
+  .medicalRecordWorkspace {
+    width: 100%;
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+}
+
+@media (max-width: 719px) {
+  .medicalRecordFormGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .medicalRecordFormGrid .fullWidthField {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .header {
+    padding: 14px 20px;
+  }
+
+  .brand {
+    gap: 12px;
+  }
+
+  .brand span:first-child {
+    font-size: 29px;
+  }
+
+  .brand span:last-child {
+    font-size: 12px;
+  }
+
+  .navigation {
+    gap: 22px;
+    font-size: 15px;
+  }
+
+  .shell {
+    width: calc(100% - 24px);
+    min-height: calc(100dvh - 24px);
+    margin-top: 12px;
+    padding: 16px 18px 48px;
+    border-radius: 24px;
+  }
+
+  .backLink {
+    gap: 10px;
+    font-size: 16px;
+  }
+
+  .subtitle {
+    margin-top: 20px;
+    font-size: 17px;
+  }
+
+  .profileCard {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 24px;
+  }
+
+  .avatarWrap {
+    width: 130px;
+    height: 130px;
+    margin: 0 auto;
+  }
+
+  .metadata {
+    font-size: 19px;
+  }
+
+  .profileAside {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .profileAside p {
+    text-align: center;
+    white-space: normal;
+  }
+
+  .tabBar {
+    gap: 0;
+    margin: 38px 0 44px;
+    padding: 6px;
+    font-size: 14px;
+  }
+
+  .tabBar span {
+    padding: 9px 4px;
+  }
+
+  .historyCard,
+  .quickActions {
+    min-height: 0;
+    padding: 22px;
+  }
+}
+
+@media (max-width: 800px) {
+  .medicalHistory {
+    margin-top: -22px;
+  }
+
+  .medicalToolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .addRecordButton {
+    width: 100%;
+  }
+
+  .addRecordPopover {
+    right: auto;
+    left: 0;
+  }
+
+  .vaccineFormPanel,
+  .reminderSuggestion {
+    margin-top: -22px;
+    padding: 22px;
+  }
+
+  .medicalWorkspace {
+    grid-template-columns: 1fr;
+    margin-top: -22px;
+  }
+}
+
+@media (max-width: 560px) {
+  .vaccineFormGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .fullWidthField {
+    grid-column: auto;
+  }
+
+  .formPanelActions,
+  .suggestionActions {
+    flex-direction: column-reverse;
+  }
+
+  .formPanelActions button,
+  .suggestionActions button {
+    width: 100%;
+  }
+}
