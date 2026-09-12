@@ -5,6 +5,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { PetListPanelDecorations } from "@/components/pets/PetListDecorations";
 import {
+  ReminderCreateForm,
+  type ManualReminderCreatedResult,
+} from "@/components/reminders/ReminderCreateForm";
+import {
   getDaysOverdue,
   getReminderDisplayStatus,
   getReminderTypeLabel,
@@ -78,8 +82,11 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
   const [selectedReminder, setSelectedReminder] = useState<ReminderListItem | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
   const [completeError, setCompleteError] = useState("");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
   const completionGuard = useRef(false);
+  const createTrigger = useRef<HTMLButtonElement | null>(null);
   const lastTrigger = useRef<HTMLButtonElement | null>(null);
 
   const loadReminders = useCallback(async () => {
@@ -181,6 +188,24 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
     setPetFilter("all");
   }
 
+  function openCreate(trigger: HTMLButtonElement) {
+    createTrigger.current = trigger;
+    setIsCreateOpen(true);
+  }
+
+  function closeCreate() {
+    if (isCreating) return;
+    setIsCreateOpen(false);
+    window.setTimeout(() => createTrigger.current?.focus(), 0);
+  }
+
+  function handleManualReminderCreated() {
+    setIsCreateOpen(false);
+    setToast({ kind: "success", message: "Đã tạo nhắc hẹn." });
+    void loadReminders();
+    window.setTimeout(() => createTrigger.current?.focus(), 0);
+  }
+
   return (
     <main className={styles.page}>
       <AppHeader activeNav="reminders" />
@@ -219,7 +244,7 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
                     {pets.map((pet) => <option key={pet.pet_id} value={pet.pet_id}>{pet.name}</option>)}
                   </select>
                 </label>
-                <button aria-disabled="true" className={styles.createButton} disabled title="Tạo nhắc hẹn thủ công sẽ được bổ sung ở checkpoint sau" type="button">+ Tạo nhắc hẹn</button>
+                <button className={styles.createButton} onClick={(event) => openCreate(event.currentTarget)} type="button">+ Tạo nhắc hẹn</button>
               </div>
             </div>
 
@@ -238,7 +263,7 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
               <span className={styles.stateIcon} aria-hidden="true">♡</span>
               <h2>Chưa có nhắc hẹn nào</h2>
               <p>Tạo nhắc hẹn để không bỏ lỡ lịch tiêm hoặc tái khám của bé.</p>
-              <button aria-disabled="true" className={styles.createButton} disabled type="button">Tạo nhắc hẹn đầu tiên</button>
+              <button className={styles.createButton} onClick={(event) => openCreate(event.currentTarget)} type="button">Tạo nhắc hẹn đầu tiên</button>
             </section>
           )}
 
@@ -276,8 +301,93 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
         />
       )}
 
+      {isCreateOpen && (
+        <CreateReminderModal
+          isCreating={isCreating}
+          onCancel={closeCreate}
+          onCreated={handleManualReminderCreated}
+          onSubmittingChange={setIsCreating}
+          pets={pets}
+        />
+      )}
+
       {toast && <div className={`${styles.toast} ${toast.kind === "error" ? styles.errorToast : ""}`} role={toast.kind === "error" ? "alert" : "status"}>{toast.message}</div>}
     </main>
+  );
+}
+
+function CreateReminderModal({
+  isCreating,
+  onCancel,
+  onCreated,
+  onSubmittingChange,
+  pets,
+}: {
+  isCreating: boolean;
+  onCancel: () => void;
+  onCreated: (result: ManualReminderCreatedResult) => void;
+  onSubmittingChange: (isSubmitting: boolean) => void;
+  pets: ReminderPetOption[];
+}) {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !isCreating) onCancel();
+      if (event.key !== "Tab" || !dialogRef.current) return;
+
+      const focusable = [...dialogRef.current.querySelectorAll<HTMLElement>(
+        "button:not(:disabled), select:not(:disabled), input:not(:disabled), textarea:not(:disabled)",
+      )];
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isCreating, onCancel]);
+
+  return (
+    <div
+      className={styles.createReminderBackdrop}
+      onMouseDown={(event) => {
+        if (!isCreating && event.target === event.currentTarget) onCancel();
+      }}
+    >
+      <div
+        aria-label="Tạo nhắc hẹn thủ công"
+        aria-modal="true"
+        className={styles.createReminderDialog}
+        ref={dialogRef}
+        role="dialog"
+      >
+        <button
+          aria-label="Đóng form tạo nhắc hẹn"
+          className={styles.createReminderClose}
+          disabled={isCreating}
+          onClick={onCancel}
+          type="button"
+        >
+          ×
+        </button>
+        <ReminderCreateForm
+          focusOnMount
+          mode="global"
+          onCancel={onCancel}
+          onCreated={onCreated}
+          onSubmittingChange={onSubmittingChange}
+          pets={pets}
+        />
+      </div>
+    </div>
   );
 }
 

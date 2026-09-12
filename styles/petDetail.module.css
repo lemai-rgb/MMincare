@@ -476,6 +476,369 @@
   color: #85857e;
 }
 
+.petReminderShell {
+  min-height: calc(100dvh - 119px);
+}
+
+.petReminderShell .subtitle {
+  margin: -11px auto 20px;
+}
+
+.petReminderShell .profileCard {
+  grid-template-columns: 112px minmax(0, 1fr) 160px;
+  gap: 24px;
+  width: min(100%, 820px);
+  min-height: 169px;
+  padding: 12px 14px 12px 68px;
+}
+
+.petReminderShell .avatarWrap {
+  width: 112px;
+  height: 112px;
+  border-radius: 24px;
+}
+
+.petReminderShell .avatar {
+  width: 88px;
+  height: 88px;
+}
+
+.petReminderShell .profileDetails h1 {
+  margin-bottom: 8px;
+}
+
+.petReminderShell .vaccineStatus {
+  margin-top: 12px;
+  padding: 8px 12px;
+  font-size: 20px;
+}
+
+.petReminderShell .profileAside {
+  width: 160px;
+  gap: 15px;
+  padding-top: 28px;
+}
+
+.petReminderShell .tabBar {
+  width: min(100%, 820px);
+  min-height: 47px;
+  margin: 49px auto 71px;
+  padding: 3px 40px;
+  border-radius: 24px;
+}
+
+.petReminderShell .tabBar a {
+  padding: 0 10px;
+}
+
+.petReminderShell .tabBar .activeTab {
+  border-radius: 12px;
+}
+
+.petReminderWorkspace {
+  position: relative;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 516px);
+  gap: 24px;
+  width: min(100%, 820px);
+  margin: -36px auto 0;
+}
+
+.petReminderSummaries {
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  min-width: 0;
+}
+
+.petReminderSummaryCard {
+  display: flex;
+  width: 100%;
+  min-height: 118px;
+  box-sizing: border-box;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px 22px;
+  background: #fff;
+  border: 1px solid #e8e2da;
+  border-radius: 22px;
+}
+
+.petReminderSummaryCard h2,
+.petReminderSummaryCard p {
+  margin: 0;
+}
+
+.petReminderSummaryCard h2 {
+  color: #000;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.petReminderSummaryContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #6e8b6b;
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.petReminderSummaryContent span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.petReminderSummaryContent strong {
+  flex: 0 0 auto;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.petReminderSummaryCardOverdue .petReminderSummaryContent span {
+  color: #d9776a;
+}
+
+.petReminderSummaryCardOverdue .petReminderSummaryContent strong {
+  padding: 5px 9px;
+  color: #b95f55;
+  background: #fcede9;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.petReminderEmpty {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  color: #9b9da5;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.petReminderEmpty svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  stroke: #789176;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.petReminderLoadState,
+.petReminderLoadError {
+  margin: 0;
+  padding: 24px;
+  color: #85857e;
+  background: #fff;
+  border: 1px solid #e8e2da;
+  border-radius: 22px;
+  font-size: 15px;
+  text-align: center;
+}
+
+.petReminderLoadError {
+  color: #a45149;
+}
+
+.petReminderForm {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  flex-direction: column;
+  padding: 28px 30px 30px;
+  background: #fff;
+  border: 1px solid #e8e2da;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 5%);
+}
+
+.petReminderFormHeader {
+  margin-bottom: 24px;
+}
+
+.petReminderFormHeader h2,
+.petReminderFormHeader p {
+  margin: 0;
+}
+
+.petReminderFormHeader h2 {
+  color: #20211f;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.petReminderFormHeader p {
+  margin-top: 6px;
+  color: #85857e;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.petReminderField {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: 8px;
+  color: #20211f;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.petReminderField + .petReminderField {
+  margin-top: 2px;
+}
+
+.petReminderField > span:first-child b {
+  color: #d9776a;
+  font: inherit;
+}
+
+.petReminderField input,
+.petReminderField select,
+.petReminderField textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  color: #333;
+  background: #fff;
+  border: 1px solid #d9d6d1;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 15px;
+}
+
+.petReminderField input,
+.petReminderField select {
+  height: 52px;
+}
+
+.petReminderField select {
+  appearance: auto;
+}
+
+.petReminderField textarea {
+  height: 96px;
+  min-height: 96px;
+  resize: vertical;
+}
+
+.petReminderNoteField textarea {
+  height: 96px;
+}
+
+.petReminderField input::placeholder,
+.petReminderField textarea::placeholder {
+  color: #bfbfbf;
+}
+
+.petReminderField input:focus-visible,
+.petReminderField select:focus-visible,
+.petReminderField textarea:focus-visible,
+.petReminderFormActions button:focus-visible {
+  outline: 2px solid #6e8b6b;
+  outline-offset: 2px;
+}
+
+.petReminderField input:disabled,
+.petReminderField select:disabled,
+.petReminderField textarea:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+.petReminderFieldMessage {
+  min-height: 15px;
+  color: #a45149;
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.petReminderPastWarning,
+.petReminderSubmitError {
+  min-height: 15px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.petReminderPastWarning {
+  max-width: 300px;
+  color: #4f6f52;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.petReminderSubmitError {
+  margin-top: 2px;
+  color: #a45149;
+}
+
+.petReminderFooter {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.petReminderFormActions {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.petReminderFormActions button {
+  min-width: 66px;
+  min-height: 48px;
+  padding: 8px 14px;
+  color: #252525;
+  background: #fff;
+  border: 1px solid #e8e2da;
+  border-radius: 14px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.petReminderFormActions button:last-child {
+  min-width: 174px;
+  color: #fff;
+  background: #6e8b6b;
+  border-color: #6e8b6b;
+}
+
+.petReminderFormActions button:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}
+
+.petReminderToast {
+  position: fixed;
+  z-index: 30;
+  right: 28px;
+  bottom: 28px;
+  margin: 0;
+  padding: 12px 18px;
+  color: #4f6f52;
+  background: #eff7ef;
+  border: 1px solid #cdddc9;
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgb(0 0 0 / 10%);
+  font-size: 15px;
+  font-weight: 600;
+}
+
 .medicalNotice,
 .medicalError,
 .medicalLoading {
@@ -1328,6 +1691,24 @@
     grid-template-columns: minmax(0, 1fr) 330px;
     gap: 28px;
   }
+
+}
+
+@media (max-width: 900px) {
+  .petReminderWorkspace {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    max-width: 600px;
+  }
+
+  .petReminderSummaries {
+    order: 2;
+    gap: 18px;
+  }
+
+  .petReminderForm {
+    order: 1;
+  }
 }
 
 @media (max-width: 800px) {
@@ -1352,6 +1733,12 @@
     grid-template-columns: 130px minmax(0, 1fr);
   }
 
+  .petReminderShell .profileCard {
+    grid-template-columns: 130px minmax(0, 1fr);
+    min-height: 0;
+    padding: 24px 20px;
+  }
+
   .profileAside {
     grid-column: 1 / -1;
     flex-direction: row;
@@ -1362,6 +1749,14 @@
   .summaryGrid,
   .overviewGrid {
     grid-template-columns: 1fr;
+  }
+
+  .petReminderShell .profileAside {
+    grid-column: 1 / -1;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    padding-top: 0;
   }
 
   .overviewGrid {
@@ -1447,10 +1842,26 @@
     padding: 24px;
   }
 
+  .petReminderShell .profileCard {
+    grid-template-columns: 1fr;
+    padding: 24px;
+  }
+
   .avatarWrap {
     width: 130px;
     height: 130px;
     margin: 0 auto;
+  }
+
+  .petReminderShell .avatarWrap {
+    width: 130px;
+    height: 130px;
+    margin: 0 auto;
+  }
+
+  .petReminderShell .avatar {
+    width: 112px;
+    height: 112px;
   }
 
   .metadata {
@@ -1458,6 +1869,12 @@
   }
 
   .profileAside {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .petReminderShell .profileAside {
     align-items: stretch;
     flex-direction: column;
     gap: 15px;
@@ -1473,6 +1890,55 @@
     margin: 38px 0 44px;
     padding: 6px;
     font-size: 14px;
+  }
+
+  .petReminderShell .tabBar {
+    min-height: 0;
+    margin: 38px 0 44px;
+    padding: 6px;
+    border-radius: 32px;
+  }
+
+  .petReminderShell .tabBar a {
+    padding: 9px 4px;
+  }
+
+  .petReminderForm {
+    min-height: 0;
+    padding: 24px 20px;
+  }
+
+  .petReminderSummaryCard h2 {
+    font-size: 20px;
+  }
+
+  .petReminderSummaryContent {
+    font-size: 16px;
+  }
+
+  .petReminderFormActions {
+    flex-direction: column-reverse;
+  }
+
+  .petReminderFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .petReminderPastWarning {
+    max-width: none;
+  }
+
+  .petReminderFormActions button,
+  .petReminderFormActions button:last-child {
+    width: 100%;
+  }
+
+  .petReminderToast {
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    text-align: center;
   }
 
   .tabBar span {
