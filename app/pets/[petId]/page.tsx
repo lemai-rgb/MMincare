@@ -5,7 +5,8 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { PetAvatar } from "@/components/pets/PetAvatar";
 import { PetListPanelDecorations } from "@/components/pets/PetListDecorations";
 import { PetMedicalHistory } from "@/components/pets/PetMedicalHistory";
-import { PetOverview } from "@/components/pets/PetOverview";
+import { PetOverview, type PetOverviewReminder } from "@/components/pets/PetOverview";
+import { PetReminders } from "@/components/pets/PetReminders";
 import { getPetGenderLabel, getPetSpeciesLabel, type Pet } from "@/lib/pets";
 import { createClient } from "@/lib/supabase/server";
 import styles from "@/styles/petDetail.module.css";
@@ -49,12 +50,10 @@ function PetDetailTabs({ petId, activeTab }: { petId: string; activeTab: PetDeta
   );
 }
 
-function PendingDetailTab({ tab, form }: { tab: Exclude<PetDetailTab, "overview" | "medical">; form?: string }) {
-  const label = tab === "reminders" ? "Nhắc hẹn" : "Sức khỏe";
-
+function PendingDetailTab({ form }: { form?: string }) {
   return (
     <section className={styles.pendingTab} aria-live="polite">
-      <h2>{label}</h2>
+      <h2>Sức khỏe</h2>
       <p>{form ? "Tính năng này sắp có." : "Nội dung này sẽ được cập nhật trong checkpoint tiếp theo."}</p>
     </section>
   );
@@ -109,6 +108,26 @@ function getLatestCreatedAt(...values: Array<string | null | undefined>) {
     .sort((left, right) => new Date(right).getTime() - new Date(left).getTime())[0];
 }
 
+function getTodayInVietnam() {
+  const parts = new Intl.DateTimeFormat("en", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function logUpcomingReminderError(error: HealthSummaryQueryError) {
+  console.error("[PET-UPCOMING-REMINDER] Query failed", {
+    code: error.code,
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+  });
+}
+
 export default async function PetDetailPage({ params, searchParams }: PetDetailPageProps) {
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
@@ -130,7 +149,7 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
   if (petError || !petRow) redirect("/dashboard");
 
   const pet = petRow as Pet;
-  const [vaccineSummary, medicalSummary] = await Promise.all([
+  const [vaccineSummary, medicalSummary, upcomingReminderResult] = await Promise.all([
     supabase
       .from("vaccine_records")
       .select("created_at", { count: "exact" })
@@ -143,10 +162,21 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
       .eq("pet_id", pet.pet_id)
       .order("created_at", { ascending: false })
       .limit(1),
+    supabase
+      .from("reminders")
+      .select("due_date, type, note")
+      .eq("user_id", claimsData.claims.sub)
+      .eq("pet_id", pet.pet_id)
+      .eq("status", "Upcoming")
+      .gte("due_date", getTodayInVietnam())
+      .order("due_date", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   if (vaccineSummary.error) logHealthSummaryError("vaccine_records", vaccineSummary.error);
   if (medicalSummary.error) logHealthSummaryError("medical_records", medicalSummary.error);
+  if (upcomingReminderResult.error) logUpcomingReminderError(upcomingReminderResult.error);
 
   const healthSummaryError = Boolean(vaccineSummary.error || medicalSummary.error);
   const totalHealthRecords = healthSummaryError
@@ -156,6 +186,9 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
     ? undefined
     : getLatestCreatedAt(vaccineSummary.data?.[0]?.created_at, medicalSummary.data?.[0]?.created_at);
   const latestHealthUpdate = latestHealthCreatedAt ? formatHealthCreatedAt(latestHealthCreatedAt) : undefined;
+  const upcomingReminder = upcomingReminderResult.data
+    ? upcomingReminderResult.data as PetOverviewReminder
+    : null;
   const age = getPetAgeLabel(pet.date_of_birth);
   const metadata = [
     getPetSpeciesLabel(pet.species),
@@ -168,7 +201,10 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
     <main className={styles.page}>
       <AppHeader activeNav="pets" />
 
-      <section className={styles.shell} aria-labelledby="pet-detail-title">
+      <section
+        className={`${styles.shell} ${activeTab === "reminders" ? styles.petReminderShell : ""}`}
+        aria-labelledby="pet-detail-title"
+      >
         <PetListPanelDecorations />
 
         <div className={styles.content}>
@@ -211,11 +247,22 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
           <PetDetailTabs activeTab={activeTab} petId={pet.pet_id} />
 
           {activeTab === "overview" && (
-            <PetOverview petId={pet.pet_id} />
+            <PetOverview
+              nextReminder={upcomingReminder}
+              petId={pet.pet_id}
+              reminderLoadError={Boolean(upcomingReminderResult.error)}
+            />
           )}
 
           {activeTab === "medical" && <PetMedicalHistory form={form} petId={pet.pet_id} species={pet.species} />}
-          {(activeTab === "reminders" || activeTab === "health") && <PendingDetailTab form={form} tab={activeTab} />}
+          {activeTab === "reminders" && (
+            <PetReminders
+              focusForm={form === "reminder"}
+              petId={pet.pet_id}
+              petName={pet.name}
+            />
+          )}
+          {activeTab === "health" && <PendingDetailTab form={form} />}
         </div>
       </section>
     </main>

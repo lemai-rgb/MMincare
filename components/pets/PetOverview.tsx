@@ -4,10 +4,19 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import type { LatestMedicalRecordSummary, MedicalHistoryEntry } from "@/lib/medicalHistory";
+import { getReminderTypeLabel, type ReminderType } from "@/lib/reminders";
 import styles from "@/styles/petDetail.module.css";
 
+export type PetOverviewReminder = {
+  due_date: string;
+  type: ReminderType;
+  note: string | null;
+};
+
 type PetOverviewProps = {
+  nextReminder: PetOverviewReminder | null;
   petId: string;
+  reminderLoadError: boolean;
 };
 
 type OverviewData = {
@@ -18,12 +27,17 @@ type OverviewData = {
 };
 
 function formatDate(value: string) {
-  const date = new Date(`${value}T00:00:00`);
+  const date = new Date(`${value}T00:00:00+07:00`);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(date);
 }
 
-export function PetOverview({ petId }: PetOverviewProps) {
+export function PetOverview({ nextReminder, petId, reminderLoadError }: PetOverviewProps) {
   const [overviewData, setOverviewData] = useState<OverviewData>({
     petId,
     entries: [],
@@ -68,6 +82,7 @@ export function PetOverview({ petId }: PetOverviewProps) {
   const latestVaccine = vaccineEntries[0];
   const recentEntries = entries.slice(0, 3);
   const addMedicalRecordHref = `/pets/${encodeURIComponent(petId)}?tab=medical&form=medical-record#medical-record-form`;
+  const addReminderHref = `/pets/${encodeURIComponent(petId)}?tab=reminders&form=reminder#pet-reminder-form`;
   const latestMedicalValue = latestMedicalRecord
     ? [
         formatDate(latestMedicalRecord.visitDate),
@@ -82,12 +97,21 @@ export function PetOverview({ petId }: PetOverviewProps) {
       : latestMedicalValue
         ? { value: latestMedicalValue }
         : { value: "Chưa có dữ liệu", action: "Thêm bản ghi đầu tiên", actionHref: addMedicalRecordHref };
+  const nextReminderValue = reminderLoadError
+    ? "Không thể tải lịch nhắc hẹn"
+    : nextReminder
+      ? [
+          getReminderTypeLabel(nextReminder.type),
+          nextReminder.note?.trim(),
+          formatDate(nextReminder.due_date),
+        ].filter(Boolean).join(" • ")
+      : "Chưa có lịch nhắc hẹn";
 
   return (
     <>
       <section className={styles.summaryGrid} aria-label="Tổng quan chăm sóc">
         <SummaryCard title="Mũi tiêm gần nhất" value={latestVaccine ? `${latestVaccine.title}: ${formatDate(latestVaccine.eventDate)}` : "Chưa có dữ liệu"} />
-        <SummaryCard title="Nhắc hẹn sắp tới" value="Chưa có lịch nhắc hẹn" />
+        <SummaryCard title="Nhắc hẹn sắp tới" value={nextReminderValue} />
         <SummaryCard title="Lần khám gần nhất" {...latestMedicalCard} />
       </section>
 
@@ -107,7 +131,7 @@ export function PetOverview({ petId }: PetOverviewProps) {
           <h2>Thao tác nhanh</h2>
           <Link href={`/pets/${encodeURIComponent(petId)}?tab=medical&form=vaccine`}>＋ Thêm mũi tiêm</Link>
           <Link href={addMedicalRecordHref}>＋ Thêm lần khám</Link>
-          <Link href={`/pets/${encodeURIComponent(petId)}?tab=reminders&form=reminder`}>＋ Tạo nhắc hẹn</Link>
+          <Link href={addReminderHref}>＋ Tạo nhắc hẹn</Link>
           <Link href={`/pets/${encodeURIComponent(petId)}?tab=health&form=health-log`}>＋ Thêm ghi chú sức khỏe</Link>
         </section>
       </section>
