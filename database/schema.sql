@@ -483,9 +483,31 @@ with check (
   )
 );
 
+create policy health_logs_owner_select on public.health_logs
+for select to authenticated
+using (
+  exists (
+    select 1
+    from public.pets
+    where pets.pet_id = health_logs.pet_id
+      and pets.owner_id = (select auth.uid())
+  )
+);
+
+create policy health_logs_owner_insert on public.health_logs
+for insert to authenticated
+with check (
+  health_logs.created_by = (select auth.uid())
+  and exists (
+    select 1
+    from public.pets
+    where pets.pet_id = health_logs.pet_id
+      and pets.owner_id = (select auth.uid())
+  )
+);
+
 -- No policies are intentionally defined for vaccine_schedule_rules,
--- health_logs, or pet_access in this checkpoint. RLS therefore denies all
--- requests made through anon/authenticated roles.
+-- vaccine_schedule_rules and pet_access remain deny-all in this checkpoint.
 revoke all on table public.vaccine_schedule_rules from public, anon, authenticated;
 revoke all on table public.health_logs from public, anon, authenticated;
 revoke all on table public.pet_access from public, anon, authenticated;
@@ -503,6 +525,7 @@ grant select, insert, update on table public.pets to authenticated;
 grant select, insert on table public.vaccine_records to authenticated;
 grant select, insert on table public.medical_records to authenticated;
 grant select, insert on table public.medical_attachments to authenticated;
+grant select, insert on table public.health_logs to authenticated;
 grant select, insert on table public.reminders to authenticated;
 revoke update on table public.reminders from anon;
 revoke update on table public.reminders from authenticated;
