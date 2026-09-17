@@ -7,6 +7,8 @@ import { PetListPanelDecorations } from "@/components/pets/PetListDecorations";
 import { PetMedicalHistory } from "@/components/pets/PetMedicalHistory";
 import { PetOverview, type PetOverviewReminder } from "@/components/pets/PetOverview";
 import { PetReminders } from "@/components/pets/PetReminders";
+import { PetHealthHistory } from "@/components/pets/PetHealthHistory";
+import { isHealthDashboardPeriod, type HealthDashboardPeriod } from "@/lib/healthLogs/dashboard";
 import { getPetGenderLabel, getPetSpeciesLabel, type Pet } from "@/lib/pets";
 import { createClient } from "@/lib/supabase/server";
 import styles from "@/styles/petDetail.module.css";
@@ -15,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 type PetDetailPageProps = {
   params: Promise<{ petId: string }>;
-  searchParams: Promise<{ tab?: string | string[]; form?: string | string[] }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 type PetDetailTab = "overview" | "medical" | "reminders" | "health";
@@ -33,6 +35,16 @@ function getDetailTab(value: string | string[] | undefined): PetDetailTab {
   return "overview";
 }
 
+function getHealthView(value: string | string[] | undefined): "history" | "statistics" {
+  const view = Array.isArray(value) ? value[0] : value;
+  return view === "statistics" ? "statistics" : "history";
+}
+
+function getHealthDashboardPeriod(value: string | string[] | undefined): HealthDashboardPeriod {
+  const period = (Array.isArray(value) ? value[0] : value) ?? null;
+  return isHealthDashboardPeriod(period) ? period : "week";
+}
+
 function PetDetailTabs({ petId, activeTab }: { petId: string; activeTab: PetDetailTab }) {
   return (
     <nav className={styles.tabBar} aria-label="Các mục hồ sơ">
@@ -47,15 +59,6 @@ function PetDetailTabs({ petId, activeTab }: { petId: string; activeTab: PetDeta
         );
       })}
     </nav>
-  );
-}
-
-function PendingDetailTab({ form }: { form?: string }) {
-  return (
-    <section className={styles.pendingTab} aria-live="polite">
-      <h2>Sức khỏe</h2>
-      <p>{form ? "Tính năng này sắp có." : "Nội dung này sẽ được cập nhật trong checkpoint tiếp theo."}</p>
-    </section>
   );
 }
 
@@ -80,7 +83,7 @@ type HealthSummaryQueryError = {
   hint?: string;
 };
 
-function logHealthSummaryError(stage: "vaccine_records" | "medical_records", error: HealthSummaryQueryError) {
+function logHealthSummaryError(stage: "vaccine_records" | "medical_records" | "health_logs", error: HealthSummaryQueryError) {
   console.error("[PET-HEALTH-SUMMARY] Query failed", {
     stage,
     code: error.code,
@@ -91,7 +94,9 @@ function logHealthSummaryError(stage: "vaccine_records" | "medical_records", err
 }
 
 function formatHealthCreatedAt(value: string) {
-  const date = new Date(value);
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? new Date(`${value}T12:00:00+07:00`)
+    : new Date(value);
   if (Number.isNaN(date.getTime())) return undefined;
 
   return new Intl.DateTimeFormat("vi-VN", {
@@ -138,6 +143,18 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
   const query = await searchParams;
   const activeTab = getDetailTab(query.tab);
   const form = Array.isArray(query.form) ? query.form[0] : query.form;
+  const healthView = activeTab === "health" ? getHealthView(query.view) : "history";
+  const healthPeriod = getHealthDashboardPeriod(query.period);
+  const isHealthForm = activeTab === "health" && form === "health-log";
+  const isHealthSubpage = isHealthForm;
+  const healthHistoryParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (key === "form" || key === "view" || key === "period" || value === undefined) continue;
+    if (Array.isArray(value)) value.forEach((item) => healthHistoryParams.append(key, item));
+    else healthHistoryParams.set(key, value);
+  }
+  healthHistoryParams.set("tab", "health");
+  const healthHistoryHref = `/pets/${encodeURIComponent(petId)}?${healthHistoryParams.toString()}`;
   const { data: petRow, error: petError } = await supabase
     .from("pets")
     .select("pet_id, owner_id, name, species, gender, breed, date_of_birth, picture_url, created_at, updated_at")
@@ -149,7 +166,7 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
   if (petError || !petRow) redirect("/dashboard");
 
   const pet = petRow as Pet;
-  const [vaccineSummary, medicalSummary, upcomingReminderResult] = await Promise.all([
+  const [vaccineSummary, medicalSummary, upcomingReminderResult, healthLogSummary] = await Promise.all([
     supabase
       .from("vaccine_records")
       .select("created_at", { count: "exact" })
@@ -172,10 +189,19 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
       .order("due_date", { ascending: true })
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from("health_logs")
+      .select("health_log_id, recorded_on, logged_at", { count: "exact" })
+      .eq("pet_id", pet.pet_id)
+      .order("recorded_on", { ascending: false })
+      .order("logged_at", { ascending: false })
+      .order("health_log_id", { ascending: false })
+      .limit(1),
   ]);
 
   if (vaccineSummary.error) logHealthSummaryError("vaccine_records", vaccineSummary.error);
   if (medicalSummary.error) logHealthSummaryError("medical_records", medicalSummary.error);
+  if (healthLogSummary.error) logHealthSummaryError("health_logs", healthLogSummary.error);
   if (upcomingReminderResult.error) logUpcomingReminderError(upcomingReminderResult.error);
 
   const healthSummaryError = Boolean(vaccineSummary.error || medicalSummary.error);
@@ -185,7 +211,15 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
   const latestHealthCreatedAt = healthSummaryError
     ? undefined
     : getLatestCreatedAt(vaccineSummary.data?.[0]?.created_at, medicalSummary.data?.[0]?.created_at);
-  const latestHealthUpdate = latestHealthCreatedAt ? formatHealthCreatedAt(latestHealthCreatedAt) : undefined;
+  const isHealthTab = activeTab === "health";
+  const profileSummaryError = isHealthTab ? Boolean(healthLogSummary.error) : healthSummaryError;
+  const profileRecordCount = isHealthTab
+    ? (healthLogSummary.error ? null : healthLogSummary.count ?? 0)
+    : totalHealthRecords;
+  const profileLatestCreatedAt = isHealthTab
+    ? (healthLogSummary.error ? undefined : healthLogSummary.data?.[0]?.recorded_on)
+    : latestHealthCreatedAt;
+  const latestHealthUpdate = profileLatestCreatedAt ? formatHealthCreatedAt(profileLatestCreatedAt) : undefined;
   const upcomingReminder = upcomingReminderResult.data
     ? upcomingReminderResult.data as PetOverviewReminder
     : null;
@@ -202,15 +236,15 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
       <AppHeader activeNav="pets" />
 
       <section
-        className={`${styles.shell} ${activeTab === "reminders" ? styles.petReminderShell : ""}`}
+        className={`${styles.shell} ${activeTab === "reminders" ? styles.petReminderShell : ""} ${isHealthTab ? styles.petHealthShell : ""}`}
         aria-labelledby="pet-detail-title"
       >
         <PetListPanelDecorations />
 
         <div className={styles.content}>
-          <Link className={styles.backLink} href="/dashboard">
+          <Link className={styles.backLink} href={isHealthSubpage ? healthHistoryHref : "/dashboard"}>
             <span className={styles.backArrow} aria-hidden="true" />
-            Thú cưng của bạn
+            {isHealthSubpage ? "Quay lại nhật ký sức khỏe" : "Thú cưng của bạn"}
           </Link>
 
           <p className={styles.subtitle} id="pet-detail-title">
@@ -226,18 +260,20 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
               <h1>{pet.name}</h1>
               <p className={styles.metadata}>{metadata.join(" • ")}</p>
               <span className={styles.vaccineStatus}>
-                {healthSummaryError
+                {profileSummaryError
                   ? "Chưa thể tải bản ghi sức khỏe"
-                  : totalHealthRecords !== null && totalHealthRecords > 0
-                    ? `${totalHealthRecords} bản ghi sức khỏe`
-                    : "Chưa có bản ghi sức khỏe"}
+                  : profileRecordCount !== null && profileRecordCount > 0
+                    ? isHealthTab
+                      ? `${profileRecordCount} bản ghi`
+                      : `${profileRecordCount} bản ghi sức khỏe`
+                    : isHealthTab ? "0 bản ghi" : "Chưa có bản ghi sức khỏe"}
               </span>
             </div>
 
             <div className={styles.profileAside}>
               <Link className={styles.editButton} href={`/pets/${encodeURIComponent(pet.pet_id)}/edit`}>Chỉnh sửa</Link>
               <p>
-                {healthSummaryError
+                {profileSummaryError
                   ? "Chưa thể tải cập nhật"
                   : latestHealthUpdate ? `Cập nhật gần nhất: ${latestHealthUpdate}` : "Chưa có cập nhật"}
               </p>
@@ -262,7 +298,16 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
               petName={pet.name}
             />
           )}
-          {activeTab === "health" && <PendingDetailTab form={form} />}
+          {activeTab === "health" && (
+            <PetHealthHistory
+              activeView={healthView}
+              currentUserId={claimsData.claims.sub}
+              formOpen={form === "health-log"}
+              initialPeriod={healthPeriod}
+              petId={pet.pet_id}
+              petName={pet.name}
+            />
+          )}
         </div>
       </section>
     </main>

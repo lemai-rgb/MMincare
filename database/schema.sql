@@ -131,8 +131,12 @@ create table public.health_logs (
   food_type text,
   status text,
   note text,
+  recorded_on date not null default ((now() at time zone 'Asia/Ho_Chi_Minh')::date),
   logged_at timestamptz not null default now(),
   constraint health_logs_weight_positive_check check (weight is null or weight > 0),
+  constraint health_logs_recorded_on_not_future_check check (
+    recorded_on <= ((now() at time zone 'Asia/Ho_Chi_Minh')::date)
+  ),
   constraint health_logs_at_least_one_field_check check (
     weight is not null
     or nullif(btrim(food_amount), '') is not null
@@ -191,8 +195,8 @@ create index reminders_source_vaccine_record_id_idx
   on public.reminders (source_vaccine_record_id);
 create index reminders_source_medical_record_id_idx
   on public.reminders (source_medical_record_id);
-create index health_logs_pet_logged_at_idx
-  on public.health_logs (pet_id, logged_at desc);
+create index health_logs_pet_recorded_on_logged_at_idx
+  on public.health_logs (pet_id, recorded_on desc, logged_at desc);
 create index health_logs_created_by_idx
   on public.health_logs (created_by);
 create index pet_access_caretaker_status_valid_until_idx

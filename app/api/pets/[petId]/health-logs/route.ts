@@ -6,9 +6,10 @@ type RouteContext = { params: Promise<{ petId: string }> };
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const BUSINESS_FIELDS = ["weight", "food_amount", "food_type", "status", "note"] as const;
+const ALLOWED_FIELDS = ["recorded_on", ...BUSINESS_FIELDS] as const;
 const TEXT_FIELDS = ["food_amount", "food_type", "status", "note"] as const;
 
-type BusinessField = (typeof BUSINESS_FIELDS)[number];
+type AllowedField = (typeof ALLOWED_FIELDS)[number];
 type TextField = (typeof TEXT_FIELDS)[number];
 
 function jsonError(message: string, status: number) {
@@ -44,6 +45,27 @@ function validWeight(value: unknown) {
   );
 }
 
+function getVietnamToday() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function validRecordedOn(value: unknown) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year
+    && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day
+    && value <= getVietnamToday();
+}
+
 async function getOwnedPet(
   supabase: Awaited<ReturnType<typeof createClient>>,
   petId: string,
@@ -75,8 +97,9 @@ export async function GET(_request: Request, { params }: RouteContext) {
 
   const { data: healthLogs, error: healthLogsError } = await supabase
     .from("health_logs")
-    .select("health_log_id, pet_id, created_by, weight, food_amount, food_type, status, note, logged_at")
+    .select("health_log_id, pet_id, created_by, recorded_on, weight, food_amount, food_type, status, note, logged_at")
     .eq("pet_id", petId)
+    .order("recorded_on", { ascending: false })
     .order("logged_at", { ascending: false })
     .order("health_log_id", { ascending: false });
 
@@ -110,8 +133,12 @@ export async function POST(request: Request, { params }: RouteContext) {
 
   const body = payload as Record<string, unknown>;
   const bodyKeys = Object.keys(body);
-  if (bodyKeys.some((key) => !BUSINESS_FIELDS.includes(key as BusinessField))) {
+  if (bodyKeys.some((key) => !ALLOWED_FIELDS.includes(key as AllowedField))) {
     return jsonError("Dữ liệu nhật ký sức khỏe không hợp lệ.", 400);
+  }
+
+  if (!validRecordedOn(body.recorded_on)) {
+    return jsonError("Ngày ghi nhận phải có định dạng YYYY-MM-DD, là ngày hợp lệ và không ở tương lai.", 400);
   }
 
   for (const field of TEXT_FIELDS as readonly TextField[]) {
@@ -143,10 +170,11 @@ export async function POST(request: Request, { params }: RouteContext) {
     .insert({
       pet_id: petId,
       created_by: userId,
+      recorded_on: body.recorded_on,
       weight: normalizedWeight,
       ...normalizedText,
     })
-    .select("health_log_id, pet_id, created_by, weight, food_amount, food_type, status, note, logged_at")
+    .select("health_log_id, pet_id, created_by, recorded_on, weight, food_amount, food_type, status, note, logged_at")
     .single();
 
   if (insertError || !healthLog) {
