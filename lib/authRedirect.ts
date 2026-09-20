@@ -19,6 +19,10 @@ export function getSafeAuthNext(value: string | null | undefined) {
     return value;
   }
 
+  if (value === "/reset-password") {
+    return value;
+  }
+
   try {
     const parsed = new URL(value, "http://mmincare.internal");
     const species = parseSpecies(parsed.searchParams.get("species"));

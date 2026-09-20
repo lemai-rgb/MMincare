@@ -157,7 +157,7 @@
   padding: 5px 9px;
   border: 0;
   background: transparent;
-  color: #7c7c7c;
+  color: var(--mm-text-secondary);
   font-size: 12px;
 }
 
@@ -185,12 +185,12 @@
   align-items: center;
   column-gap: 24px;
   margin: 0;
-  color: #7c7c7c;
+  color: var(--mm-text-secondary);
 }
 
 .petListToolbar h1 {
   margin: 0;
-  color: #7c7c7c;
+  color: var(--mm-text-secondary);
   font-size: 20px;
   font-weight: 600;
   line-height: 1.2;
@@ -400,7 +400,7 @@
 
 .petListHealthStatus {
   margin: 8px 0 0;
-  color: var(--mm-primary);
+  color: var(--mm-primary-dark);
   font-size: 24px;
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -440,7 +440,7 @@
 .petListUpdatedAt {
   max-width: 210px;
   margin: 0;
-  color: #a1a3ab;
+  color: var(--mm-text-secondary);
   font-size: 18px;
   line-height: 1.35;
   overflow-wrap: anywhere;

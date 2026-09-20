@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getAvailableAuthDestination, getSafeAuthNext } from "@/lib/authRedirect";
 import { createClient } from "@/lib/supabase/server";
 
-const CONFIRMATION_TYPES = new Set<EmailOtpType>(["signup", "email"]);
+const CONFIRMATION_TYPES = new Set<EmailOtpType>(["signup", "email", "recovery"]);
 
 export async function GET(request: NextRequest) {
   const tokenHash = request.nextUrl.searchParams.get("token_hash");

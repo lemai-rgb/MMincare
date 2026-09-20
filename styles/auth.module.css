@@ -187,7 +187,7 @@
   border: 0;
   border-radius: var(--radius-input);
   background: transparent;
-  color: #aaa;
+  color: var(--mm-text-secondary);
   cursor: pointer;
 }
 
@@ -217,6 +217,9 @@
 }
 
 .primaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 160px;
   height: 48px;
   margin: 38px auto 0;
@@ -262,6 +265,11 @@
 .primaryButton:disabled {
   cursor: not-allowed;
   opacity: 0.56;
+}
+
+.forgotPassword:disabled {
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .alternativeAuth {

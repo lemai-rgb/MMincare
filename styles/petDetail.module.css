@@ -22,7 +22,7 @@
   display: inline-flex;
   align-items: baseline;
   gap: 48px;
-  color: #6e8b6b;
+  color: var(--mm-primary);
   text-decoration: none;
   white-space: nowrap;
 }
@@ -34,7 +34,7 @@
 }
 
 .brand span:last-child {
-  color: #7c7c7c;
+  color: var(--mm-text-secondary);
   font-size: 16px;
 }
 
@@ -78,7 +78,7 @@
 }
 
 .activeNavItem {
-  color: #6e8b6b !important;
+  color: var(--mm-primary) !important;
   font-weight: 600;
 }
 
@@ -106,7 +106,7 @@
   align-items: center;
   gap: 17px;
   min-height: 30px;
-  color: #7c7c7c;
+  color: var(--mm-text-secondary);
   font-size: 20px;
   font-weight: 500;
   text-decoration: none;
@@ -209,7 +209,7 @@
   display: inline-flex;
   margin-top: 20px;
   padding: 10px 14px;
-  color: #6e8b6b;
+  color: var(--mm-primary-dark);
   background: #eff7ef;
   border-radius: 24px;
   font-size: 16px;
@@ -254,7 +254,7 @@
   min-width: 0;
   max-width: 100%;
   margin: 0;
-  color: #a1a3ab;
+  color: var(--mm-text-secondary);
   font-size: 15px;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -269,7 +269,7 @@
   min-height: 62px;
   margin: 64px auto 74px;
   padding: 7px 40px;
-  color: #b7b7b7;
+  color: var(--mm-text-secondary);
   background: rgb(237 245 236 / 93%);
   border: 1px solid #e8e2da;
   border-radius: 32px;
@@ -288,7 +288,7 @@
 }
 
 .tabBar .activeTab {
-  color: #7c7c7c;
+  color: var(--mm-text-secondary);
   background: #fffdf9;
   border: 1px solid #e8c99c;
   border-radius: 24px;
@@ -446,7 +446,7 @@
 .medicalEmptyState p {
   max-width: 420px;
   margin: 10px 0 0;
-  color: #85857e;
+  color: var(--mm-text-secondary);
   font-size: 15px;
   line-height: 1.5;
 }
@@ -473,7 +473,7 @@
 
 .pendingTab p {
   margin-top: 10px;
-  color: #85857e;
+  color: var(--mm-text-secondary);
 }
 
 .petHealthShell {
@@ -687,14 +687,14 @@
 
 .healthLatestSummary span {
   margin-top: 14px;
-  color: #a1a3ab;
+  color: var(--mm-text-secondary);
   font-size: 16px;
   line-height: 1.35;
 }
 
 .healthLatestSummary .healthSummaryMuted {
   margin: auto 0;
-  color: #85857e;
+  color: var(--mm-text-secondary);
   font-size: 16px;
 }
 
@@ -769,13 +769,13 @@
 }
 
 .healthSelectPlaceholder {
-  color: #bfbfbf !important;
+  color: var(--mm-placeholder) !important;
 }
 
 .healthCreateField input::placeholder,
 .healthCreateField textarea::placeholder,
 .healthCreateField select:invalid {
-  color: #bfbfbf;
+  color: var(--mm-placeholder);
 }
 
 .healthCreateField input:focus-visible,
@@ -811,7 +811,7 @@
 }
 
 .healthWeightControl:focus-within {
-  border-color: #6e8b6b;
+  border-color: var(--mm-primary);
   box-shadow: 0 0 0 2px rgb(110 139 107 / 18%);
 }
 
@@ -822,7 +822,7 @@
 .healthWeightControl > span {
   flex: 0 0 auto;
   padding-right: 16px;
-  color: #bfbfbf;
+  color: var(--mm-placeholder);
   font-size: 16px;
 }
 
@@ -900,8 +900,8 @@
 
 .healthCreateActions button:last-child {
   color: #fff;
-  background: #6e8b6b;
-  border-color: #6e8b6b;
+  background: var(--mm-primary);
+  border-color: var(--mm-primary);
 }
 
 .healthCreateActions button:disabled {
@@ -998,7 +998,7 @@
 
 .healthEmptyState p + p {
   max-width: 560px;
-  color: #85857e;
+  color: var(--mm-text-secondary);
   font-size: 16px;
 }
 
@@ -1135,7 +1135,7 @@
 
 .healthStatsEmpty {
   margin: auto 0 !important;
-  color: #85857e;
+  color: var(--mm-text-secondary);
   font-size: 18px;
   line-height: 1.4;
 }
@@ -1353,7 +1353,7 @@
 }
 
 .healthChartEmpty span {
-  color: #85857e;
+  color: var(--mm-text-secondary);
   font-size: 15px;
   line-height: 1.4;
 }
@@ -1364,7 +1364,7 @@
 }
 
 .healthStatsLoading > span {
-  color: #85857e;
+  color: var(--mm-text-secondary);
   font-size: 16px;
 }
 
@@ -1521,7 +1521,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  color: #6e8b6b;
+  color: var(--mm-primary-dark);
   font-size: 16px;
   line-height: 1.3;
 }
@@ -1554,7 +1554,7 @@
   align-items: center;
   gap: 9px;
   margin: 0;
-  color: #9b9da5;
+  color: var(--mm-text-secondary);
   font-size: 15px;
   line-height: 1.4;
 }
@@ -1573,7 +1573,7 @@
 .petReminderLoadError {
   margin: 0;
   padding: 24px;
-  color: #85857e;
+  color: var(--mm-text-secondary);
   background: #fff;
   border: 1px solid #e8e2da;
   border-radius: 22px;
@@ -1617,7 +1617,7 @@
 
 .petReminderFormHeader p {
   margin-top: 6px;
-  color: #85857e;
+  color: var(--mm-text-secondary);
   font-size: 14px;
   line-height: 1.45;
 }
@@ -1677,7 +1677,7 @@
 
 .petReminderField input::placeholder,
 .petReminderField textarea::placeholder {
-  color: #bfbfbf;
+  color: var(--mm-placeholder);
 }
 
 .petReminderField input:focus-visible,
@@ -1754,8 +1754,8 @@
 .petReminderFormActions button:last-child {
   min-width: 174px;
   color: #fff;
-  background: #6e8b6b;
-  border-color: #6e8b6b;
+  background: var(--mm-primary);
+  border-color: var(--mm-primary);
 }
 
 .petReminderFormActions button:disabled {
@@ -1803,7 +1803,7 @@
 }
 
 .medicalLoading {
-  color: #85857e;
+  color: var(--mm-text-secondary);
 }
 
 .medicalTimeline {
@@ -1818,7 +1818,7 @@
 
 .medicalMonth h2 {
   margin: 0;
-  color: #7c7c7c;
+  color: var(--mm-text-secondary);
   font-size: 14px;
   font-weight: 600;
   text-transform: capitalize;
@@ -1855,14 +1855,14 @@
 
 .medicalEntryCard p {
   margin-top: 4px;
-  color: #6e8b6b;
+  color: var(--mm-primary-dark);
   font-size: 14px;
 }
 
 .medicalEntryCard span:not([class]) {
   display: block;
   margin-top: 4px;
-  color: #85857e;
+  color: var(--mm-text-secondary);
   font-size: 13px;
 }
 
@@ -1984,7 +1984,7 @@
 
 .formPanelHeader p {
   margin-top: 6px;
-  color: #85857e;
+  color: var(--mm-text-secondary);
   font-size: 14px;
 }
 
@@ -2054,7 +2054,7 @@
   justify-content: center;
   gap: 8px !important;
   padding: 10px 12px;
-  color: #6e8b6b !important;
+  color: var(--mm-primary-dark) !important;
   background: #fff;
   border: 1px dashed #b9c8b6;
   border-radius: 10px;
@@ -2139,7 +2139,7 @@
 .medicalFileHelp {
   min-height: 30px;
   margin: 0;
-  color: #85857e;
+  color: var(--mm-text-secondary);
   font-size: 12px;
   line-height: 1.3;
 }
@@ -2178,8 +2178,8 @@
 .formPanelActions button:last-child,
 .suggestionActions button:last-child {
   color: #fff;
-  background: #6e8b6b;
-  border-color: #6e8b6b;
+  background: var(--mm-primary);
+  border-color: var(--mm-primary);
 }
 
 .formPanelActions button:disabled,
@@ -2229,7 +2229,7 @@
 
 .suggestionMuted,
 .suggestionWarning {
-  color: #7c7c7c !important;
+  color: var(--mm-text-secondary) !important;
   font-size: 15px !important;
 }
 
@@ -2320,7 +2320,7 @@
 .medicalRecordPreview > p {
   margin: 0;
   padding: 28px 18px;
-  color: #85857e;
+  color: var(--mm-text-secondary);
   background: #f0f5ef;
   border: 1px solid #e8e2da;
   border-radius: 18px;
@@ -2347,7 +2347,7 @@
 }
 
 .overviewHistoryList span {
-  color: #9b9da5;
+  color: var(--mm-text-secondary);
   white-space: nowrap;
 }
 
@@ -2358,7 +2358,7 @@
 
 .quickActionNotice {
   margin: 0;
-  color: #6e8b6b;
+  color: var(--mm-primary-dark);
   font-size: 13px;
   text-align: center;
 }
@@ -2691,7 +2691,7 @@
 
 .summaryCard p {
   margin: auto 0;
-  color: #6e8b6b;
+  color: var(--mm-primary-dark);
   font-size: 18px;
   line-height: 1.35;
 }
@@ -2701,7 +2701,7 @@
 }
 
 .summaryAction {
-  color: #6e8b6b;
+  color: var(--mm-primary-dark);
   font-size: 16px;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -2785,7 +2785,7 @@
 }
 
 .comingSoonLabel {
-  color: #9b9da5;
+  color: var(--mm-text-secondary);
   font-size: 12px;
   text-align: right;
 }
@@ -2808,7 +2808,7 @@
 
 .createPageHeader p {
   margin-top: 8px;
-  color: #85857e;
+  color: var(--mm-text-secondary);
   font-size: 16px;
 }
 

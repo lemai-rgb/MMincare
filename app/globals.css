@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --mm-primary: #6e8b6b;
+  --mm-primary: #5a7658;
   --mm-primary-dark: #4f6f52;
   --mm-canvas: #faf8f5;
   --mm-surface: #ffffff;
@@ -9,9 +9,9 @@
   --mm-auth-green-wash: #ddeBDD;
   --mm-text: #333333;
   --mm-text-home: #2d2d2d;
-  --mm-text-secondary: #7c7c7c;
-  --mm-placeholder: #bfbfbf;
-  --mm-gray-2: #aeaeb2;
+  --mm-text-secondary: #5f625f;
+  --mm-placeholder: #707570;
+  --mm-gray-2: #6f746f;
   --mm-border: #e8e2da;
   --mm-auth-border: #727272;
   --mm-elevated-subtle: #f2f2f7;
