@@ -84,11 +84,11 @@ async function getHealthLogs(petId: string, signal: AbortSignal) {
 
 function HealthLogCard({ log, currentUserId }: { log: HealthLog; currentUserId: string }) {
   const fields = useMemo(() => [
-    log.weight !== null ? <span key="weight">{formatWeight(log.weight)}</span> : null,
-    log.food_amount ? <span key="food-amount">{log.food_amount}</span> : null,
-    log.food_type ? <span key="food-type">{log.food_type}</span> : null,
+    log.weight !== null ? <span className={styles.healthLogMetric} key="weight">{formatWeight(log.weight)}</span> : null,
+    log.food_amount ? <span className={styles.healthLogMetric} key="food-amount">{log.food_amount}</span> : null,
+    log.food_type ? <span className={styles.healthLogMetric} key="food-type">{log.food_type}</span> : null,
     log.status ? <span className={styles.healthLogWide} key="status">Tình trạng: {log.status}</span> : null,
-    log.note ? <span className={styles.healthLogWide} key="note">Ghi chú: {log.note}</span> : null,
+    log.note ? <span className={`${styles.healthLogWide} ${styles.healthLogNote}`} key="note">Ghi chú: {log.note}</span> : null,
   ].filter(Boolean), [log]);
 
   return (

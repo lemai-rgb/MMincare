@@ -35,15 +35,24 @@ export type WeightTrendPoint = {
   logged_at: string;
 };
 
+export type HealthStatusRecord = {
+  health_log_id: string;
+  status: string;
+  recorded_on: string;
+  logged_at: string;
+};
+
 export type StatusCount = {
   status: HealthStatusGroup;
   label: HealthStatusGroup;
   count: number;
+  records: HealthStatusRecord[];
 };
 
 export type OtherStatusBreakdownEntry = {
   label: string;
   count: number;
+  records: HealthStatusRecord[];
 };
 
 export type HealthDashboardData = {
@@ -215,18 +224,36 @@ export function aggregateStatusCounts(rows: HealthLogDashboardRow[], range: Peri
   const counts = new Map<HealthStatusGroup, number>(
     HEALTH_STATUS_GROUPS.map((status) => [status, 0]),
   );
+  const records = new Map<HealthStatusGroup, HealthStatusRecord[]>(
+    HEALTH_STATUS_GROUPS.map((status) => [status, []]),
+  );
 
   for (const row of rows) {
     if (!hasRecordedOnWithinRange(row.recorded_on, range)) continue;
     const group = getHealthStatusGroup(row.status);
-    if (group) counts.set(group, (counts.get(group) ?? 0) + 1);
+    if (!group) continue;
+
+    counts.set(group, (counts.get(group) ?? 0) + 1);
+    records.get(group)?.push({
+      health_log_id: row.health_log_id,
+      status: row.status!.trim(),
+      recorded_on: row.recorded_on,
+      logged_at: row.logged_at,
+    });
   }
 
   return HEALTH_STATUS_GROUPS.map((status) => ({
     status,
     label: status,
     count: counts.get(status) ?? 0,
+    records: (records.get(status) ?? []).sort(compareHealthStatusRecords),
   }));
+}
+
+function compareHealthStatusRecords(left: HealthStatusRecord, right: HealthStatusRecord) {
+  return right.recorded_on.localeCompare(left.recorded_on)
+    || Date.parse(right.logged_at) - Date.parse(left.logged_at)
+    || right.health_log_id.localeCompare(left.health_log_id);
 }
 
 function normalizeOtherStatusKey(value: string) {
@@ -250,11 +277,24 @@ export function aggregateOtherStatusBreakdown(
 
     const key = normalizeOtherStatusKey(label);
     const existing = counts.get(key);
-    if (existing) existing.count += 1;
-    else counts.set(key, { label, count: 1 });
+    const record = {
+      health_log_id: row.health_log_id,
+      status: label,
+      recorded_on: row.recorded_on,
+      logged_at: row.logged_at,
+    };
+    if (existing) {
+      existing.count += 1;
+      existing.records.push(record);
+    } else {
+      counts.set(key, { label, count: 1, records: [record] });
+    }
   }
 
   return [...counts.values()].sort((left, right) => (
     right.count - left.count || left.label.localeCompare(right.label, "vi", { sensitivity: "base" })
-  ));
+  )).map((entry) => ({
+    ...entry,
+    records: entry.records.sort(compareHealthStatusRecords),
+  }));
 }

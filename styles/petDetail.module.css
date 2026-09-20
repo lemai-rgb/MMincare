@@ -953,6 +953,18 @@
   grid-column: 1 / -1;
 }
 
+.healthLogMetric {
+  font-weight: 700;
+}
+
+.healthLogNote {
+  margin-top: 4px;
+  color: var(--mm-text-secondary);
+  font-size: 0.875em;
+  font-style: italic;
+  line-height: 1.5;
+}
+
 .healthLogCreator {
   margin: 28px 0 0;
   color: #111;
@@ -1223,9 +1235,38 @@
   cursor: default;
 }
 
+.healthStatusChartStage {
+  position: relative;
+  width: 100%;
+  overflow: visible;
+}
+
+.healthStatusChartViewport {
+  width: 100%;
+  overflow: visible;
+}
+
+.healthStatusBarGroup {
+  cursor: pointer;
+  outline: none;
+}
+
 .healthStatusBarInteractive,
 .healthStatusLabelInteractive {
   cursor: pointer;
+}
+
+.healthStatusBarGroup:focus-visible .healthStatusBar,
+.healthStatusBarActive {
+  stroke: #2f5134;
+  stroke-width: 3;
+}
+
+.healthStatusBarGroup:focus-visible .healthChartText,
+.healthStatusLabelActive {
+  fill: #2f5134;
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 .healthStatusBarInteractive:focus-visible,
@@ -1242,6 +1283,51 @@
   fill: #2f5134;
   font-weight: 700;
   text-decoration: underline;
+}
+
+.healthStatusTooltip {
+  position: absolute;
+  z-index: 5;
+  top: 8px;
+  width: 238px;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  transform: translateX(-50%);
+  color: #20211f;
+  background: #fff;
+  border: 1px solid #cbd8c7;
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgb(32 33 31 / 16%);
+  font-size: 12px;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.healthStatusTooltip > strong,
+.healthStatusTooltip > span {
+  display: block;
+}
+
+.healthStatusTooltip > strong {
+  color: #2f5134;
+  font-size: 14px;
+}
+
+.healthStatusTooltipRecord {
+  display: grid;
+  gap: 1px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid #e1e8de;
+}
+
+.healthStatusTooltipRecord b {
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.healthStatusTooltipRecord span {
+  color: #686962;
 }
 
 .healthOtherBreakdown {
@@ -1311,6 +1397,19 @@
   font-size: 15px;
 }
 
+.healthOtherBreakdownList > li {
+  display: grid;
+  gap: 8px;
+}
+
+.healthOtherBreakdownEntryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+}
+
 .healthOtherBreakdownList li span {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1322,6 +1421,29 @@
   color: #2f5134;
   font-weight: 600;
   white-space: nowrap;
+}
+
+.healthOtherBreakdownDates {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0 0 0 14px;
+  list-style: none;
+}
+
+.healthOtherBreakdownDates li {
+  display: grid;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  color: #686962;
+  font-size: 13px;
+}
+
+.healthOtherBreakdownDates li span {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .healthChartEmpty,
@@ -2644,12 +2766,17 @@
     font-size: 12px;
   }
 
-  .healthStatusChartGraphic {
+  .healthStatusChartViewport {
     overflow-x: auto;
     overscroll-behavior-inline: contain;
   }
 
-  .healthStatusChartGraphic .healthChartSvg {
+  .healthStatusChartStage {
+    width: 600px;
+    min-width: 600px;
+  }
+
+  .healthStatusChartStage .healthChartSvg {
     min-width: 600px;
   }
 
