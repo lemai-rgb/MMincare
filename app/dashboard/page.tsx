@@ -36,6 +36,39 @@ function formatUpdatedAt(value: string) {
   return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
 }
 
+type LatestHealthLog = {
+  pet_id: string;
+  health_log_id: string;
+  recorded_on: string;
+  logged_at: string;
+  weight: number | null;
+  food_amount: string | null;
+  food_type: string | null;
+  status: string | null;
+};
+
+function formatRecordedOn(value: string) {
+  const date = new Date(`${value}T00:00:00+07:00`);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(date);
+}
+
+function getHealthLogSummary(log: LatestHealthLog) {
+  const details = [
+    log.status,
+    log.weight === null ? undefined : `${log.weight} kg`,
+    log.food_type,
+    log.food_amount,
+  ].filter(Boolean).join(" · ");
+  const date = formatRecordedOn(log.recorded_on);
+  return `Nhật ký gần nhất${date ? `: ${date}` : ""}${details ? ` · ${details}` : ""}`;
+}
+
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
@@ -49,6 +82,32 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     .order("created_at", { ascending: false });
 
   const pets = (petRows ?? []) as Pet[];
+  const latestHealthLogs = new Map<string, LatestHealthLog>();
+  let healthLogsError: { code?: string; message?: string; details?: string; hint?: string } | null = null;
+
+  if (pets.length > 0) {
+    const { data: healthLogRows, error } = await supabase
+      .from("health_logs")
+      .select("pet_id, health_log_id, recorded_on, logged_at, weight, food_amount, food_type, status")
+      .in("pet_id", pets.map((pet) => pet.pet_id))
+      .order("recorded_on", { ascending: false })
+      .order("logged_at", { ascending: false })
+      .order("health_log_id", { ascending: false });
+
+    if (error) {
+      healthLogsError = error;
+      console.error("[PET-LIST-HEALTH] Query failed", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
+    } else {
+      for (const row of (healthLogRows ?? []) as LatestHealthLog[]) {
+        if (!latestHealthLogs.has(row.pet_id)) latestHealthLogs.set(row.pet_id, row);
+      }
+    }
+  }
   const params = await searchParams;
   const requestedSpecies = Array.isArray(params.species) ? params.species[0] : params.species;
   const species = parseSpecies(requestedSpecies);
@@ -72,6 +131,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             {pets.map((pet) => {
               const age = getPetAgeLabel(pet.date_of_birth);
               const updatedAt = formatUpdatedAt(pet.updated_at ?? pet.created_at);
+              const latestHealthLog = latestHealthLogs.get(pet.pet_id);
 
               return (
                 <article className={styles.petListCard} key={pet.pet_id}>
@@ -87,7 +147,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                       <li>{getPetGenderLabel(pet.gender)}</li>
                       {age && <li>{age}</li>}
                     </ul>
-                    <p className={styles.petListHealthStatus}>Chưa có thông tin sức khỏe</p>
+                    <p className={styles.petListHealthStatus} role={healthLogsError ? "alert" : undefined}>
+                      {healthLogsError
+                        ? "Không thể tải thông tin sức khỏe"
+                        : latestHealthLog
+                          ? getHealthLogSummary(latestHealthLog)
+                          : "Chưa có nhật ký sức khỏe"}
+                    </p>
                   </div>
                   <div className={styles.petListActions}>
                     <Link className={styles.petListPreviewButton} href={`/pets/${pet.pet_id}`}>

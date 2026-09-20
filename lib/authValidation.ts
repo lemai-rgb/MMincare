@@ -35,19 +35,31 @@ export function validateRegister(values: {
   const emailError = validateEmail(values.email);
 
   if (emailError) errors.email = emailError;
-  if (!values.password) {
+  Object.assign(errors, validatePasswordFields(values.password, values.confirmPassword));
+
+  return errors;
+}
+
+function validatePasswordFields(password: string, confirmPassword: string) {
+  const errors: AuthFieldErrors = {};
+
+  if (!password) {
     errors.password = "Vui lòng nhập mật khẩu";
-  } else if (values.password.length < 8) {
+  } else if (password.length < 8) {
     errors.password = "Mật khẩu phải có ít nhất 8 ký tự";
-  } else if (!/\d/.test(values.password)) {
+  } else if (!/\d/.test(password)) {
     errors.password = "Mật khẩu phải có ít nhất một chữ số";
   }
 
-  if (!values.confirmPassword) {
+  if (!confirmPassword) {
     errors.confirmPassword = "Vui lòng xác nhận mật khẩu";
-  } else if (values.confirmPassword !== values.password) {
+  } else if (confirmPassword !== password) {
     errors.confirmPassword = "Mật khẩu xác nhận không khớp";
   }
 
   return errors;
+}
+
+export function validatePasswordReset(values: { password: string; confirmPassword: string }) {
+  return validatePasswordFields(values.password, values.confirmPassword);
 }
