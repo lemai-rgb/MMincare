@@ -211,9 +211,9 @@ function StatusFrequencyChart({
     ? dimensions.left + ((activeIndex + 0.5) / counts.length) * plotWidth
     : 0;
   const tooltipWidth = 238;
-  const tooltipX = Math.min(
-    Math.max(activeCenter - tooltipWidth / 2, 8),
-    dimensions.width - tooltipWidth - 8,
+  const tooltipCenterX = Math.min(
+    Math.max(activeCenter, tooltipWidth / 2 + 8),
+    dimensions.width - tooltipWidth / 2 - 8,
   );
 
   useEffect(() => {
@@ -355,7 +355,7 @@ function StatusFrequencyChart({
           className={styles.healthStatusTooltip}
           id={tooltipId}
           role="tooltip"
-          style={{ left: `${(tooltipX / dimensions.width) * 100}%` }}
+          style={{ left: `${(tooltipCenterX / dimensions.width) * 100}%` }}
         >
           <strong>{activeCount.label}</strong>
           <span>{activeCount.count} lần ghi nhận</span>
