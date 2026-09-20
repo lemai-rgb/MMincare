@@ -953,6 +953,18 @@
   grid-column: 1 / -1;
 }
 
+.healthLogMetric {
+  font-weight: 700;
+}
+
+.healthLogNote {
+  margin-top: 4px;
+  color: var(--mm-text-secondary);
+  font-size: 0.875em;
+  font-style: italic;
+  line-height: 1.5;
+}
+
 .healthLogCreator {
   margin: 28px 0 0;
   color: #111;

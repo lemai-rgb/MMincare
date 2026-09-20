@@ -25,7 +25,8 @@ type HealthLogsPayload = {
   error?: string;
 };
 
-const WEIGHT_CHART_DIMENSIONS = { width: 600, height: 240, left: 56, right: 26, top: 20, bottom: 44 };
+// Reserve separate rows for the unit, date ticks, and horizontal-axis title.
+const WEIGHT_CHART_DIMENSIONS = { width: 600, height: 288, left: 72, right: 40, top: 40, bottom: 72 };
 const STATUS_CHART_DIMENSIONS = { width: 600, height: 252, left: 48, right: 24, top: 20, bottom: 58 };
 
 function formatDate(value: string) {
@@ -153,13 +154,13 @@ function WeightTrendChart({ points, titleId }: { points: WeightTrendPoint[]; tit
             <g key={tick}>
               <line className={styles.healthChartTick} x1={dimensions.left - 7} x2={dimensions.left} y1={y} y2={y} />
               <text className={styles.healthChartText} textAnchor="end" x={dimensions.left - 12} y={y + 5}>
-                {new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 }).format(tick)}
+                {new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(tick)}
               </text>
             </g>
           );
         })}
-        <text className={styles.healthChartLabel} x={12} y={dimensions.top + 12}>kg</text>
-        <text className={styles.healthChartLabel} textAnchor="end" x={dimensions.width - dimensions.right} y={dimensions.height - 8}>Thời gian</text>
+        <text className={styles.healthChartLabel} x={dimensions.left} y={dimensions.top - 22}>kg</text>
+        <text className={styles.healthChartLabel} textAnchor="middle" x={dimensions.left + plotWidth / 2} y={dimensions.height - 12}>Thời gian</text>
         <polyline className={styles.healthTrendLine} fill="none" points={polyline} />
         {pointsWithCoordinates.map((point) => (
           <g key={`${point.logged_at}-${point.index}`}>
@@ -174,7 +175,12 @@ function WeightTrendChart({ points, titleId }: { points: WeightTrendPoint[]; tit
               <title>{`${formatDateTime(point.logged_at)}: ${formatWeight(point.weight)}`}</title>
             </circle>
             {(point.index % labelEvery === 0 || point.index === points.length - 1) && (
-              <text className={styles.healthChartText} textAnchor="middle" x={point.x} y={dimensions.height - dimensions.bottom + 25}>
+              <text
+                className={styles.healthChartText}
+                textAnchor={point.index === 0 ? "start" : point.index === points.length - 1 ? "end" : "middle"}
+                x={point.x}
+                y={dimensions.height - dimensions.bottom + 25}
+              >
                 {formatDate(point.recorded_on).slice(0, 5)}
               </text>
             )}
