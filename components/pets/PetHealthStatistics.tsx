@@ -6,6 +6,7 @@ import {
   aggregateOtherStatusBreakdown,
   type HealthDashboardData,
   type HealthDashboardPeriod,
+  type HealthStatusRecord,
   type OtherStatusBreakdownEntry,
   type StatusCount,
   type WeightTrendPoint,
@@ -14,16 +15,6 @@ import { getReminderTypeLabel, type ReminderType } from "@/lib/reminders";
 import styles from "@/styles/petDetail.module.css";
 
 type DashboardPayload = HealthDashboardData & { error?: string };
-type HealthLogsPayload = {
-  health_logs?: Array<{
-    health_log_id: string;
-    recorded_on: string;
-    weight: number | null;
-    status: string | null;
-    logged_at: string;
-  }>;
-  error?: string;
-};
 
 // Reserve separate rows for the unit, date ticks, and horizontal-axis title.
 const WEIGHT_CHART_DIMENSIONS = { width: 600, height: 288, left: 72, right: 40, top: 40, bottom: 72 };
@@ -50,6 +41,21 @@ function formatDateTime(value: string) {
   return new Intl.DateTimeFormat("vi-VN", {
     day: "2-digit",
     month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(date);
+}
+
+function formatLoggedAt(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--/--/---- --:--";
+
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -88,19 +94,6 @@ async function getDashboard(petId: string, period: HealthDashboardPeriod, signal
   }
 
   return payload;
-}
-
-async function getHealthLogs(petId: string, signal: AbortSignal) {
-  const response = await fetch(`/api/pets/${encodeURIComponent(petId)}/health-logs`, {
-    cache: "no-store",
-    signal,
-  });
-  const payload = await response.json() as HealthLogsPayload;
-  if (!response.ok || !Array.isArray(payload.health_logs)) {
-    throw new Error("Health log history request failed");
-  }
-
-  return payload.health_logs;
 }
 
 function WeightTrendChart({ points, titleId }: { points: WeightTrendPoint[]; titleId: string }) {
@@ -202,15 +195,92 @@ function StatusFrequencyChart({
   onOpenOther: () => void;
 }) {
   const descriptionId = useId();
+  const tooltipId = useId();
+  const chartRef = useRef<HTMLDivElement>(null);
+  const [activeStatus, setActiveStatus] = useState<string | null>(null);
+  const [isTooltipPinned, setIsTooltipPinned] = useState(false);
   const dimensions = STATUS_CHART_DIMENSIONS;
   const plotWidth = dimensions.width - dimensions.left - dimensions.right;
   const plotHeight = dimensions.height - dimensions.top - dimensions.bottom;
   const maxCount = Math.max(...counts.map((count) => count.count), 1);
   const yMax = Math.max(4, Math.ceil(maxCount / 4) * 4);
   const barWidth = Math.min(118, (plotWidth / counts.length) * 0.72);
+  const activeCount = counts.find((count) => count.status === activeStatus) ?? null;
+  const activeIndex = activeCount ? counts.findIndex((count) => count.status === activeCount.status) : -1;
+  const activeCenter = activeIndex >= 0
+    ? dimensions.left + ((activeIndex + 0.5) / counts.length) * plotWidth
+    : 0;
+  const tooltipWidth = 238;
+  const tooltipX = Math.min(
+    Math.max(activeCenter - tooltipWidth / 2, 8),
+    dimensions.width - tooltipWidth - 8,
+  );
+
+  useEffect(() => {
+    function handleEscape(event: globalThis.KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setActiveStatus(null);
+      setIsTooltipPinned(false);
+    }
+
+    function handleOutsidePointerDown(event: PointerEvent) {
+      if (chartRef.current && !chartRef.current.contains(event.target as Node)) {
+        setActiveStatus(null);
+        setIsTooltipPinned(false);
+      }
+    }
+
+    document.addEventListener("keydown", handleEscape);
+    document.addEventListener("pointerdown", handleOutsidePointerDown);
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("pointerdown", handleOutsidePointerDown);
+    };
+  }, []);
+
+  function showTooltip(status: string) {
+    if (activeStatus !== status) setIsTooltipPinned(false);
+    setActiveStatus(status);
+  }
+
+  function hideTooltip() {
+    if (!isTooltipPinned) setActiveStatus(null);
+  }
+
+  function toggleTooltip(status: string) {
+    if (activeStatus === status && isTooltipPinned) {
+      setActiveStatus(null);
+      setIsTooltipPinned(false);
+      return;
+    }
+
+    setActiveStatus(status);
+    setIsTooltipPinned(true);
+  }
+
+  function handleBarKeyDown(event: KeyboardEvent<SVGGElement>, count: StatusCount) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setActiveStatus(null);
+      setIsTooltipPinned(false);
+      return;
+    }
+    if (event.key !== "Enter" && event.key !== " ") return;
+
+    event.preventDefault();
+    toggleTooltip(count.status);
+    if (count.status === counts.at(-1)?.status && count.count > 0) onOpenOther();
+  }
+
+  function handleBarClick(count: StatusCount) {
+    toggleTooltip(count.status);
+    if (count.status === counts.at(-1)?.status && count.count > 0) onOpenOther();
+  }
 
   return (
-    <div className={`${styles.healthChartGraphic} ${styles.healthStatusChartGraphic}`}>
+    <div className={styles.healthStatusChartViewport}>
+      <div className={styles.healthStatusChartStage} ref={chartRef}>
+        <div className={styles.healthChartGraphic}>
       <svg
         aria-describedby={descriptionId}
         aria-label="Biểu đồ tần suất trạng thái"
@@ -233,27 +303,29 @@ function StatusFrequencyChart({
           const center = dimensions.left + ((index + 0.5) / counts.length) * plotWidth;
           const height = (count.count / yMax) * plotHeight;
           const y = dimensions.height - dimensions.bottom - height;
-          const isOther = count.status === "Khác";
-          const canOpenOther = isOther && count.count > 0;
-          const labelLines = count.label === "Ăn kém/Bỏ ăn" ? ["Ăn kém/", "Bỏ ăn"] : [count.label];
-
-          function handleOtherKeyDown(event: KeyboardEvent<SVGElement>) {
-            if (!canOpenOther || (event.key !== "Enter" && event.key !== " ")) return;
-            event.preventDefault();
-            onOpenOther();
-          }
+          const canOpenOther = count.status === counts.at(-1)?.status && count.count > 0;
+          const labelLines = count.label.includes("/") ? count.label.split("/") : [count.label];
+          const isActive = count.status === activeStatus;
 
           return (
-            <g key={count.status}>
+            <g
+              aria-describedby={isActive ? tooltipId : undefined}
+              aria-label={`${count.label}: ${count.count} lần ghi nhận`}
+              className={styles.healthStatusBarGroup}
+              key={count.status}
+              onBlur={hideTooltip}
+              onClick={() => handleBarClick(count)}
+              onFocus={() => showTooltip(count.status)}
+              onKeyDown={(event) => handleBarKeyDown(event, count)}
+              onMouseEnter={() => showTooltip(count.status)}
+              onMouseLeave={hideTooltip}
+              role="button"
+              tabIndex={0}
+            >
               <rect
-                aria-label={`${count.label}: ${count.count} lần`}
-                className={`${styles.healthStatusBar} ${canOpenOther ? styles.healthStatusBarInteractive : ""}`}
+                className={`${styles.healthStatusBar} ${canOpenOther ? styles.healthStatusBarInteractive : ""} ${isActive ? styles.healthStatusBarActive : ""}`}
                 height={height}
                 rx={2}
-                onClick={canOpenOther ? onOpenOther : undefined}
-                onKeyDown={handleOtherKeyDown}
-                role={canOpenOther ? "button" : undefined}
-                tabIndex={canOpenOther ? 0 : undefined}
                 width={barWidth}
                 x={center - barWidth / 2}
                 y={y}
@@ -261,12 +333,7 @@ function StatusFrequencyChart({
                 <title>{`${count.label}: ${count.count} lần`}</title>
               </rect>
               <text
-                aria-label={canOpenOther ? `Xem chi tiết ${count.label}` : undefined}
-                className={`${styles.healthChartText} ${canOpenOther ? styles.healthStatusLabelInteractive : ""}`}
-                onClick={canOpenOther ? onOpenOther : undefined}
-                onKeyDown={handleOtherKeyDown}
-                role={canOpenOther ? "button" : undefined}
-                tabIndex={canOpenOther ? 0 : undefined}
+                className={`${styles.healthChartText} ${canOpenOther ? styles.healthStatusLabelInteractive : ""} ${isActive ? styles.healthStatusLabelActive : ""}`}
                 textAnchor="middle"
                 x={center}
                 y={dimensions.height - dimensions.bottom + 25}
@@ -278,10 +345,33 @@ function StatusFrequencyChart({
             </g>
           );
         })}
-      </svg>
-      <p className={styles.healthVisuallyHidden} id={descriptionId}>
-        {counts.map((count) => `${count.label}: ${count.count} lần`).join("; ")}
-      </p>
+        </svg>
+        <p className={styles.healthVisuallyHidden} id={descriptionId}>
+          {counts.map((count) => `${count.label}: ${count.count} lần`).join("; ")}
+        </p>
+        </div>
+        {activeCount && (
+        <div
+          className={styles.healthStatusTooltip}
+          id={tooltipId}
+          role="tooltip"
+          style={{ left: `${(tooltipX / dimensions.width) * 100}%` }}
+        >
+          <strong>{activeCount.label}</strong>
+          <span>{activeCount.count} lần ghi nhận</span>
+          {activeCount.records.slice(0, 3).map((record: HealthStatusRecord) => (
+            <div className={styles.healthStatusTooltipRecord} key={record.health_log_id}>
+              <b>{record.status}</b>
+              <span>Ngày nhật ký: {formatDate(record.recorded_on)}</span>
+              <span>Được nhập lúc: {formatLoggedAt(record.logged_at)}</span>
+            </div>
+          ))}
+          {activeCount.count > activeCount.records.slice(0, 3).length && (
+            <span>Và {activeCount.count - activeCount.records.slice(0, 3).length} lần ghi nhận khác</span>
+          )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -327,16 +417,10 @@ function SummaryCards({ data }: { data: HealthDashboardData }) {
 
 function OtherStatusBreakdown({
   entries,
-  isLoading,
-  error,
   onClose,
-  onRetry,
 }: {
   entries: OtherStatusBreakdownEntry[];
-  isLoading: boolean;
-  error: boolean;
   onClose: () => void;
-  onRetry: () => void;
 }) {
   const total = entries.reduce((sum, entry) => sum + entry.count, 0);
 
@@ -345,28 +429,29 @@ function OtherStatusBreakdown({
       <div className={styles.healthOtherBreakdownHeader}>
         <div>
           <h4 id="other-status-breakdown-title">Chi tiết tình trạng khác</h4>
-          {!isLoading && !error && <span>{total} lần</span>}
+          <span>{total} lần</span>
         </div>
         <button aria-label="Đóng chi tiết tình trạng khác" onClick={onClose} type="button">Đóng</button>
       </div>
 
-      {isLoading && <p className={styles.healthOtherBreakdownMessage}>Đang tải chi tiết tình trạng khác…</p>}
-      {error && (
-        <div className={styles.healthOtherBreakdownError} role="alert">
-          <p>Không thể tải chi tiết tình trạng khác lúc này.</p>
-          <button onClick={onRetry} type="button">Thử lại</button>
-        </div>
-      )}
-      {!isLoading && !error && (
-        <ul className={styles.healthOtherBreakdownList}>
-          {entries.map((entry) => (
-            <li key={entry.label}>
+      <ul className={styles.healthOtherBreakdownList}>
+        {entries.map((entry) => (
+          <li key={entry.label}>
+            <div className={styles.healthOtherBreakdownEntryHeader}>
               <span>{entry.label}</span>
               <strong>{entry.count} lần</strong>
-            </li>
-          ))}
-        </ul>
-      )}
+            </div>
+            <ul className={styles.healthOtherBreakdownDates}>
+              {entry.records.map((record) => (
+                <li key={record.health_log_id}>
+                  <span>Ngày nhật ký: {formatDate(record.recorded_on)}</span>
+                  <span>Được nhập lúc: {formatLoggedAt(record.logged_at)}</span>
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -387,11 +472,7 @@ export function PetHealthStatistics({
     periodEnd: string;
   } | null>(null);
   const [otherBreakdown, setOtherBreakdown] = useState<OtherStatusBreakdownEntry[]>([]);
-  const [isOtherBreakdownLoading, setIsOtherBreakdownLoading] = useState(false);
-  const [otherBreakdownError, setOtherBreakdownError] = useState(false);
   const requestId = useRef(0);
-  const otherBreakdownRequestId = useRef(0);
-  const otherBreakdownController = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const activeRequestId = ++requestId.current;
@@ -422,44 +503,25 @@ export function PetHealthStatistics({
   }
 
   function closeOtherBreakdown() {
-    otherBreakdownController.current?.abort();
     setOtherPanelRange(null);
-    setIsOtherBreakdownLoading(false);
   }
 
   function openOtherBreakdown() {
     const activeData = data;
-    const otherCount = activeData?.status_counts.find((count) => count.status === "Khác")?.count ?? 0;
-    if (!activeData || otherCount === 0) return;
+    const otherCount = activeData?.status_counts.at(-1);
+    if (!activeData || !otherCount || otherCount.count === 0) return;
 
-    otherBreakdownController.current?.abort();
-    const controller = new AbortController();
-    const activeRequestId = ++otherBreakdownRequestId.current;
-    otherBreakdownController.current = controller;
     setOtherPanelRange({ period: activeData.period, periodEnd: activeData.period_end });
-    setOtherBreakdown([]);
-    setOtherBreakdownError(false);
-    setIsOtherBreakdownLoading(true);
-
-    void getHealthLogs(petId, controller.signal)
-      .then((healthLogs) => {
-        if (activeRequestId !== otherBreakdownRequestId.current || controller.signal.aborted) return;
-        setOtherBreakdown(aggregateOtherStatusBreakdown(healthLogs, {
-          period: activeData.period,
-          period_start: activeData.period_start,
-          period_end: activeData.period_end,
-        }));
-      })
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        if (activeRequestId !== otherBreakdownRequestId.current || controller.signal.aborted) return;
-        setOtherBreakdownError(true);
-      })
-      .finally(() => {
-        if (activeRequestId === otherBreakdownRequestId.current && !controller.signal.aborted) {
-          setIsOtherBreakdownLoading(false);
-        }
-      });
+    setOtherBreakdown(aggregateOtherStatusBreakdown(
+      otherCount.records.map((record) => ({
+        health_log_id: record.health_log_id,
+        recorded_on: record.recorded_on,
+        weight: null,
+        status: record.status,
+        logged_at: record.logged_at,
+      })),
+      activeData,
+    ));
   }
 
   const loadError = failedPeriod === period;
@@ -523,10 +585,7 @@ export function PetHealthStatistics({
                   {isOtherBreakdownOpen && (
                     <OtherStatusBreakdown
                       entries={otherBreakdown}
-                      error={otherBreakdownError}
-                      isLoading={isOtherBreakdownLoading}
                       onClose={closeOtherBreakdown}
-                      onRetry={openOtherBreakdown}
                     />
                   )}
                 </>
