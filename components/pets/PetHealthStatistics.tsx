@@ -34,20 +34,6 @@ function formatDate(value: string) {
   }).format(date);
 }
 
-function formatDateTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "--/--/----";
-
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "Asia/Ho_Chi_Minh",
-  }).format(date);
-}
-
 function formatLoggedAt(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "--/--/---- --:--";
@@ -96,12 +82,35 @@ async function getDashboard(petId: string, period: HealthDashboardPeriod, signal
   return payload;
 }
 
-function WeightTrendChart({ points, titleId }: { points: WeightTrendPoint[]; titleId: string }) {
+function getWeightChartPeriodEnd(period: HealthDashboardPeriod, periodStart: string) {
+  const [year, month, day] = periodStart.slice(0, 10).split("-").map(Number);
+  if (![year, month, day].every(Number.isFinite)) return periodStart.slice(0, 10);
+
+  const end = new Date(Date.UTC(year, period === "week" ? month - 1 : month, period === "week" ? day + 6 : 0));
+  return [end.getUTCFullYear(), String(end.getUTCMonth() + 1).padStart(2, "0"), String(end.getUTCDate()).padStart(2, "0")].join("-");
+}
+
+function WeightTrendChart({
+  period,
+  periodStart,
+  points,
+  titleId,
+}: {
+  period: HealthDashboardPeriod;
+  periodStart: string;
+  points: WeightTrendPoint[];
+  titleId: string;
+}) {
   const descriptionId = useId();
+  const tooltipId = useId();
+  const chartRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [isTooltipPinned, setIsTooltipPinned] = useState(false);
   const dimensions = WEIGHT_CHART_DIMENSIONS;
   const plotWidth = dimensions.width - dimensions.left - dimensions.right;
   const plotHeight = dimensions.height - dimensions.top - dimensions.bottom;
-  const labelEvery = Math.max(1, Math.ceil(points.length / 6));
+  const periodStartDate = periodStart.slice(0, 10);
+  const periodEndDate = getWeightChartPeriodEnd(period, periodStartDate);
   const { polyline, pointsWithCoordinates, yTicks } = useMemo(() => {
     const weights = points.map((point) => point.weight);
     const rawMin = Math.min(...weights);
@@ -110,14 +119,12 @@ function WeightTrendChart({ points, titleId }: { points: WeightTrendPoint[]; tit
     const min = Math.max(0, rawMin - padding);
     const max = rawMax + padding;
     const range = max - min || 1;
-    const start = Date.parse(`${points[0].recorded_on}T00:00:00+07:00`);
-    const end = Date.parse(`${points.at(-1)?.recorded_on ?? points[0].recorded_on}T00:00:00+07:00`);
+    const start = Date.parse(`${periodStartDate}T00:00:00+07:00`);
+    const end = Date.parse(`${periodEndDate}T00:00:00+07:00`);
     const duration = Math.max(1, end - start);
     const coordinates = points.map((point, index) => {
       const timestamp = Date.parse(`${point.recorded_on}T00:00:00+07:00`);
-      const x = points.length === 1
-        ? dimensions.left + plotWidth / 2
-        : dimensions.left + ((timestamp - start) / duration) * plotWidth;
+      const x = dimensions.left + ((timestamp - start) / duration) * plotWidth;
       const y = dimensions.top + (1 - (point.weight - min) / range) * plotHeight;
       return { ...point, x, y, index };
     });
@@ -127,13 +134,76 @@ function WeightTrendChart({ points, titleId }: { points: WeightTrendPoint[]; tit
       pointsWithCoordinates: coordinates,
       yTicks: Array.from({ length: 5 }, (_, index) => min + (range / 4) * index).reverse(),
     };
-  }, [dimensions.left, dimensions.top, plotHeight, plotWidth, points]);
+  }, [dimensions.left, dimensions.top, periodEndDate, periodStartDate, plotHeight, plotWidth, points]);
+
+  const activePoint = activeIndex === null ? null : pointsWithCoordinates[activeIndex] ?? null;
+  const tooltipWidth = 238;
+  const tooltipHeight = 112;
+  const tooltipX = activePoint
+    ? Math.min(Math.max(activePoint.x - tooltipWidth / 2, 8), dimensions.width - tooltipWidth - 8)
+    : 0;
+  const preferredTooltipY = activePoint ? activePoint.y - tooltipHeight - 12 : 0;
+  const tooltipY = activePoint
+    ? Math.min(
+      Math.max(preferredTooltipY < dimensions.top ? activePoint.y + 12 : preferredTooltipY, 8),
+      dimensions.height - tooltipHeight - 8,
+    )
+    : 0;
+
+  useEffect(() => {
+    function handleEscape(event: globalThis.KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setActiveIndex(null);
+      setIsTooltipPinned(false);
+    }
+
+    function handleOutsidePointerDown(event: PointerEvent) {
+      if (chartRef.current && !chartRef.current.contains(event.target as Node)) {
+        setActiveIndex(null);
+        setIsTooltipPinned(false);
+      }
+    }
+
+    document.addEventListener("keydown", handleEscape);
+    document.addEventListener("pointerdown", handleOutsidePointerDown);
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("pointerdown", handleOutsidePointerDown);
+    };
+  }, []);
+
+  function openPoint(index: number) {
+    setActiveIndex(index);
+    if (activeIndex !== index) setIsTooltipPinned(false);
+  }
+
+  function closeUnpinnedPoint() {
+    if (!isTooltipPinned) setActiveIndex(null);
+  }
+
+  function togglePinnedPoint(index: number) {
+    if (activeIndex === index && isTooltipPinned) {
+      setActiveIndex(null);
+      setIsTooltipPinned(false);
+      return;
+    }
+
+    setActiveIndex(index);
+    setIsTooltipPinned(true);
+  }
+
+  function handlePointKeyDown(event: KeyboardEvent<SVGGElement>, index: number) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    togglePinnedPoint(index);
+  }
 
   return (
     <div className={styles.healthChartGraphic}>
       <svg
         aria-describedby={descriptionId}
         aria-labelledby={titleId}
+        aria-label={points.map((point) => `\u004e\u0067\u00e0\u0079 nh\u1eadt k\u00fd ${formatDate(point.recorded_on)}, ${formatWeight(point.weight)}, \u0111\u01b0\u1ee3c nh\u1eadp l\u00fac ${formatLoggedAt(point.logged_at)}`).join("; ")}
         className={styles.healthChartSvg}
         role="img"
         viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
@@ -153,35 +223,51 @@ function WeightTrendChart({ points, titleId }: { points: WeightTrendPoint[]; tit
           );
         })}
         <text className={styles.healthChartLabel} x={dimensions.left} y={dimensions.top - 22}>kg</text>
-        <text className={styles.healthChartLabel} textAnchor="middle" x={dimensions.left + plotWidth / 2} y={dimensions.height - 12}>Thời gian</text>
+        <text className={styles.healthChartLabel} textAnchor="start" x={dimensions.left} y={dimensions.height - dimensions.bottom + 25}>
+          {formatDate(periodStartDate).slice(0, 5)}
+        </text>
+        <text className={styles.healthChartLabel} textAnchor="end" x={dimensions.width - dimensions.right} y={dimensions.height - dimensions.bottom + 25}>
+          {formatDate(periodEndDate).slice(0, 5)}
+        </text>
+        <text className={styles.healthChartLabel} textAnchor="middle" x={dimensions.left + plotWidth / 2} y={dimensions.height - 12}>Ngày ghi nhận</text>
         <polyline className={styles.healthTrendLine} fill="none" points={polyline} />
         {pointsWithCoordinates.map((point) => (
-          <g key={`${point.logged_at}-${point.index}`}>
+          <g
+            aria-describedby={activeIndex === point.index ? tooltipId : undefined}
+            aria-label={`Cân nặng: ${formatWeight(point.weight)}; Ngày nhật ký: ${formatDate(point.recorded_on)}; Được nhập lúc: ${formatLoggedAt(point.logged_at)}`}
+            aria-pressed={activeIndex === point.index && isTooltipPinned}
+            className={styles.healthTrendPointTarget}
+            key={`${point.health_log_id}-${point.index}`}
+            onBlur={closeUnpinnedPoint}
+            onClick={() => togglePinnedPoint(point.index)}
+            onFocus={() => openPoint(point.index)}
+            onKeyDown={(event) => handlePointKeyDown(event, point.index)}
+            onPointerEnter={() => openPoint(point.index)}
+            onPointerLeave={closeUnpinnedPoint}
+            role="button"
+            tabIndex={0}
+          >
+            <circle className={styles.healthTrendPointHitArea} cx={point.x} cy={point.y} r={12} />
             <circle
-              aria-label={`${formatDateTime(point.logged_at)}: ${formatWeight(point.weight)}`}
-              className={styles.healthTrendPoint}
+              className={`${styles.healthTrendPoint} ${activeIndex === point.index ? styles.healthTrendPointActive : ""}`}
               cx={point.x}
               cy={point.y}
               r={4}
-              tabIndex={0}
-            >
-              <title>{`${formatDateTime(point.logged_at)}: ${formatWeight(point.weight)}`}</title>
-            </circle>
-            {(point.index % labelEvery === 0 || point.index === points.length - 1) && (
-              <text
-                className={styles.healthChartText}
-                textAnchor={point.index === 0 ? "start" : point.index === points.length - 1 ? "end" : "middle"}
-                x={point.x}
-                y={dimensions.height - dimensions.bottom + 25}
-              >
-                {formatDate(point.recorded_on).slice(0, 5)}
-              </text>
-            )}
+            />
           </g>
         ))}
+        {activePoint && (
+          <foreignObject height={tooltipHeight} width={tooltipWidth} x={tooltipX} y={tooltipY}>
+            <div className={styles.healthWeightTooltip} id={tooltipId} role="tooltip">
+              <strong>Cân nặng: {formatWeight(activePoint.weight)}</strong>
+              <span>Ngày nhật ký: {formatDate(activePoint.recorded_on)}</span>
+              <span>Được nhập lúc: {formatLoggedAt(activePoint.logged_at)}</span>
+            </div>
+          </foreignObject>
+        )}
       </svg>
       <p className={styles.healthVisuallyHidden} id={descriptionId}>
-        {points.map((point) => `${formatDate(point.recorded_on)}: ${formatWeight(point.weight)}`).join("; ")}
+        {points.map((point) => `Ngày nhật ký ${formatDate(point.recorded_on)}, ${formatWeight(point.weight)}, được nhập lúc ${formatLoggedAt(point.logged_at)}`).join("; ")}
       </p>
     </div>
   );
@@ -564,7 +650,12 @@ export function PetHealthStatistics({
             <section className={styles.healthChartPanel} aria-labelledby="weight-trend-title">
               <h3 id="weight-trend-title">XU HƯỚNG CÂN NẶNG</h3>
               {data.weight_trend.length >= 2 ? (
-                <WeightTrendChart points={data.weight_trend} titleId="weight-trend-title" />
+                <WeightTrendChart
+                  period={data.period}
+                  periodStart={data.period_start}
+                  points={data.weight_trend}
+                  titleId="weight-trend-title"
+                />
               ) : (
                 <div className={styles.healthChartEmpty}>
                   <p>Chưa đủ dữ liệu để hiển thị biểu đồ.</p>
