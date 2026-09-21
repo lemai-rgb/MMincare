@@ -1230,6 +1230,52 @@
   cursor: default;
 }
 
+.healthTrendPointTarget {
+  cursor: pointer;
+  outline: none;
+}
+
+.healthTrendPointHitArea {
+  fill: transparent;
+  stroke: transparent;
+  pointer-events: all;
+}
+
+.healthTrendPointActive,
+.healthTrendPointTarget:focus-visible .healthTrendPoint {
+  stroke: #2f5134;
+  stroke-width: 3;
+}
+
+.healthWeightTooltip {
+  width: 238px;
+  min-height: 92px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #d4dfd1;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 5px 16px rgb(32 33 31 / 16%);
+  color: #20211f;
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.healthWeightTooltip > strong,
+.healthWeightTooltip > span {
+  display: block;
+}
+
+.healthWeightTooltip > strong {
+  color: #2f5134;
+  font-size: 13px;
+}
+
+.healthWeightTooltip > span {
+  color: #4f554e;
+}
+
 .healthStatusBar {
   fill: #6e8b6b;
   cursor: default;
