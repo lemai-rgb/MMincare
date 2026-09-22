@@ -290,7 +290,7 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
             />
           )}
 
-          {activeTab === "medical" && <PetMedicalHistory form={form} petId={pet.pet_id} species={pet.species} />}
+          {activeTab === "medical" && <PetMedicalHistory form={form} isOwner={pet.owner_id === claimsData.claims.sub} petId={pet.pet_id} species={pet.species} />}
           {activeTab === "reminders" && (
             <PetReminders
               focusForm={form === "reminder"}

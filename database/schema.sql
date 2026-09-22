@@ -93,7 +93,7 @@ create table public.medical_records (
 
 create table public.medical_attachments (
   attachment_id uuid primary key default gen_random_uuid(),
-  record_id uuid not null references public.medical_records (record_id) on delete restrict,
+  record_id uuid not null references public.medical_records (record_id) on delete cascade,
   uploaded_by uuid not null references public.users (user_id) on delete restrict,
   file_url text not null,
   file_type public.attachment_file_type not null,
@@ -109,8 +109,8 @@ create table public.reminders (
   reminder_id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users (user_id) on delete restrict,
   pet_id uuid not null references public.pets (pet_id) on delete restrict,
-  source_vaccine_record_id uuid references public.vaccine_records (vaccine_record_id) on delete restrict,
-  source_medical_record_id uuid references public.medical_records (record_id) on delete restrict,
+  source_vaccine_record_id uuid references public.vaccine_records (vaccine_record_id) on delete set null,
+  source_medical_record_id uuid references public.medical_records (record_id) on delete set null,
   due_date date not null,
   type public.reminder_type not null,
   status public.reminder_status not null default 'Upcoming',
@@ -364,6 +364,14 @@ with check (
   )
 );
 
+create policy vaccine_records_owner_delete on public.vaccine_records
+for delete to authenticated
+using (exists (
+  select 1 from public.pets
+  where pets.pet_id = vaccine_records.pet_id
+    and pets.owner_id = (select auth.uid())
+));
+
 create policy medical_records_owner_select on public.medical_records
 for select to authenticated
 using (
@@ -379,6 +387,17 @@ create policy medical_records_owner_insert on public.medical_records
 for insert to authenticated
 with check (
   created_by = (select auth.uid())
+  and exists (
+    select 1 from public.pets
+    where pets.pet_id = medical_records.pet_id
+      and pets.owner_id = (select auth.uid())
+  )
+);
+
+create policy medical_records_owner_delete on public.medical_records
+for delete to authenticated
+using (
+  medical_records.created_by = (select auth.uid())
   and exists (
     select 1 from public.pets
     where pets.pet_id = medical_records.pet_id
@@ -526,8 +545,8 @@ revoke all on table public.reminders from public, anon;
 grant select on table public.users to authenticated;
 grant update (name, phone_number) on table public.users to authenticated;
 grant select, insert, update on table public.pets to authenticated;
-grant select, insert on table public.vaccine_records to authenticated;
-grant select, insert on table public.medical_records to authenticated;
+grant select, insert, delete on table public.vaccine_records to authenticated;
+grant select, insert, delete on table public.medical_records to authenticated;
 grant select, insert on table public.medical_attachments to authenticated;
 grant select, insert on table public.health_logs to authenticated;
 grant select, insert on table public.reminders to authenticated;
@@ -579,14 +598,6 @@ on storage.objects for delete to authenticated
 using (
   storage.objects.bucket_id = 'medical-record-attachments'
   and (storage.foldername(storage.objects.name))[1] = (select auth.uid())::text
-  and exists (
-    select 1
-    from public.medical_records
-    join public.pets on pets.pet_id = medical_records.pet_id
-    where medical_records.record_id::text = (storage.foldername(storage.objects.name))[2]
-      and medical_records.created_by = (select auth.uid())
-      and pets.owner_id = (select auth.uid())
-  )
   and not exists (
     select 1
     from public.medical_attachments

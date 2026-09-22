@@ -2009,6 +2009,10 @@
   border-radius: 18px;
 }
 
+.medicalEntryCardWithActions {
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+}
+
 .medicalEntryCard h3,
 .medicalEntryCard p,
 .medicalEntryCard span {
@@ -2036,6 +2040,45 @@
 
 .medicalEntryContent {
   min-width: 0;
+}
+
+.medicalEntryActions {
+  display: flex;
+  min-width: 64px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.deleteRecordButton,
+.deleteRecordConfirm {
+  padding: 7px 12px;
+  color: #a45149;
+  background: #fff;
+  border: 1px solid #d49a91;
+  border-radius: 9px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.deleteRecordButton:focus-visible,
+.deleteRecordConfirm:focus-visible,
+.dialogActions button:focus-visible {
+  outline: 2px solid #6e8b6b;
+  outline-offset: 3px;
+}
+
+.deleteRecordButton:hover,
+.deleteRecordConfirm:hover {
+  background: #fff5f3;
+}
+
+.deleteRecordButton:disabled,
+.deleteRecordConfirm:disabled,
+.dialogActions button:disabled {
+  cursor: wait;
+  opacity: .65;
 }
 
 .medicalAttachmentList {
@@ -2588,6 +2631,53 @@
   outline-offset: 3px;
 }
 
+.deleteDialogBody {
+  padding: 22px 28px 28px;
+}
+
+.deleteDialogBody p {
+  margin: 0 0 12px;
+  color: var(--mm-text-secondary);
+  line-height: 1.55;
+}
+
+.deleteDialogWarning {
+  color: #a45149 !important;
+  font-weight: 700;
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.dialogActions button {
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid #d8d1c8;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.dialogActions button:first-child {
+  color: var(--mm-text-secondary);
+  background: #fff;
+}
+
+.dialogActions .deleteRecordConfirm {
+  color: #fff;
+  background: #a45149;
+  border-color: #a45149;
+}
+
+.dialogActions .deleteRecordConfirm:hover {
+  background: #8e4039;
+}
+
 .vaccineDialog .vaccineFormPanel {
   min-height: 0;
   padding: 22px 28px 28px;
@@ -2612,6 +2702,20 @@
 
   .vaccineDialog .vaccineFormPanel {
     padding: 18px 20px 22px;
+  }
+
+  .deleteDialogBody {
+    padding: 18px 20px 22px;
+  }
+
+  .medicalEntryCardWithActions {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .medicalEntryCardWithActions .medicalEntryActions {
+    grid-column: 2;
+    justify-content: flex-start;
+    min-width: 0;
   }
 }
 
