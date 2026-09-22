@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { MedicalRecordCreateForm } from "@/components/pets/MedicalRecordCreateForm";
@@ -22,6 +22,12 @@ type MedicalView =
 
 type ApiHistoryResponse = { records?: MedicalHistoryEntry[]; error?: string };
 type SignedUrlResponse = { signed_url?: string; error?: string };
+type DeleteTarget = { entry: MedicalHistoryEntry; trigger: HTMLButtonElement | null };
+type DeleteResponse = {
+  attachment_cleanup?: "complete" | "pending";
+  error?: string;
+  warnings?: string[];
+};
 const filters: Array<{ id: MedicalHistoryFilter; label: string }> = [
   { id: "all", label: "Tất cả" },
   { id: "vaccines", label: "Tiêm phòng" },
@@ -46,7 +52,7 @@ function validDate(value: string) {
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
 
-export function PetMedicalHistory({ form, petId, species }: { form?: string; petId: string; species: PetSpecies }) {
+export function PetMedicalHistory({ form, isOwner = false, petId, species }: { form?: string; isOwner?: boolean; petId: string; species: PetSpecies }) {
   const router = useRouter();
   const [filter, setFilter] = useState<MedicalHistoryFilter>(form === "medical-record" ? "visits" : "all");
   const [view, setView] = useState<MedicalView>(
@@ -63,8 +69,22 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
   const [createdReminderId, setCreatedReminderId] = useState<string | null>(null);
   const [reminderDate, setReminderDate] = useState("");
   const [reminderNote, setReminderNote] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const requestController = useRef<AbortController | null>(null);
   const reminderSubmissionGuard = useRef(false);
+  const deleteSubmissionGuard = useRef(false);
+  const deleteDialogRef = useRef<HTMLDivElement | null>(null);
+  const deleteCancelRef = useRef<HTMLButtonElement | null>(null);
+
+  const closeDeleteDialog = useCallback(() => {
+    if (isDeleting) return;
+    const trigger = deleteTarget?.trigger;
+    setDeleteTarget(null);
+    setDeleteError(null);
+    trigger?.focus();
+  }, [deleteTarget, isDeleting]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -86,6 +106,34 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
       });
     return () => controller.abort();
   }, [form, petId]);
+
+  useEffect(() => {
+    if (!deleteTarget) return;
+    deleteCancelRef.current?.focus();
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !isDeleting) {
+        closeDeleteDialog();
+        return;
+      }
+      if (event.key === "Tab") {
+        const focusable = deleteDialogRef.current?.querySelectorAll<HTMLElement>(
+          "button:not(:disabled), [href], input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex='-1'])",
+        );
+        if (!focusable || focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [closeDeleteDialog, deleteTarget, isDeleting]);
 
   const visibleEntries = useMemo(
     () => entries.filter((entry) => filter === "all" || (filter === "vaccines" ? entry.type === "vaccine" : entry.type === "medical")),
@@ -170,6 +218,51 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
     setView({ kind: "medical-reminder", entry });
     router.replace(`/pets/${encodeURIComponent(petId)}?tab=medical`);
     router.refresh();
+  }
+
+  function openDeleteDialog(entry: MedicalHistoryEntry, trigger: HTMLButtonElement | null) {
+    if (!isOwner || deleteSubmissionGuard.current) return;
+    setDeleteError(null);
+    setDeleteTarget({ entry, trigger });
+  }
+
+  async function deleteEntry() {
+    if (!deleteTarget || deleteSubmissionGuard.current) return;
+    deleteSubmissionGuard.current = true;
+    setIsDeleting(true);
+    setDeleteError(null);
+    const { entry } = deleteTarget;
+    const resource = entry.type === "vaccine" ? "vaccines" : "medical-records";
+    const response = await fetch(
+      `/api/pets/${encodeURIComponent(petId)}/${resource}/${encodeURIComponent(entry.id)}`,
+      { method: "DELETE" },
+    ).catch(() => null);
+
+    try {
+      const payload = response ? await response.json() as DeleteResponse : null;
+      if (!response || !response.ok) {
+        const message = response?.status === 401
+          ? "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
+          : response?.status === 403 || response?.status === 404
+            ? "Không tìm thấy bản ghi hoặc bạn không có quyền xóa."
+            : response?.status === 409
+              ? "Bản ghi còn dữ liệu liên quan chưa thể xóa."
+              : payload?.error || "Không thể xóa bản ghi lúc này. Vui lòng thử lại.";
+        throw new Error(message);
+      }
+
+      setEntries((current) => current.filter((item) => item.id !== entry.id));
+      setDeleteTarget(null);
+      setNotice(payload?.attachment_cleanup === "pending"
+        ? "Hồ sơ đã được xóa. Một số tệp đang chờ hệ thống dọn dẹp."
+        : entry.type === "vaccine" ? "Đã xóa bản ghi tiêm phòng." : "Đã xóa hồ sơ khám bệnh.");
+      router.refresh();
+    } catch (requestError) {
+      setDeleteError(requestError instanceof Error ? requestError.message : "Không thể xóa bản ghi lúc này. Vui lòng thử lại.");
+    } finally {
+      deleteSubmissionGuard.current = false;
+      setIsDeleting(false);
+    }
   }
 
   async function createReminder() {
@@ -272,7 +365,15 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
                 <section className={styles.medicalMonth} key={month}>
                   <h2 id={month === groupedEntries[0][0] ? "medical-history-title" : undefined}>{groupLabel(monthEntries[0].eventDate)}</h2>
                   <div className={styles.medicalEntryList}>
-                    {monthEntries.map((entry) => <MedicalEntryCard entry={entry} key={entry.id} visitNumber={medicalVisitNumbers.get(entry.id)} />)}
+                    {monthEntries.map((entry) => (
+                      <MedicalEntryCard
+                        canDelete={isOwner}
+                        entry={entry}
+                        key={entry.id}
+                        onDelete={openDeleteDialog}
+                        visitNumber={medicalVisitNumbers.get(entry.id)}
+                      />
+                    ))}
                   </div>
                 </section>
               ))}
@@ -342,6 +443,45 @@ export function PetMedicalHistory({ form, petId, species }: { form?: string; pet
             reminderDate={reminderDate}
             reminderNote={reminderNote}
           />
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className={styles.dialogBackdrop} onMouseDown={(event) => {
+          if (event.target === event.currentTarget && !isDeleting) closeDeleteDialog();
+        }}>
+          <div
+            aria-labelledby="delete-record-title"
+            aria-modal="true"
+            className={styles.vaccineDialog}
+            ref={deleteDialogRef}
+            role="dialog"
+          >
+            <div className={styles.dialogHeader}>
+              <h2 id="delete-record-title">
+                {deleteTarget.entry.type === "vaccine" ? "Xóa bản ghi tiêm phòng?" : "Xóa hồ sơ khám bệnh?"}
+              </h2>
+              <button aria-label="Đóng" className={styles.dialogClose} disabled={isDeleting} onClick={closeDeleteDialog} type="button">×</button>
+            </div>
+            <div className={styles.deleteDialogBody}>
+              <p>
+                Bạn sắp xóa vĩnh viễn {deleteTarget.entry.type === "vaccine" ? "bản ghi" : "hồ sơ"} “{deleteTarget.entry.title}” ngày {formatDate(deleteTarget.entry.eventDate)}.
+              </p>
+              <p>
+                {deleteTarget.entry.type === "medical"
+                  ? "Các tệp đính kèm cũng sẽ bị xóa. Nhắc hẹn liên quan sẽ được giữ lại nhưng không còn liên kết với hồ sơ."
+                  : "Nhắc hẹn được tạo từ bản ghi này sẽ được giữ lại nhưng không còn liên kết với bản ghi tiêm phòng."}
+              </p>
+              <p className={styles.deleteDialogWarning}>Thao tác này không thể hoàn tác.</p>
+              {deleteError && <p className={styles.medicalError} role="alert">{deleteError}</p>}
+              <div className={styles.dialogActions}>
+                <button disabled={isDeleting} onClick={closeDeleteDialog} type="button">Hủy</button>
+                <button className={styles.deleteRecordConfirm} disabled={isDeleting} onClick={() => void deleteEntry()} type="button">
+                  {isDeleting ? "Đang xóa…" : "Xóa bản ghi"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </section>
@@ -431,12 +571,12 @@ function MedicalRecordPreview({ entries, medicalOnly = false }: { entries: Medic
   );
 }
 
-function MedicalEntryCard({ entry, visitNumber }: { entry: MedicalHistoryEntry; visitNumber?: number }) {
+function MedicalEntryCard({ canDelete = false, entry, onDelete, visitNumber }: { canDelete?: boolean; entry: MedicalHistoryEntry; onDelete?: (entry: MedicalHistoryEntry, trigger: HTMLButtonElement | null) => void; visitNumber?: number }) {
   const title = entry.type === "medical" && entry.title === "Lần khám bệnh"
     ? `Lần khám ngày ${formatDate(entry.eventDate)}`
     : entry.title;
   return (
-    <article className={styles.medicalEntryCard}>
+    <article className={`${styles.medicalEntryCard} ${canDelete ? styles.medicalEntryCardWithActions : ""}`}>
       {entry.type === "vaccine"
         ? <span className={styles.vaccineIcon}><Image alt="" aria-hidden="true" height={27} src="/icons/vaccine-syringe.svg" width={41} /></span>
         : <span className={styles.medicalIcon}><Image alt="" aria-hidden="true" height={34} src="/icons/medical-briefcase.svg" width={34} /></span>}
@@ -455,6 +595,18 @@ function MedicalEntryCard({ entry, visitNumber }: { entry: MedicalHistoryEntry; 
           </div>
         )}
       </div>
+      {canDelete && onDelete && (
+        <div className={styles.medicalEntryActions}>
+          <button
+            aria-label={entry.type === "vaccine" ? "Xóa bản ghi tiêm phòng" : "Xóa hồ sơ khám bệnh"}
+            className={styles.deleteRecordButton}
+            onClick={(event) => onDelete(entry, event.currentTarget)}
+            type="button"
+          >
+            Xóa
+          </button>
+        </div>
+      )}
     </article>
   );
 }
