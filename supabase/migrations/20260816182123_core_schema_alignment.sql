@@ -257,6 +257,12 @@ begin
       raise exception 'Temporary enum public.reminder_status_core already exists';
     end if;
 
+    -- Policies are catalog dependencies of the referenced column. The
+    -- current audited policy is recreated below after the enum replacement;
+    -- drop it before ALTER COLUMN TYPE so a schema dump containing the policy
+    -- can be replayed safely as well as an older live schema without it.
+    drop policy if exists reminders_owner_update on public.reminders;
+
     alter table public.reminders alter column status drop default;
     create type public.reminder_status_core as enum ('Upcoming', 'Completed');
 
