@@ -56,9 +56,9 @@ jobs:
 
           for migration in supabase/migrations/20*.sql; do
             version="$(basename "$migration" | cut -d_ -f1)"
+            [[ "$version" =~ ^[0-9]{14}$ ]]
             applied="$(psql "$LOCAL_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 \
-              -v version="$version" \
-              -c "select count(*) from supabase_migrations.schema_migrations where version = :'version';")"
+              -c "select count(*) from supabase_migrations.schema_migrations where version = '$version';")"
             test "$applied" = "1"
           done
 
