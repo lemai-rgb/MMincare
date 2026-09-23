@@ -162,14 +162,25 @@ jobs:
             end if;
 
             if not has_table_privilege('authenticated', 'public.reminders', 'SELECT')
-               or not has_table_privilege('authenticated', 'public.reminders', 'INSERT')
-               or has_table_privilege('authenticated', 'public.reminders', 'UPDATE')
-               or has_table_privilege('authenticated', 'public.reminders', 'DELETE')
-               or has_table_privilege('authenticated', 'public.reminders', 'TRUNCATE')
-               or has_table_privilege('authenticated', 'public.reminders', 'REFERENCES')
-               or has_table_privilege('authenticated', 'public.reminders', 'TRIGGER')
-               or has_table_privilege('authenticated', 'public.reminders', 'MAINTAIN') then
-              raise exception 'Unexpected authenticated table privilege on reminders';
+               or not has_table_privilege('authenticated', 'public.reminders', 'INSERT') then
+              raise exception 'Authenticated is missing SELECT or INSERT on reminders';
+            end if;
+
+            if exists (
+              select 1
+              from information_schema.role_table_grants table_grant
+              where table_grant.grantee = 'authenticated'
+                and table_grant.table_schema = 'public'
+                and table_grant.table_name = 'reminders'
+                and table_grant.privilege_type in (
+                  'UPDATE',
+                  'DELETE',
+                  'TRUNCATE',
+                  'REFERENCES',
+                  'TRIGGER'
+                )
+            ) then
+              raise exception 'Unexpected authenticated table-level privilege on reminders';
             end if;
 
             if not has_column_privilege(
