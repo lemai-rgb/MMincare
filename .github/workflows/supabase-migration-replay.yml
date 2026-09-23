@@ -5,6 +5,7 @@ on:
     paths:
       - "supabase/migrations/**"
       - "supabase/config.toml"
+      - "database/schema.sql"
       - ".github/workflows/supabase-migration-replay.yml"
   workflow_dispatch:
 
@@ -47,7 +48,7 @@ jobs:
       - name: Replay every migration on a clean local database
         run: supabase db reset --local --no-seed
 
-      - name: Verify migration history, Reminder enum, and update policy
+      - name: Verify migration history, Reminder schema, and owner delete access
         shell: bash
         env:
           LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
@@ -121,6 +122,50 @@ jobs:
                 and policy.polcmd = 'w'
             ) then
               raise exception 'reminders_owner_update policy is missing after replay';
+            end if;
+
+            if not has_table_privilege(
+              'authenticated',
+              'public.medical_records',
+              'DELETE'
+            ) then
+              raise exception 'authenticated is missing DELETE on medical_records';
+            end if;
+
+            if not has_table_privilege(
+              'authenticated',
+              'public.vaccine_records',
+              'DELETE'
+            ) then
+              raise exception 'authenticated is missing DELETE on vaccine_records';
+            end if;
+
+            if has_table_privilege('anon', 'public.medical_records', 'DELETE') then
+              raise exception 'anon unexpectedly has DELETE on medical_records';
+            end if;
+
+            if has_table_privilege('anon', 'public.vaccine_records', 'DELETE') then
+              raise exception 'anon unexpectedly has DELETE on vaccine_records';
+            end if;
+
+            if not exists (
+              select 1
+              from pg_catalog.pg_policy policy
+              where policy.polrelid = 'public.medical_records'::regclass
+                and policy.polname = 'medical_records_owner_delete'
+                and policy.polcmd = 'd'
+            ) then
+              raise exception 'medical_records_owner_delete policy is missing after replay';
+            end if;
+
+            if not exists (
+              select 1
+              from pg_catalog.pg_policy policy
+              where policy.polrelid = 'public.vaccine_records'::regclass
+                and policy.polname = 'vaccine_records_owner_delete'
+                and policy.polcmd = 'd'
+            ) then
+              raise exception 'vaccine_records_owner_delete policy is missing after replay';
             end if;
           end
           $$;
