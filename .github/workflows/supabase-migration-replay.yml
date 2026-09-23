@@ -5,6 +5,7 @@ on:
     paths:
       - "supabase/migrations/**"
       - "supabase/config.toml"
+      - "database/schema.sql"
       - ".github/workflows/supabase-migration-replay.yml"
   workflow_dispatch:
 
@@ -47,7 +48,7 @@ jobs:
       - name: Replay every migration on a clean local database
         run: supabase db reset --local --no-seed
 
-      - name: Verify migration history, Reminder enum, and update policy
+      - name: Verify migration history, schema, RLS, and effective privileges
         shell: bash
         env:
           LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
@@ -121,6 +122,153 @@ jobs:
                 and policy.polcmd = 'w'
             ) then
               raise exception 'reminders_owner_update policy is missing after replay';
+            end if;
+
+            if not has_table_privilege(
+              'authenticated',
+              'public.medical_records',
+              'DELETE'
+            ) then
+              raise exception 'authenticated is missing DELETE on medical_records';
+            end if;
+
+            if has_table_privilege('anon', 'public.medical_records', 'DELETE') then
+              raise exception 'anon unexpectedly has DELETE on medical_records';
+            end if;
+
+            if not has_table_privilege('authenticated', 'public.health_logs', 'SELECT')
+               or not has_table_privilege('authenticated', 'public.health_logs', 'INSERT') then
+              raise exception 'authenticated is missing SELECT or INSERT on health_logs';
+            end if;
+
+            if has_table_privilege('authenticated', 'public.health_logs', 'UPDATE')
+               or has_table_privilege('authenticated', 'public.health_logs', 'DELETE')
+               or has_table_privilege('authenticated', 'public.health_logs', 'TRUNCATE')
+               or has_table_privilege('authenticated', 'public.health_logs', 'REFERENCES')
+               or has_table_privilege('authenticated', 'public.health_logs', 'TRIGGER')
+               or has_table_privilege('authenticated', 'public.health_logs', 'MAINTAIN') then
+              raise exception 'authenticated has an unexpected health_logs privilege';
+            end if;
+
+            if has_table_privilege('anon', 'public.health_logs', 'SELECT')
+               or has_table_privilege('anon', 'public.health_logs', 'INSERT')
+               or has_table_privilege('anon', 'public.health_logs', 'UPDATE')
+               or has_table_privilege('anon', 'public.health_logs', 'DELETE')
+               or has_table_privilege('anon', 'public.health_logs', 'TRUNCATE')
+               or has_table_privilege('anon', 'public.health_logs', 'REFERENCES')
+               or has_table_privilege('anon', 'public.health_logs', 'TRIGGER')
+               or has_table_privilege('anon', 'public.health_logs', 'MAINTAIN') then
+              raise exception 'anon unexpectedly has a health_logs privilege';
+            end if;
+
+            if not has_table_privilege('authenticated', 'public.reminders', 'SELECT')
+               or not has_table_privilege('authenticated', 'public.reminders', 'INSERT')
+               or has_table_privilege('authenticated', 'public.reminders', 'UPDATE')
+               or has_table_privilege('authenticated', 'public.reminders', 'DELETE')
+               or has_table_privilege('authenticated', 'public.reminders', 'TRUNCATE')
+               or has_table_privilege('authenticated', 'public.reminders', 'REFERENCES')
+               or has_table_privilege('authenticated', 'public.reminders', 'TRIGGER')
+               or has_table_privilege('authenticated', 'public.reminders', 'MAINTAIN') then
+              raise exception 'Unexpected authenticated table privilege on reminders';
+            end if;
+
+            if not has_column_privilege(
+              'authenticated',
+              'public.reminders',
+              'status',
+              'UPDATE'
+            ) or not has_column_privilege(
+              'authenticated',
+              'public.reminders',
+              'completed_at',
+              'UPDATE'
+            ) then
+              raise exception 'Reminder completion columns are missing UPDATE';
+            end if;
+
+            if exists (
+              select 1
+              from information_schema.columns column_info
+              where column_info.table_schema = 'public'
+                and column_info.table_name = 'reminders'
+                and column_info.column_name not in ('status', 'completed_at')
+                and has_column_privilege(
+                  'authenticated',
+                  'public.reminders',
+                  column_info.column_name,
+                  'UPDATE'
+                )
+            ) then
+              raise exception 'Authenticated can UPDATE an unexpected Reminder column';
+            end if;
+
+            if exists (
+              select 1
+              from information_schema.columns column_info
+              where column_info.table_schema = 'public'
+                and column_info.table_name = 'reminders'
+                and (
+                  not has_column_privilege(
+                    'authenticated',
+                    'public.reminders',
+                    column_info.column_name,
+                    'SELECT'
+                  )
+                  or not has_column_privilege(
+                    'authenticated',
+                    'public.reminders',
+                    column_info.column_name,
+                    'INSERT'
+                  )
+                  or has_column_privilege(
+                    'authenticated',
+                    'public.reminders',
+                    column_info.column_name,
+                    'REFERENCES'
+                  )
+                )
+            ) then
+              raise exception 'Unexpected authenticated column privilege on reminders';
+            end if;
+
+            if exists (
+              select 1
+              from information_schema.columns column_info
+              where column_info.table_schema = 'public'
+                and column_info.table_name = 'reminders'
+                and (
+                  has_column_privilege('anon', 'public.reminders', column_info.column_name, 'SELECT')
+                  or has_column_privilege('anon', 'public.reminders', column_info.column_name, 'INSERT')
+                  or has_column_privilege('anon', 'public.reminders', column_info.column_name, 'UPDATE')
+                  or has_column_privilege('anon', 'public.reminders', column_info.column_name, 'REFERENCES')
+                )
+            ) then
+              raise exception 'anon unexpectedly has a Reminder column privilege';
+            end if;
+
+            if exists (
+              select 1
+              from (values
+                ('medical_records'::text, 'medical_records_owner_delete'::text, 'd'::"char"),
+                ('health_logs', 'health_logs_owner_select', 'r'::"char"),
+                ('health_logs', 'health_logs_owner_insert', 'a'::"char"),
+                ('vaccine_records', 'vaccine_records_owner_delete', 'd'::"char"),
+                ('reminders', 'reminders_owner_select', 'r'::"char"),
+                ('reminders', 'reminders_owner_insert', 'a'::"char"),
+                ('reminders', 'reminders_owner_update', 'w'::"char")
+              ) expected_policy(table_name, policy_name, command)
+              where not exists (
+                select 1
+                from pg_catalog.pg_policy policy
+                where policy.polrelid = format(
+                  'public.%I',
+                  expected_policy.table_name
+                )::regclass
+                  and policy.polname = expected_policy.policy_name
+                  and policy.polcmd = expected_policy.command
+              )
+            ) then
+              raise exception 'An expected Owner RLS policy is missing after replay';
             end if;
           end
           $$;
