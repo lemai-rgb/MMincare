@@ -1,0 +1,131 @@
+name: Supabase Migration Replay
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/config.toml"
+      - ".github/workflows/supabase-migration-replay.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  replay:
+    name: Replay all local migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+
+      - name: Initialize local Supabase configuration
+        run: supabase init
+
+      - name: Prepare local-only legacy baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          baseline="supabase/migrations/00000000000000_local_ci_baseline.sql"
+          sed \
+            "s/create type public.reminder_status as enum ('Upcoming', 'Completed');/create type public.reminder_status as enum ('Upcoming', 'Overdue', 'Completed');/" \
+            database/schema.sql > "$baseline"
+          grep -Fq "create type public.reminder_status as enum ('Upcoming', 'Overdue', 'Completed');" "$baseline"
+
+      - name: Start local Supabase services
+        run: >-
+          supabase start
+          --exclude studio,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor
+
+      - name: Replay every migration on a clean local database
+        run: supabase db reset --local --no-seed
+
+      - name: Verify migration history, Reminder enum, and update policy
+        shell: bash
+        env:
+          LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: |
+          set -euo pipefail
+
+          for migration in supabase/migrations/20*.sql; do
+            version="$(basename "$migration" | cut -d_ -f1)"
+            [[ "$version" =~ ^[0-9]{14}$ ]]
+            applied="$(psql "$LOCAL_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 \
+              -c "select count(*) from supabase_migrations.schema_migrations where version = '$version';")"
+            test "$applied" = "1"
+          done
+
+          psql "$LOCAL_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+          do $$
+          declare
+            actual_default text;
+            actual_labels text[];
+          begin
+            if not exists (
+              select 1
+              from pg_catalog.pg_attribute attribute
+              join pg_catalog.pg_class relation
+                on relation.oid = attribute.attrelid
+              join pg_catalog.pg_namespace namespace
+                on namespace.oid = relation.relnamespace
+              join pg_catalog.pg_type data_type
+                on data_type.oid = attribute.atttypid
+              join pg_catalog.pg_namespace type_namespace
+                on type_namespace.oid = data_type.typnamespace
+              where namespace.nspname = 'public'
+                and relation.relname = 'reminders'
+                and attribute.attname = 'status'
+                and attribute.attnum > 0
+                and not attribute.attisdropped
+                and type_namespace.nspname = 'public'
+                and data_type.typname = 'reminder_status'
+            ) then
+              raise exception 'reminders.status is not public.reminder_status';
+            end if;
+
+            select array_agg(enum.enumlabel order by enum.enumsortorder)
+              into actual_labels
+            from pg_catalog.pg_enum enum
+            where enum.enumtypid = 'public.reminder_status'::regtype;
+
+            if actual_labels is distinct from array['Upcoming', 'Completed']::text[] then
+              raise exception 'Unexpected reminder_status labels: %', actual_labels;
+            end if;
+
+            select pg_catalog.pg_get_expr(default_value.adbin, default_value.adrelid)
+              into actual_default
+            from pg_catalog.pg_attrdef default_value
+            join pg_catalog.pg_attribute attribute
+              on attribute.attrelid = default_value.adrelid
+             and attribute.attnum = default_value.adnum
+            where default_value.adrelid = 'public.reminders'::regclass
+              and attribute.attname = 'status';
+
+            if actual_default is null
+               or actual_default not like '%Upcoming%reminder_status%' then
+              raise exception 'Unexpected reminders.status default: %', actual_default;
+            end if;
+
+            if not exists (
+              select 1
+              from pg_catalog.pg_policy policy
+              where policy.polrelid = 'public.reminders'::regclass
+                and policy.polname = 'reminders_owner_update'
+                and policy.polcmd = 'w'
+            ) then
+              raise exception 'reminders_owner_update policy is missing after replay';
+            end if;
+          end
+          $$;
+          SQL
+
+      - name: Stop local Supabase services
+        if: always()
+        run: supabase stop --no-backup
