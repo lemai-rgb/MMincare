@@ -243,11 +243,17 @@ begin
   if current_labels is distinct from array['Upcoming', 'Completed']::text[] then
     select count(*)
     into dependent_status_columns
-    from pg_catalog.pg_attribute
-    where atttypid = 'public.reminder_status'::regtype
-      and attnum > 0
-      and not attisdropped
-      and not (attrelid = 'public.reminders'::regclass and attname = 'status');
+    from pg_catalog.pg_attribute attribute
+    join pg_catalog.pg_class relation
+      on relation.oid = attribute.attrelid
+    where attribute.atttypid = 'public.reminder_status'::regtype
+      and attribute.attnum > 0
+      and not attribute.attisdropped
+      and relation.relkind in ('r', 'p', 'v', 'm', 'f')
+      and not (
+        attribute.attrelid = 'public.reminders'::regclass
+        and attribute.attname = 'status'
+      );
 
     if dependent_status_columns <> 0 then
       raise exception 'reminder_status has unexpected dependent table columns';
