@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
+import { getAuthEmailRedirectOrigin } from "@/lib/authEmailRedirect";
 import { getAvailableAuthDestination, getOnboardingPath } from "@/lib/authRedirect";
 import type { OnboardingSpecies } from "@/lib/authRedirect";
 import type { AuthFieldErrors } from "@/lib/authValidation";
@@ -49,7 +50,10 @@ export function RegisterForm({ species }: RegisterFormProps) {
 
     setIsLoading(true);
     const next = species ? getOnboardingPath(species) : "/dashboard";
-    const confirmUrl = new URL("/auth/confirm", window.location.origin);
+    const confirmUrl = new URL(
+      "/auth/confirm",
+      getAuthEmailRedirectOrigin(window.location.origin),
+    );
     confirmUrl.searchParams.set("next", next);
 
     const { data, error } = await createClient().auth.signUp({

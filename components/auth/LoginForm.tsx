@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
+import { getAuthEmailRedirectOrigin } from "@/lib/authEmailRedirect";
 import type { AuthFieldErrors } from "@/lib/authValidation";
 import { normalizeEmail, validateEmail, validateLogin } from "@/lib/authValidation";
 import { createClient } from "@/lib/supabase/client";
@@ -80,7 +81,10 @@ export function LoginForm({ next = "/dashboard" }: LoginFormProps) {
 
     setIsResetLoading(true);
     try {
-      const redirectUrl = new URL("/auth/confirm", window.location.origin);
+      const redirectUrl = new URL(
+        "/auth/confirm",
+        getAuthEmailRedirectOrigin(window.location.origin),
+      );
       redirectUrl.searchParams.set("next", "/reset-password");
       const { error } = await createClient().auth.resetPasswordForEmail(normalizedEmail, {
         redirectTo: redirectUrl.toString(),
