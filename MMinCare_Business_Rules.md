@@ -120,7 +120,7 @@ Nguồn: US-10, US-11.
 | BR-REM-06 | Caretaker không được tạo, sửa, hoàn thành hoặc xóa Reminder. | Authorization | US-11 |
 | BR-REM-07 | Sau khi lưu Vaccine Record, hệ thống chỉ tạo Reminder khi Owner xác nhận ngày gợi ý hoặc ngày đã chỉnh sửa. | Process | US-06, US-10 |
 | BR-REM-08 | Chỉ Owner được đánh dấu Reminder là Completed. Khi hoàn thành, hệ thống cập nhật trạng thái lưu trữ thành `Completed`. | Authorization / Process | US-10 AC-03 |
-| BR-REM-09 | Owner chỉ được sửa ngày hẹn và ghi chú khi Reminder còn `Upcoming`; Caretaker không được sửa. | Authorization / Process | Notification Phase 1 |
+| BR-REM-11 | Owner chỉ được sửa ngày hẹn và ghi chú khi Reminder còn `Upcoming`; Caretaker không được sửa. | Authorization / Process | Notification Phase 1 |
 | BR-NOT-01 | Mỗi Reminder `Upcoming` có hai event hoạt động: `due_soon` tại D-2 và `overdue` tại D+2, đều lúc 08:00 `Asia/Ho_Chi_Minh`. | Process | Notification Phase 1 |
 | BR-NOT-02 | Đổi ngày hẹn hủy event lịch cũ và tạo lịch mới; hoàn thành Reminder hủy các event còn hoạt động. | Audit / Data Integrity | Notification Phase 1 |
 | BR-NOT-03 | Notification hiện hành chỉ trả tối đa một event cho mỗi Reminder; `overdue` thay thế `due_soon` từ D+2. | Presentation / Process | Notification Phase 1 |
