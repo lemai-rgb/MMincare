@@ -40,7 +40,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   if (!pet) return NextResponse.json({ error: "Không tìm thấy nhắc hẹn." }, { status: 404 });
   if (reminder.status !== "Upcoming") return NextResponse.json({ error: "Chỉ có thể sửa nhắc hẹn đang sắp tới." }, { status: 409 });
 
-  const updates: { due_date?: string; note?: string | null; updated_at: string } = { updated_at: new Date().toISOString() };
+  const updates: { due_date?: string; note?: string | null } = {};
   if (body.due_date !== undefined) updates.due_date = body.due_date as string;
   if (body.note !== undefined) updates.note = typeof body.note === "string" ? body.note.trim() || null : null;
   const { data, error } = await supabase.from("reminders").update(updates)

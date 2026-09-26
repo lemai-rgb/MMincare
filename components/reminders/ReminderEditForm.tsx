@@ -4,8 +4,9 @@ import { FormEvent, useRef, useState } from "react";
 import type { ReminderListItem } from "@/lib/reminders";
 import styles from "@/styles/petDetail.module.css";
 
-export function ReminderEditForm({ reminder, onCancel, onSaved }: {
+export function ReminderEditForm({ reminder, titleId, onCancel, onSaved }: {
   reminder: ReminderListItem;
+  titleId?: string;
   onCancel: () => void;
   onSaved: (reminder: Partial<ReminderListItem> & { reminder_id: string }) => void;
 }) {
@@ -31,7 +32,7 @@ export function ReminderEditForm({ reminder, onCancel, onSaved }: {
     finally { guard.current = false; setSaving(false); }
   }
   return <form aria-busy={saving} className={styles.petReminderForm} onSubmit={submit}>
-    <header className={styles.petReminderFormHeader}><h2>Chỉnh sửa nhắc hẹn</h2><p>Cập nhật ngày hẹn hoặc ghi chú</p></header>
+    <header className={styles.petReminderFormHeader}><h2 id={titleId}>Chỉnh sửa nhắc hẹn</h2><p>Cập nhật ngày hẹn hoặc ghi chú</p></header>
     <label className={styles.petReminderField}><span>Ngày hẹn <b aria-hidden="true">*</b></span><input autoFocus disabled={saving} type="date" value={dueDate} onChange={(e) => { setDueDate(e.target.value); setError(""); }} /></label>
     <label className={`${styles.petReminderField} ${styles.petReminderNoteField}`}><span>Ghi chú</span><textarea disabled={saving} value={note} onChange={(e) => { setNote(e.target.value); setError(""); }} /></label>
     <p className={styles.petReminderSubmitError} role={error ? "alert" : undefined}>{error || "\u00a0"}</p>

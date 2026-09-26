@@ -38,6 +38,18 @@ jobs:
           sed \
             "s/create type public.reminder_status as enum ('Upcoming', 'Completed');/create type public.reminder_status as enum ('Upcoming', 'Overdue', 'Completed');/" \
             database/schema.sql > "$baseline"
+          python3 - "$baseline" <<'PY'
+          import re, sys
+          path = sys.argv[1]
+          text = open(path, encoding="utf-8").read()
+          # The baseline is the final schema snapshot; remove only objects
+          # introduced by the later Notification migration before replaying
+          # historical migrations. The migration itself remains immutable.
+          text = re.sub(r"create policy reminders_owner_edit.*?;\n", "", text, flags=re.S)
+          text = re.sub(r"create trigger reminders_sync_notification_events.*?;\n", "", text, flags=re.S)
+          text = re.sub(r"create trigger reminders_guard_update.*?;\n", "", text, flags=re.S)
+          open(path, "w", encoding="utf-8").write(text)
+          PY
           grep -Fq "create type public.reminder_status as enum ('Upcoming', 'Overdue', 'Completed');" "$baseline"
 
       - name: Start local Supabase services
@@ -203,7 +215,7 @@ jobs:
               where column_info.table_schema = 'public'
                 and column_info.table_name = 'reminders'
                 and column_info.column_name not in (
-                  'status', 'completed_at', 'due_date', 'note', 'updated_at'
+                  'status', 'completed_at', 'due_date', 'note'
                 )
                 and has_column_privilege(
                   'authenticated',
@@ -217,8 +229,11 @@ jobs:
 
             if not has_column_privilege('authenticated', 'public.reminders', 'due_date', 'UPDATE')
                or not has_column_privilege('authenticated', 'public.reminders', 'note', 'UPDATE')
-               or not has_column_privilege('authenticated', 'public.reminders', 'updated_at', 'UPDATE') then
+               then
               raise exception 'Reminder edit columns are missing UPDATE';
+            end if;
+            if has_column_privilege('authenticated', 'public.reminders', 'updated_at', 'UPDATE') then
+              raise exception 'updated_at must not be client writable';
             end if;
 
             if exists (
@@ -305,6 +320,9 @@ jobs:
             end if;
             if not exists (select 1 from pg_trigger where tgrelid = 'public.reminders'::regclass and tgname = 'reminders_sync_notification_events' and not tgisinternal) then
               raise exception 'Reminder notification trigger is missing';
+            end if;
+            if not exists (select 1 from pg_trigger where tgrelid = 'public.reminders'::regclass and tgname = 'reminders_guard_update' and not tgisinternal) then
+              raise exception 'Reminder guard trigger is missing';
             end if;
           end
           $$;

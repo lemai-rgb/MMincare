@@ -484,6 +484,8 @@ Không dùng public bucket cho hồ sơ y tế. Storage policies phải kiểm t
 | created_at, updated_at | timestamptz | Audit timestamps |
 
 Partial unique index bảo đảm tối đa một event đang hoạt động cho `(reminder_id, event_type, due_date_snapshot)` nhưng vẫn giữ lịch sử đã hủy.
+
+Notification query dùng `overdue` thay `due_soon` sau D+2; event tương lai, đã hủy hoặc Reminder Completed không phải notification hiện hành.
 - [ ] Kiểm thử RLS bằng ít nhất ba tài khoản: owner, caretaker và người không có quyền.
 
 ---

@@ -90,6 +90,22 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
   const completionGuard = useRef(false);
   const createTrigger = useRef<HTMLButtonElement | null>(null);
   const lastTrigger = useRef<HTMLButtonElement | null>(null);
+  const editTrigger = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!editingReminder) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const dialog = document.getElementById("edit-reminder-dialog");
+      if (event.key === "Escape") { event.preventDefault(); setEditingReminder(null); editTrigger.current?.focus(); return; }
+      if (event.key !== "Tab" || !dialog) return;
+      const focusable = [...dialog.querySelectorAll<HTMLElement>("button:not(:disabled), input:not(:disabled), textarea:not(:disabled)")];
+      if (!focusable.length) return;
+      if (event.shiftKey && document.activeElement === focusable[0]) { event.preventDefault(); focusable.at(-1)?.focus(); }
+      else if (!event.shiftKey && document.activeElement === focusable.at(-1)) { event.preventDefault(); focusable[0]?.focus(); }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [editingReminder]);
 
   const loadReminders = useCallback(async () => {
     setIsLoading(true);
@@ -284,7 +300,7 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
                   highlighted={reminder.reminder_id === highlightedReminderId}
                   key={reminder.reminder_id}
                   onComplete={openComplete}
-                  onEdit={setEditingReminder}
+                  onEdit={(reminder, trigger) => { editTrigger.current = trigger; setEditingReminder(reminder); }}
                   reminder={reminder}
                 />
               ))}
@@ -315,11 +331,11 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
       )}
       {editingReminder && (
         <div className={styles.createReminderBackdrop} onMouseDown={(event) => { if (event.target === event.currentTarget) setEditingReminder(null); }}>
-          <div aria-label="Chỉnh sửa nhắc hẹn" aria-modal="true" className={styles.createReminderDialog} role="dialog">
-            <button aria-label="Đóng form chỉnh sửa nhắc hẹn" className={styles.createReminderClose} onClick={() => setEditingReminder(null)} type="button">×</button>
-            <ReminderEditForm reminder={editingReminder} onCancel={() => setEditingReminder(null)} onSaved={(updated) => {
+          <div aria-labelledby="edit-reminder-title" aria-modal="true" className={styles.createReminderDialog} id="edit-reminder-dialog" role="dialog">
+            <button aria-label="Đóng form chỉnh sửa nhắc hẹn" className={styles.createReminderClose} onClick={() => { setEditingReminder(null); editTrigger.current?.focus(); }} type="button">×</button>
+            <ReminderEditForm reminder={editingReminder} titleId="edit-reminder-title" onCancel={() => { setEditingReminder(null); editTrigger.current?.focus(); }} onSaved={(updated) => {
               setReminders((current) => current.map((item) => item.reminder_id === updated.reminder_id ? { ...item, ...updated } : item));
-              setEditingReminder(null); setToast({ kind: "success", message: "Đã cập nhật nhắc hẹn." });
+              setEditingReminder(null); editTrigger.current?.focus(); setToast({ kind: "success", message: "Đã cập nhật nhắc hẹn." });
             }} />
           </div>
         </div>
@@ -409,7 +425,7 @@ function ReminderCard({ reminder, highlighted, onComplete, onEdit }: {
   reminder: ReminderListItem;
   highlighted: boolean;
   onComplete: (reminder: ReminderListItem, trigger: HTMLButtonElement) => void;
-  onEdit: (reminder: ReminderListItem) => void;
+  onEdit: (reminder: ReminderListItem, trigger: HTMLButtonElement) => void;
 }) {
   const displayStatus = getReminderDisplayStatus(reminder.status, reminder.due_date);
   const overdueDays = getDaysOverdue(reminder.due_date);
@@ -436,7 +452,7 @@ function ReminderCard({ reminder, highlighted, onComplete, onEdit }: {
       </div>
       {displayStatus !== "Completed" && (
         <div className={styles.reminderCardActions}>
-          <button aria-label={`Chỉnh sửa nhắc hẹn cho ${reminder.pet_name}`} className={styles.editButton} onClick={() => onEdit(reminder)} type="button">Chỉnh sửa</button>
+          <button aria-label={`Chỉnh sửa nhắc hẹn cho ${reminder.pet_name}`} className={styles.editButton} onClick={(event) => onEdit(reminder, event.currentTarget)} type="button">Chỉnh sửa</button>
           <button className={styles.completeButton} onClick={(event) => onComplete(reminder, event.currentTarget)} type="button">Hoàn thành</button>
         </div>
       )}

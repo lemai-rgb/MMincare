@@ -41,6 +41,8 @@ CT-05: Reminder trong MVP tập trung vào việc hiển thị nhắc hẹn tron
 
 Notification Phase 1 chỉ chuẩn bị event trong hệ thống: Owner có thể sửa Reminder `Upcoming`; event D-2/D+2 được lưu để truy vấn sau này. Chưa có Notification Center, email hoặc browser push.
 
+Trong dữ liệu truy vấn, mỗi Reminder chỉ có tối đa một notification hiện hành; `overdue` thay thế `due_soon` từ D+2.
+
 CT-06: Caretaker Portal chưa phải trọng tâm kiểm chứng giá trị cốt lõi của MVP, nên chỉ được xem là Should Have hoặc Future Enhancement tùy scope cuối cùng.
 
 ### 4\. Persona Prioritization

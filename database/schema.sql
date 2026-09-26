@@ -524,6 +524,31 @@ begin
 end;
 $$;
 
+create or replace function public.guard_reminder_update()
+returns trigger language plpgsql security invoker set search_path = '' as $$
+begin
+  if new.user_id is distinct from old.user_id or new.pet_id is distinct from old.pet_id
+     or new.type is distinct from old.type
+     or new.source_vaccine_record_id is distinct from old.source_vaccine_record_id
+     or new.source_medical_record_id is distinct from old.source_medical_record_id
+     or new.created_at is distinct from old.created_at then
+    raise exception 'Reminder ownership and source fields are immutable';
+  end if;
+  if old.status::text = 'Completed' then raise exception 'Completed reminders are immutable'; end if;
+  if new.status::text = 'Completed' then
+    if new.completed_at is null or new.due_date is distinct from old.due_date or new.note is distinct from old.note then
+      raise exception 'Completion may only change status and completed_at';
+    end if;
+  elsif new.status::text = 'Upcoming' then
+    if new.completed_at is not null then raise exception 'Upcoming reminder cannot have completed_at'; end if;
+  else raise exception 'Invalid reminder transition'; end if;
+  new.updated_at := now(); return new;
+end;
+$$;
+
+create trigger reminders_guard_update before update on public.reminders
+for each row execute function public.guard_reminder_update();
+
 create trigger reminders_sync_notification_events
 after insert or update of due_date, status on public.reminders
 for each row execute function public.sync_reminder_notification_events();
@@ -621,9 +646,11 @@ grant select, insert on table public.health_logs to authenticated;
 grant select, insert on table public.reminders to authenticated;
 revoke update on table public.reminders from anon;
 revoke update on table public.reminders from authenticated;
-grant update (status, completed_at, due_date, note, updated_at) on table public.reminders to authenticated;
+grant update (status, completed_at, due_date, note) on table public.reminders to authenticated;
 grant select on table public.notification_events to authenticated;
 grant update (read_at) on table public.notification_events to authenticated;
+revoke execute on function public.sync_reminder_notification_events() from public, anon, authenticated;
+revoke execute on function public.guard_reminder_update() from public, anon, authenticated;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
