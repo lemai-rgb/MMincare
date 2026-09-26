@@ -202,7 +202,9 @@ jobs:
               from information_schema.columns column_info
               where column_info.table_schema = 'public'
                 and column_info.table_name = 'reminders'
-                and column_info.column_name not in ('status', 'completed_at')
+                and column_info.column_name not in (
+                  'status', 'completed_at', 'due_date', 'note', 'updated_at'
+                )
                 and has_column_privilege(
                   'authenticated',
                   'public.reminders',
@@ -211,6 +213,12 @@ jobs:
                 )
             ) then
               raise exception 'Authenticated can UPDATE an unexpected Reminder column';
+            end if;
+
+            if not has_column_privilege('authenticated', 'public.reminders', 'due_date', 'UPDATE')
+               or not has_column_privilege('authenticated', 'public.reminders', 'note', 'UPDATE')
+               or not has_column_privilege('authenticated', 'public.reminders', 'updated_at', 'UPDATE') then
+              raise exception 'Reminder edit columns are missing UPDATE';
             end if;
 
             if exists (
