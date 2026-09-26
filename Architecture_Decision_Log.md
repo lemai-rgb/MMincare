@@ -11,4 +11,4 @@
 - Security: authenticated Owners can select their own events and update only `read_at`; clients cannot insert, delete or change scheduling fields. The trigger function is `SECURITY DEFINER` because authenticated callers intentionally have no scheduling-field grants; it uses an empty `search_path`, schema-qualified objects, and has EXECUTE revoked from client roles.
 - Current notification selection: `overdue` supersedes `due_soon` after D+2, so at most one active notification is returned per Reminder.
 - Reminder updates are guarded by a database trigger: edit keeps `Upcoming` and only changes due date/note; completion changes only status/completed_at. `updated_at` is database-managed and not client-writable.
-- Migration history remains immutable. CI derives a sanitized legacy baseline by removing only later Notification objects before replaying historical migrations.
+- Migration history remains immutable. CI takes `database/schema.sql` from the base branch as the pre-Notification baseline, verifies that it contains no Notification Phase 1 objects, then replays each migration exactly once.
