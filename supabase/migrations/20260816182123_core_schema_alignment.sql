@@ -268,6 +268,9 @@ begin
     -- drop it before ALTER COLUMN TYPE so a schema dump containing the policy
     -- can be replayed safely as well as an older live schema without it.
     drop policy if exists reminders_owner_update on public.reminders;
+    -- A current schema dump can contain the later Notification Phase 1
+    -- trigger. Like policies, it is a catalog dependency of status.
+    drop trigger if exists reminders_sync_notification_events on public.reminders;
 
     alter table public.reminders alter column status drop default;
     create type public.reminder_status_core as enum ('Upcoming', 'Completed');
@@ -289,6 +292,22 @@ $$;
 
 alter table public.reminders
   alter column status set default 'Upcoming'::public.reminder_status;
+
+do $$
+begin
+  if to_regprocedure('public.sync_reminder_notification_events()') is not null
+     and not exists (
+       select 1 from pg_catalog.pg_trigger
+       where tgrelid = 'public.reminders'::regclass
+         and tgname = 'reminders_sync_notification_events'
+         and not tgisinternal
+     ) then
+    execute 'create trigger reminders_sync_notification_events '
+      || 'after insert or update of due_date, status on public.reminders '
+      || 'for each row execute function public.sync_reminder_notification_events()';
+  end if;
+end
+$$;
 
 -- Target indexes, including foreign-key and RLS lookup paths.
 create index if not exists pets_owner_created_at_idx
