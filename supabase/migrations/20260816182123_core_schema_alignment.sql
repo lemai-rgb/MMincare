@@ -268,6 +268,7 @@ begin
     -- drop it before ALTER COLUMN TYPE so a schema dump containing the policy
     -- can be replayed safely as well as an older live schema without it.
     drop policy if exists reminders_owner_update on public.reminders;
+    drop policy if exists reminders_owner_edit on public.reminders;
     -- A current schema dump can contain the later Notification Phase 1
     -- trigger. Like policies, it is a catalog dependency of status.
     drop trigger if exists reminders_sync_notification_events on public.reminders;
