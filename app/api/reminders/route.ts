@@ -19,6 +19,7 @@ type ReminderRow = {
   source_vaccine_record_id: string | null;
   source_medical_record_id: string | null;
   completed_at: string | null;
+  updated_at: string | null;
 };
 
 export async function GET() {
@@ -46,7 +47,7 @@ export async function GET() {
   const petIds = pets.map((pet) => pet.pet_id);
   const reminderResult = await supabase
     .from("reminders")
-    .select("reminder_id, pet_id, due_date, type, status, note, source_vaccine_record_id, source_medical_record_id, completed_at")
+    .select("reminder_id, pet_id, due_date, type, status, note, source_vaccine_record_id, source_medical_record_id, completed_at, updated_at")
     .eq("user_id", userId)
     .in("pet_id", petIds)
     .order("due_date", { ascending: true });
@@ -63,7 +64,7 @@ export async function GET() {
       .eq("user_id", userId)
       .in("pet_id", petIds)
       .order("due_date", { ascending: true });
-    reminderRows = (fallbackResult.data ?? []).map((row) => ({ ...row, completed_at: null })) as ReminderRow[];
+    reminderRows = (fallbackResult.data ?? []).map((row) => ({ ...row, completed_at: null, updated_at: null })) as ReminderRow[];
     remindersError = fallbackResult.error;
   }
 

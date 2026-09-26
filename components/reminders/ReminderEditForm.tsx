@@ -1,14 +1,14 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
-import type { ReminderListItem } from "@/lib/reminders";
+import type { ReminderListItem, ReminderUpdate } from "@/lib/reminders";
 import styles from "@/styles/petDetail.module.css";
 
 export function ReminderEditForm({ reminder, titleId, onCancel, onSaved, onSavingChange }: {
   reminder: ReminderListItem;
   titleId?: string;
   onCancel: () => void;
-  onSaved: (reminder: Partial<ReminderListItem> & { reminder_id: string }) => void;
+  onSaved: (reminder: ReminderUpdate) => void | Promise<void>;
   onSavingChange?: (saving: boolean) => void;
 }) {
   const [dueDate, setDueDate] = useState(reminder.due_date);
@@ -26,9 +26,9 @@ export function ReminderEditForm({ reminder, titleId, onCancel, onSaved, onSavin
         method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ due_date: dueDate, note: note.trim() || null }),
       });
-      const payload = await response.json() as { reminder?: Partial<ReminderListItem> & { reminder_id: string }; error?: string };
+      const payload = await response.json() as { reminder?: ReminderUpdate; error?: string };
       if (!response.ok || !payload.reminder) throw new Error(payload.error || "Không thể lưu thay đổi.");
-      onSaved(payload.reminder);
+      await onSaved(payload.reminder);
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Không thể lưu thay đổi."); }
     finally { guard.current = false; setSaving(false); onSavingChange?.(false); }
   }

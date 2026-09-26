@@ -13,9 +13,11 @@ import {
   getDaysOverdue,
   getReminderDisplayStatus,
   getReminderTypeLabel,
+  sortReminders,
   type ReminderDisplayStatus,
   type ReminderListItem,
   type ReminderPetOption,
+  type ReminderUpdate,
 } from "@/lib/reminders";
 import styles from "@/styles/reminders.module.css";
 
@@ -225,10 +227,6 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
     setIsCreateOpen(true);
   }
 
-  function sortReminders(items: ReminderListItem[]) {
-    return [...items].sort((a, b) => a.due_date.localeCompare(b.due_date) || a.reminder_id.localeCompare(b.reminder_id));
-  }
-
   function closeCreate() {
     if (isCreating) return;
     setIsCreateOpen(false);
@@ -240,6 +238,21 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
     setToast({ kind: "success", message: "Đã tạo nhắc hẹn." });
     void loadReminders();
     window.setTimeout(() => createTrigger.current?.focus(), 0);
+  }
+
+  async function handleReminderSaved(updated: ReminderUpdate) {
+    const payload = await requestReminderData();
+    const nextReminders = Array.isArray(payload.reminders) ? payload.reminders : [];
+    const canonical = nextReminders.find((item) => item.reminder_id === updated.reminder_id);
+    if (!canonical || (updated.due_date !== undefined && canonical.due_date !== updated.due_date) || (updated.note !== undefined && canonical.note !== updated.note)) {
+      throw new Error("Không thể đồng bộ nhắc hẹn sau khi lưu. Vui lòng thử lại.");
+    }
+
+    setReminders(sortReminders(nextReminders));
+    setPets(Array.isArray(payload.pets) ? payload.pets : []);
+    setEditingReminder(null);
+    window.setTimeout(() => editTrigger.current?.focus(), 0);
+    setToast({ kind: "success", message: "Đã cập nhật nhắc hẹn." });
   }
 
   return (
@@ -351,10 +364,7 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
         <div className={styles.createReminderBackdrop} onMouseDown={(event) => { if (!isEditingSaving && event.target === event.currentTarget) { setEditingReminder(null); editTrigger.current?.focus(); } }}>
           <div aria-labelledby="edit-reminder-title" aria-modal="true" className={styles.createReminderDialog} id="edit-reminder-dialog" role="dialog">
             <button aria-label="Đóng form chỉnh sửa nhắc hẹn" className={styles.createReminderClose} onClick={() => { setEditingReminder(null); editTrigger.current?.focus(); }} type="button">×</button>
-            <ReminderEditForm reminder={editingReminder} titleId="edit-reminder-title" onCancel={() => { if (!isEditingSaving) { setEditingReminder(null); editTrigger.current?.focus(); } }} onSavingChange={setIsEditingSaving} onSaved={(updated) => {
-              setReminders((current) => sortReminders(current.map((item) => item.reminder_id === updated.reminder_id ? { ...item, ...updated } : item)));
-              setEditingReminder(null); editTrigger.current?.focus(); setToast({ kind: "success", message: "Đã cập nhật nhắc hẹn." });
-            }} />
+            <ReminderEditForm reminder={editingReminder} titleId="edit-reminder-title" onCancel={() => { if (!isEditingSaving) { setEditingReminder(null); editTrigger.current?.focus(); } }} onSavingChange={setIsEditingSaving} onSaved={handleReminderSaved} />
           </div>
         </div>
       )}
