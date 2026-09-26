@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Supabase CLI
         uses: supabase/setup-cli@v1
@@ -35,22 +37,15 @@ jobs:
         run: |
           set -euo pipefail
           baseline="supabase/migrations/00000000000000_local_ci_baseline.sql"
-          sed \
-            "s/create type public.reminder_status as enum ('Upcoming', 'Completed');/create type public.reminder_status as enum ('Upcoming', 'Overdue', 'Completed');/" \
-            database/schema.sql > "$baseline"
-          python3 - "$baseline" <<'PY'
-          import re, sys
-          path = sys.argv[1]
-          text = open(path, encoding="utf-8").read()
-          # The baseline is the final schema snapshot; remove only objects
-          # introduced by the later Notification migration before replaying
-          # historical migrations. The migration itself remains immutable.
-          text = re.sub(r"create policy reminders_owner_edit.*?;\n", "", text, flags=re.S)
-          text = re.sub(r"create trigger reminders_sync_notification_events.*?;\n", "", text, flags=re.S)
-          text = re.sub(r"create trigger reminders_guard_update.*?;\n", "", text, flags=re.S)
-          open(path, "w", encoding="utf-8").write(text)
-          PY
-          grep -Fq "create type public.reminder_status as enum ('Upcoming', 'Overdue', 'Completed');" "$baseline"
+          base_ref="${GITHUB_BASE_REF:-main}"
+          git show "origin/${base_ref}:database/schema.sql" > "$baseline"
+          # This snapshot is the schema from the base branch, before
+          # Notification Phase 1. It must not contain any Phase 1 objects.
+          if grep -Eq "notification_events|reminders_owner_edit|reminders_guard_update|sync_reminder_notification_events" "$baseline"; then
+            echo "The legacy baseline contains Notification Phase 1 objects" >&2
+            exit 1
+          fi
+          grep -Fq "create table public.reminders" "$baseline"
 
       - name: Start local Supabase services
         run: >-
@@ -326,6 +321,70 @@ jobs:
             end if;
           end
           $$;
+          SQL
+
+      - name: Verify notification database behavior
+        shell: bash
+        env:
+          LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: |
+          set -euo pipefail
+          psql "$LOCAL_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+          begin;
+          insert into auth.users (id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data)
+          values ('00000000-0000-0000-0000-000000000091', 'notification-ci@example.com', 'not-used', now(), '{"provider":"email"}', '{}');
+          insert into public.pets (pet_id, owner_id, name, species, gender)
+          values ('00000000-0000-0000-0000-000000000092', '00000000-0000-0000-0000-000000000091', 'Notification CI', 'Cat', 'Unknown');
+
+          insert into public.reminders (reminder_id, user_id, pet_id, due_date, type)
+          values ('00000000-0000-0000-0000-000000000093', '00000000-0000-0000-0000-000000000091', '00000000-0000-0000-0000-000000000092', current_date + 5, 'Other');
+
+          do $$
+          declare
+            event_count integer;
+            due_soon_schedule timestamptz;
+            overdue_schedule timestamptz;
+          begin
+            select count(*) into event_count from public.notification_events where reminder_id = '00000000-0000-0000-0000-000000000093';
+            if event_count <> 2 then raise exception 'Upcoming reminder did not create exactly two events'; end if;
+            select scheduled_for into due_soon_schedule from public.notification_events where reminder_id = '00000000-0000-0000-0000-000000000093' and event_type = 'due_soon' and cancelled_at is null;
+            select scheduled_for into overdue_schedule from public.notification_events where reminder_id = '00000000-0000-0000-0000-000000000093' and event_type = 'overdue' and cancelled_at is null;
+            if due_soon_schedule <> ((current_date + 3) + time '08:00') at time zone 'Asia/Ho_Chi_Minh' then raise exception 'due_soon schedule is incorrect'; end if;
+            if overdue_schedule <> ((current_date + 7) + time '08:00') at time zone 'Asia/Ho_Chi_Minh' then raise exception 'overdue schedule is incorrect'; end if;
+          end $$;
+
+          update public.reminders set due_date = current_date + 10 where reminder_id = '00000000-0000-0000-0000-000000000093';
+          do $$
+          begin
+            if (select count(*) from public.notification_events where reminder_id = '00000000-0000-0000-0000-000000000093' and cancelled_at is null) <> 2
+               or (select count(*) from public.notification_events where reminder_id = '00000000-0000-0000-0000-000000000093' and cancelled_at is not null) <> 2 then
+              raise exception 'Reschedule did not cancel old events and create one active pair';
+            end if;
+          end $$;
+
+          update public.reminders set status = 'Completed', completed_at = now() where reminder_id = '00000000-0000-0000-0000-000000000093';
+          do $$
+          begin
+            if (select count(*) from public.notification_events where reminder_id = '00000000-0000-0000-0000-000000000093' and cancelled_at is null) <> 0 then
+              raise exception 'Completion left active notification events';
+            end if;
+          end $$;
+
+          insert into public.reminders (reminder_id, user_id, pet_id, due_date, type)
+          values ('00000000-0000-0000-0000-000000000094', '00000000-0000-0000-0000-000000000091', '00000000-0000-0000-0000-000000000092', current_date + 5, 'Other');
+          do $$
+          begin
+            begin
+              update public.reminders
+              set status = 'Completed', completed_at = now(), due_date = current_date + 6
+              where reminder_id = '00000000-0000-0000-0000-000000000094';
+              raise exception 'Mixed Edit and Complete update was accepted';
+            exception when others then
+              if SQLERRM not like '%Completion may only change status and completed_at%' then raise; end if;
+            end;
+          end $$;
+
+          rollback;
           SQL
 
       - name: Stop local Supabase services

@@ -27,6 +27,26 @@ export async function PATCH(_request: Request, { params }: RouteContext) {
     .eq("notification_event_id", notificationId).eq("user_id", userId).is("read_at", null)
     .select("notification_event_id,read_at").maybeSingle();
   if (error) return NextResponse.json({ error: "Không thể cập nhật thông báo lúc này." }, { status: 500 });
-  if (!data) return NextResponse.json({ error: "Không tìm thấy thông báo." }, { status: 404 });
+  if (!data) {
+    // A concurrent request may have won the conditional update. Re-read the
+    // event and current-event precedence before deciding that it is missing.
+    const { data: latest, error: latestError } = await supabase.from("notification_events")
+      .select("notification_event_id,reminder_id,event_type,scheduled_for,read_at,cancelled_at,reminders!inner(status)")
+      .eq("notification_event_id", notificationId).eq("user_id", userId).maybeSingle();
+    if (latestError) return NextResponse.json({ error: "Không thể kiểm tra thông báo lúc này." }, { status: 500 });
+    const latestReminder = Array.isArray(latest?.reminders) ? latest.reminders[0] : latest?.reminders;
+    const now = new Date().toISOString();
+    if (latest && latest.read_at && !latest.cancelled_at && latest.scheduled_for <= now && latestReminder?.status === "Upcoming") {
+      const { data: latestActive, error: latestActiveError } = await supabase.from("notification_events")
+        .select("notification_event_id,event_type,scheduled_for")
+        .eq("reminder_id", latest.reminder_id).is("cancelled_at", null).lte("scheduled_for", now);
+      if (latestActiveError) return NextResponse.json({ error: "Không thể kiểm tra thông báo lúc này." }, { status: 500 });
+      const latestCurrent = (latestActive ?? []).sort((a, b) => Number(b.event_type === "overdue") - Number(a.event_type === "overdue") || b.scheduled_for.localeCompare(a.scheduled_for))[0];
+      if (latestCurrent?.notification_event_id === notificationId) {
+        return NextResponse.json({ notification: { notification_event_id: latest.notification_event_id, read_at: latest.read_at } });
+      }
+    }
+    return NextResponse.json({ error: "Không tìm thấy thông báo." }, { status: 404 });
+  }
   return NextResponse.json({ notification: data });
 }

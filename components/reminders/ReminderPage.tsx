@@ -85,6 +85,7 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
   const [completeError, setCompleteError] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingReminder, setEditingReminder] = useState<ReminderListItem | null>(null);
+  const [isEditingSaving, setIsEditingSaving] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
   const completionGuard = useRef(false);
@@ -96,7 +97,7 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
     if (!editingReminder) return;
     const onKeyDown = (event: KeyboardEvent) => {
       const dialog = document.getElementById("edit-reminder-dialog");
-      if (event.key === "Escape") { event.preventDefault(); setEditingReminder(null); editTrigger.current?.focus(); return; }
+      if (event.key === "Escape" && !isEditingSaving) { event.preventDefault(); setEditingReminder(null); editTrigger.current?.focus(); return; }
       if (event.key !== "Tab" || !dialog) return;
       const focusable = [...dialog.querySelectorAll<HTMLElement>("button:not(:disabled), input:not(:disabled), textarea:not(:disabled)")];
       if (!focusable.length) return;
@@ -105,7 +106,20 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [editingReminder]);
+  }, [editingReminder, isEditingSaving]);
+
+  useEffect(() => {
+    if (!isEditingSaving) return;
+    const preventDialogDismiss = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("#edit-reminder-dialog > button")) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    document.addEventListener("click", preventDialogDismiss, true);
+    return () => document.removeEventListener("click", preventDialogDismiss, true);
+  }, [isEditingSaving]);
 
   const loadReminders = useCallback(async () => {
     setIsLoading(true);
@@ -211,6 +225,10 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
     setIsCreateOpen(true);
   }
 
+  function sortReminders(items: ReminderListItem[]) {
+    return [...items].sort((a, b) => a.due_date.localeCompare(b.due_date) || a.reminder_id.localeCompare(b.reminder_id));
+  }
+
   function closeCreate() {
     if (isCreating) return;
     setIsCreateOpen(false);
@@ -300,7 +318,7 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
                   highlighted={reminder.reminder_id === highlightedReminderId}
                   key={reminder.reminder_id}
                   onComplete={openComplete}
-                  onEdit={(reminder, trigger) => { editTrigger.current = trigger; setEditingReminder(reminder); }}
+                  onEdit={(reminder, trigger) => { editTrigger.current = trigger; setIsEditingSaving(false); setEditingReminder(reminder); }}
                   reminder={reminder}
                 />
               ))}
@@ -330,11 +348,11 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
         />
       )}
       {editingReminder && (
-        <div className={styles.createReminderBackdrop} onMouseDown={(event) => { if (event.target === event.currentTarget) setEditingReminder(null); }}>
+        <div className={styles.createReminderBackdrop} onMouseDown={(event) => { if (!isEditingSaving && event.target === event.currentTarget) { setEditingReminder(null); editTrigger.current?.focus(); } }}>
           <div aria-labelledby="edit-reminder-title" aria-modal="true" className={styles.createReminderDialog} id="edit-reminder-dialog" role="dialog">
             <button aria-label="Đóng form chỉnh sửa nhắc hẹn" className={styles.createReminderClose} onClick={() => { setEditingReminder(null); editTrigger.current?.focus(); }} type="button">×</button>
-            <ReminderEditForm reminder={editingReminder} titleId="edit-reminder-title" onCancel={() => { setEditingReminder(null); editTrigger.current?.focus(); }} onSaved={(updated) => {
-              setReminders((current) => current.map((item) => item.reminder_id === updated.reminder_id ? { ...item, ...updated } : item));
+            <ReminderEditForm reminder={editingReminder} titleId="edit-reminder-title" onCancel={() => { if (!isEditingSaving) { setEditingReminder(null); editTrigger.current?.focus(); } }} onSavingChange={setIsEditingSaving} onSaved={(updated) => {
+              setReminders((current) => sortReminders(current.map((item) => item.reminder_id === updated.reminder_id ? { ...item, ...updated } : item)));
               setEditingReminder(null); editTrigger.current?.focus(); setToast({ kind: "success", message: "Đã cập nhật nhắc hẹn." });
             }} />
           </div>

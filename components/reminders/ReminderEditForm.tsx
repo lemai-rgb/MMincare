@@ -4,11 +4,12 @@ import { FormEvent, useRef, useState } from "react";
 import type { ReminderListItem } from "@/lib/reminders";
 import styles from "@/styles/petDetail.module.css";
 
-export function ReminderEditForm({ reminder, titleId, onCancel, onSaved }: {
+export function ReminderEditForm({ reminder, titleId, onCancel, onSaved, onSavingChange }: {
   reminder: ReminderListItem;
   titleId?: string;
   onCancel: () => void;
   onSaved: (reminder: Partial<ReminderListItem> & { reminder_id: string }) => void;
+  onSavingChange?: (saving: boolean) => void;
 }) {
   const [dueDate, setDueDate] = useState(reminder.due_date);
   const [note, setNote] = useState(reminder.note ?? "");
@@ -19,7 +20,7 @@ export function ReminderEditForm({ reminder, titleId, onCancel, onSaved }: {
     event.preventDefault();
     if (guard.current) return;
     if (!dueDate) { setError("Vui lòng chọn ngày hẹn."); return; }
-    guard.current = true; setSaving(true); setError("");
+    guard.current = true; setSaving(true); onSavingChange?.(true); setError("");
     try {
       const response = await fetch(`/api/reminders/${encodeURIComponent(reminder.reminder_id)}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -29,7 +30,7 @@ export function ReminderEditForm({ reminder, titleId, onCancel, onSaved }: {
       if (!response.ok || !payload.reminder) throw new Error(payload.error || "Không thể lưu thay đổi.");
       onSaved(payload.reminder);
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Không thể lưu thay đổi."); }
-    finally { guard.current = false; setSaving(false); }
+    finally { guard.current = false; setSaving(false); onSavingChange?.(false); }
   }
   return <form aria-busy={saving} className={styles.petReminderForm} onSubmit={submit}>
     <header className={styles.petReminderFormHeader}><h2 id={titleId}>Chỉnh sửa nhắc hẹn</h2><p>Cập nhật ngày hẹn hoặc ghi chú</p></header>
