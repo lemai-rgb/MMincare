@@ -45,7 +45,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   if (body.note !== undefined) updates.note = typeof body.note === "string" ? body.note.trim() || null : null;
   const { data, error } = await supabase.from("reminders").update(updates)
     .eq("reminder_id", reminderId).eq("user_id", userId).eq("status", "Upcoming")
-    .select("reminder_id,pet_id,due_date,type,status,note,source_vaccine_record_id,source_medical_record_id,completed_at").maybeSingle();
+    .select("reminder_id,pet_id,due_date,type,status,note,source_vaccine_record_id,source_medical_record_id,completed_at,updated_at").maybeSingle();
   if (error) return NextResponse.json({ error: "Không thể lưu thay đổi nhắc hẹn." }, { status: 500 });
   if (!data) return NextResponse.json({ error: "Nhắc hẹn đã thay đổi và không còn có thể sửa." }, { status: 409 });
   return NextResponse.json({ reminder: data });

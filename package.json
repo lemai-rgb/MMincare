@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:notifications": "tsx lib/notifications/current.test.ts"
+    "test:notifications": "tsx lib/notifications/current.test.ts",
+    "test:reminders": "tsx lib/reminders/edit.test.ts"
   },
   "overrides": {
     "baseline-browser-mapping": "2.11.25"

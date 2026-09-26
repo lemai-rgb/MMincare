@@ -25,7 +25,18 @@ export type ReminderListItem = {
   source_medical_record_id: string | null;
   source_medical_visit_date: string | null;
   completed_at: string | null;
+  updated_at?: string | null;
 };
+
+export type ReminderUpdate = Partial<ReminderListItem> & { reminder_id: string };
+
+export function sortReminders(items: ReminderListItem[]) {
+  return [...items].sort((a, b) => a.due_date.localeCompare(b.due_date) || a.reminder_id.localeCompare(b.reminder_id));
+}
+
+export function replaceReminder(items: ReminderListItem[], updated: ReminderUpdate) {
+  return sortReminders(items.map((item) => item.reminder_id === updated.reminder_id ? { ...item, ...updated } : item));
+}
 
 export function getReminderDisplayStatus(
   status: ReminderStoredStatus,
