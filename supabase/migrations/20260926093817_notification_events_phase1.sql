@@ -3,7 +3,7 @@ begin;
 alter table public.reminders
   add column if not exists updated_at timestamptz not null default now();
 
-create table public.notification_events (
+create table if not exists public.notification_events (
   notification_event_id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users (user_id) on delete restrict,
   reminder_id uuid not null references public.reminders (reminder_id) on delete cascade,
@@ -18,13 +18,13 @@ create table public.notification_events (
   constraint notification_events_owner_check check (user_id is not null)
 );
 
-create unique index notification_events_active_schedule_uidx
+create unique index if not exists notification_events_active_schedule_uidx
   on public.notification_events (reminder_id, event_type, due_date_snapshot)
   where cancelled_at is null;
-create index notification_events_owner_schedule_idx
+create index if not exists notification_events_owner_schedule_idx
   on public.notification_events (user_id, scheduled_for, notification_event_id)
   where cancelled_at is null;
-create index notification_events_owner_unread_idx
+create index if not exists notification_events_owner_unread_idx
   on public.notification_events (user_id, scheduled_for)
   where read_at is null and cancelled_at is null;
 
@@ -86,10 +86,12 @@ on conflict (reminder_id, event_type, due_date_snapshot)
 
 alter table public.notification_events enable row level security;
 
+drop policy if exists notification_events_owner_select on public.notification_events;
 create policy notification_events_owner_select on public.notification_events
 for select to authenticated
 using (user_id = (select auth.uid()));
 
+drop policy if exists notification_events_owner_read_update on public.notification_events;
 create policy notification_events_owner_read_update on public.notification_events
 for update to authenticated
 using (user_id = (select auth.uid()))
