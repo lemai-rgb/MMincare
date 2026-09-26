@@ -153,7 +153,22 @@
 }
 
 .reminderCardActions { display: flex; align-items: center; gap: 8px; }
-.editButton { border: 1px solid var(--mm-primary); border-radius: 999px; background: #fff; color: var(--mm-primary-dark); padding: 9px 14px; font-weight: 700; cursor: pointer; }
+.editButton {
+  display: inline-flex;
+  width: 140px;
+  min-width: 130px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid var(--mm-primary);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--mm-primary-dark);
+  padding: 9px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
 .editButton:hover { background: var(--mm-primary-soft); }
 .editButton:focus-visible { outline: 3px solid rgba(62, 103, 70, .3); outline-offset: 2px; }
 
@@ -422,12 +437,16 @@
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 14px;
   margin-top: 8px;
 }
 
 .completeButton {
-  min-width: 172px;
+  width: 240px;
+  min-width: 220px;
+  max-width: 260px;
+  min-height: 44px;
+  box-sizing: border-box;
   align-self: center;
   border-color: var(--mm-primary);
   background: var(--mm-primary);
@@ -683,8 +702,8 @@
   .dateBlock,
   .reminderDetails,
   .reminderCardActions { grid-column: 1; grid-row: auto; }
-  .reminderCardActions { width: 100%; justify-content: stretch; }
-  .reminderCardActions button { flex: 1 1 160px; }
+  .reminderCardActions { width: 100%; flex-direction: column; align-items: stretch; justify-content: stretch; gap: 12px; }
+  .reminderCardActions button { width: 100%; min-width: 0; max-width: none; flex: 0 1 auto; }
   .dateBlock { margin-bottom: 14px; }
   .cardTitleRow { flex-wrap: wrap; margin-bottom: 12px; }
   .reminderDetails h2 { max-width: none; margin-bottom: 12px; }
