@@ -468,6 +468,24 @@ Không dùng public bucket cho hồ sơ y tế. Storage policies phải kiểm t
 - [ ] Chỉ tạo Reminder sau khi owner xác nhận ngày.
 - [ ] Áp dụng Storage policy và giới hạn loại/kích thước tệp.
 - [ ] Kiểm tra constraint liên bảng: owner của Reminder, source vaccine cùng pet, người cấp quyền là owner.
+
+## notification_events (Notification Phase 1)
+
+| Column | Type | Rule |
+|---|---|---|
+| notification_event_id | uuid | PK, generated |
+| user_id | uuid | Owner, FK users |
+| reminder_id | uuid | FK reminders, ON DELETE CASCADE |
+| event_type | text | `due_soon` hoặc `overdue` |
+| due_date_snapshot | date | Ngày hẹn tại lúc tạo lịch |
+| scheduled_for | timestamptz | D-2/D+2 lúc 08:00 Asia/Ho_Chi_Minh |
+| read_at | timestamptz nullable | Chỉ trường client được phép cập nhật |
+| cancelled_at | timestamptz nullable | Hủy khi đổi ngày/hoàn thành |
+| created_at, updated_at | timestamptz | Audit timestamps |
+
+Partial unique index bảo đảm tối đa một event đang hoạt động cho `(reminder_id, event_type, due_date_snapshot)` nhưng vẫn giữ lịch sử đã hủy.
+
+Notification query dùng `overdue` thay `due_soon` sau D+2; event tương lai, đã hủy hoặc Reminder Completed không phải notification hiện hành.
 - [ ] Kiểm thử RLS bằng ít nhất ba tài khoản: owner, caretaker và người không có quyền.
 
 ---

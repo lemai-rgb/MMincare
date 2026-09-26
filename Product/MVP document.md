@@ -39,6 +39,10 @@ CT-04: MVP không xử lý đặt lịch khám, thanh toán hoặc kết nối m
 
 CT-05: Reminder trong MVP tập trung vào việc hiển thị nhắc hẹn trong hệ thống; push notification/email notification có thể được mô phỏng hoặc để ở phiên bản sau.
 
+Notification Phase 1 chỉ chuẩn bị event trong hệ thống: Owner có thể sửa Reminder `Upcoming`; event D-2/D+2 được lưu để truy vấn sau này. Chưa có Notification Center, email hoặc browser push.
+
+Trong dữ liệu truy vấn, mỗi Reminder chỉ có tối đa một notification hiện hành; `overdue` thay thế `due_soon` từ D+2.
+
 CT-06: Caretaker Portal chưa phải trọng tâm kiểm chứng giá trị cốt lõi của MVP, nên chỉ được xem là Should Have hoặc Future Enhancement tùy scope cuối cùng.
 
 ### 4\. Persona Prioritization
@@ -96,4 +100,4 @@ CT-06: Caretaker Portal chưa phải trọng tâm kiểm chứng giá trị cố
 - Hỗ trợ loài khác ngoài chó và mèo: Chưa có vaccination schedule chuẩn để model  
 - Hệ thống quản lý phía phòng khám (Clinic-side): Domain riêng biệt, đã loại trừ trong WHO   
 - Tính năng cộng đồng / mạng xã hội: Nằm ngoài core value của MminCare   
-- Tích hợp đặt lịch phòng khám trực tuyến: Phụ thuộc third-party, tăng complexity không cần thiết ở MVP 
+- Tích hợp đặt lịch phòng khám trực tuyến: Phụ thuộc third-party, tăng complexity không cần thiết ở MVP

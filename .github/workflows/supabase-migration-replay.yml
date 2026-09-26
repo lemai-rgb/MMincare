@@ -21,11 +21,21 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Supabase CLI
         uses: supabase/setup-cli@v1
         with:
           version: 2.117.0
+
+      - name: Install Node.js dependencies
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install npm dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Initialize local Supabase configuration
         run: supabase init
@@ -35,10 +45,15 @@ jobs:
         run: |
           set -euo pipefail
           baseline="supabase/migrations/00000000000000_local_ci_baseline.sql"
-          sed \
-            "s/create type public.reminder_status as enum ('Upcoming', 'Completed');/create type public.reminder_status as enum ('Upcoming', 'Overdue', 'Completed');/" \
-            database/schema.sql > "$baseline"
-          grep -Fq "create type public.reminder_status as enum ('Upcoming', 'Overdue', 'Completed');" "$baseline"
+          base_ref="${GITHUB_BASE_REF:-main}"
+          git show "origin/${base_ref}:database/schema.sql" > "$baseline"
+          # This snapshot is the schema from the base branch, before
+          # Notification Phase 1. It must not contain any Phase 1 objects.
+          if grep -Eq "notification_events|reminders_owner_edit|reminders_guard_update|sync_reminder_notification_events" "$baseline"; then
+            echo "The legacy baseline contains Notification Phase 1 objects" >&2
+            exit 1
+          fi
+          grep -Fq "create table public.reminders" "$baseline"
 
       - name: Start local Supabase services
         run: >-
@@ -202,7 +217,9 @@ jobs:
               from information_schema.columns column_info
               where column_info.table_schema = 'public'
                 and column_info.table_name = 'reminders'
-                and column_info.column_name not in ('status', 'completed_at')
+                and column_info.column_name not in (
+                  'status', 'completed_at', 'due_date', 'note'
+                )
                 and has_column_privilege(
                   'authenticated',
                   'public.reminders',
@@ -211,6 +228,15 @@ jobs:
                 )
             ) then
               raise exception 'Authenticated can UPDATE an unexpected Reminder column';
+            end if;
+
+            if not has_column_privilege('authenticated', 'public.reminders', 'due_date', 'UPDATE')
+               or not has_column_privilege('authenticated', 'public.reminders', 'note', 'UPDATE')
+               then
+              raise exception 'Reminder edit columns are missing UPDATE';
+            end if;
+            if has_column_privilege('authenticated', 'public.reminders', 'updated_at', 'UPDATE') then
+              raise exception 'updated_at must not be client writable';
             end if;
 
             if exists (
@@ -281,9 +307,96 @@ jobs:
             ) then
               raise exception 'An expected Owner RLS policy is missing after replay';
             end if;
+
+            if not exists (select 1 from pg_catalog.pg_policy where polrelid = 'public.notification_events'::regclass and polname = 'notification_events_owner_select')
+               or not exists (select 1 from pg_catalog.pg_policy where polrelid = 'public.notification_events'::regclass and polname = 'notification_events_owner_read_update') then
+              raise exception 'Notification Owner policies are missing';
+            end if;
+            if not has_table_privilege('authenticated', 'public.notification_events', 'SELECT')
+               or has_table_privilege('authenticated', 'public.notification_events', 'INSERT')
+               or has_table_privilege('authenticated', 'public.notification_events', 'DELETE') then
+              raise exception 'Unexpected notification_events table privileges';
+            end if;
+            if not has_column_privilege('authenticated', 'public.notification_events', 'read_at', 'UPDATE')
+               or has_column_privilege('authenticated', 'public.notification_events', 'scheduled_for', 'UPDATE') then
+              raise exception 'Unexpected notification_events column privileges';
+            end if;
+            if not exists (select 1 from pg_trigger where tgrelid = 'public.reminders'::regclass and tgname = 'reminders_sync_notification_events' and not tgisinternal) then
+              raise exception 'Reminder notification trigger is missing';
+            end if;
+            if not exists (select 1 from pg_trigger where tgrelid = 'public.reminders'::regclass and tgname = 'reminders_guard_update' and not tgisinternal) then
+              raise exception 'Reminder guard trigger is missing';
+            end if;
           end
           $$;
           SQL
+
+      - name: Verify notification database behavior
+        shell: bash
+        env:
+          LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: |
+          set -euo pipefail
+          psql "$LOCAL_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+          begin;
+          insert into auth.users (id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data)
+          values ('00000000-0000-0000-0000-000000000091', 'notification-ci@example.com', 'not-used', now(), '{"provider":"email"}', '{}');
+          insert into public.pets (pet_id, owner_id, name, species, gender)
+          values ('00000000-0000-0000-0000-000000000092', '00000000-0000-0000-0000-000000000091', 'Notification CI', 'Cat', 'Unknown');
+
+          insert into public.reminders (reminder_id, user_id, pet_id, due_date, type)
+          values ('00000000-0000-0000-0000-000000000093', '00000000-0000-0000-0000-000000000091', '00000000-0000-0000-0000-000000000092', current_date + 5, 'Other');
+
+          do $$
+          declare
+            event_count integer;
+            due_soon_schedule timestamptz;
+            overdue_schedule timestamptz;
+          begin
+            select count(*) into event_count from public.notification_events where reminder_id = '00000000-0000-0000-0000-000000000093';
+            if event_count <> 2 then raise exception 'Upcoming reminder did not create exactly two events'; end if;
+            select scheduled_for into due_soon_schedule from public.notification_events where reminder_id = '00000000-0000-0000-0000-000000000093' and event_type = 'due_soon' and cancelled_at is null;
+            select scheduled_for into overdue_schedule from public.notification_events where reminder_id = '00000000-0000-0000-0000-000000000093' and event_type = 'overdue' and cancelled_at is null;
+            if due_soon_schedule <> ((current_date + 3) + time '08:00') at time zone 'Asia/Ho_Chi_Minh' then raise exception 'due_soon schedule is incorrect'; end if;
+            if overdue_schedule <> ((current_date + 7) + time '08:00') at time zone 'Asia/Ho_Chi_Minh' then raise exception 'overdue schedule is incorrect'; end if;
+          end $$;
+
+          update public.reminders set due_date = current_date + 10 where reminder_id = '00000000-0000-0000-0000-000000000093';
+          do $$
+          begin
+            if (select count(*) from public.notification_events where reminder_id = '00000000-0000-0000-0000-000000000093' and cancelled_at is null) <> 2
+               or (select count(*) from public.notification_events where reminder_id = '00000000-0000-0000-0000-000000000093' and cancelled_at is not null) <> 2 then
+              raise exception 'Reschedule did not cancel old events and create one active pair';
+            end if;
+          end $$;
+
+          update public.reminders set status = 'Completed', completed_at = now() where reminder_id = '00000000-0000-0000-0000-000000000093';
+          do $$
+          begin
+            if (select count(*) from public.notification_events where reminder_id = '00000000-0000-0000-0000-000000000093' and cancelled_at is null) <> 0 then
+              raise exception 'Completion left active notification events';
+            end if;
+          end $$;
+
+          insert into public.reminders (reminder_id, user_id, pet_id, due_date, type)
+          values ('00000000-0000-0000-0000-000000000094', '00000000-0000-0000-0000-000000000091', '00000000-0000-0000-0000-000000000092', current_date + 5, 'Other');
+          do $$
+          begin
+            begin
+              update public.reminders
+              set status = 'Completed', completed_at = now(), due_date = current_date + 6
+              where reminder_id = '00000000-0000-0000-0000-000000000094';
+              raise exception 'Mixed Edit and Complete update was accepted';
+            exception when others then
+              if SQLERRM not like '%Completion may only change status and completed_at%' then raise; end if;
+            end;
+          end $$;
+
+          rollback;
+          SQL
+
+      - name: Run notification selector regression test
+        run: npm run test:notifications
 
       - name: Stop local Supabase services
         if: always()

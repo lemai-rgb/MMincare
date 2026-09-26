@@ -95,6 +95,11 @@
 | Reminder | GET | `/pets/{pet_id}/reminders` | Xem Reminder theo pet |
 | Reminder | POST | `/pets/{pet_id}/reminders` | Owner tạo Reminder |
 | Reminder | PATCH | `/reminders/{reminder_id}/complete` | Owner đánh dấu hoàn thành |
+| Reminder | PATCH | `/reminders/{reminder_id}` | Owner sửa ngày hẹn/ghi chú của Reminder Upcoming |
+| Notification | GET | `/notifications` | Owner xem event đã đến lịch, chưa hủy |
+| Notification | PATCH | `/notifications/{notification_id}/read` | Owner đánh dấu event đã đọc |
+
+`GET /notifications` chỉ trả notification hiện hành: event chưa hủy, `scheduled_for <= now`, Reminder còn `Upcoming`; từ D+2 `overdue` thay thế `due_soon`, tối đa một event cho mỗi Reminder. Endpoint read chỉ đánh dấu event hiện hành và idempotent.
 | HealthLog | GET | `/pets/{pet_id}/health-logs` | Xem Health Log |
 | HealthLog | POST | `/pets/{pet_id}/health-logs` | Thêm Health Log |
 | Dashboard | GET | `/dashboard` | Tổng quan nhiều pet |
