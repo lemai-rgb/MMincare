@@ -281,6 +281,23 @@ jobs:
             ) then
               raise exception 'An expected Owner RLS policy is missing after replay';
             end if;
+
+            if not exists (select 1 from pg_catalog.pg_policy where polrelid = 'public.notification_events'::regclass and polname = 'notification_events_owner_select')
+               or not exists (select 1 from pg_catalog.pg_policy where polrelid = 'public.notification_events'::regclass and polname = 'notification_events_owner_read_update') then
+              raise exception 'Notification Owner policies are missing';
+            end if;
+            if not has_table_privilege('authenticated', 'public.notification_events', 'SELECT')
+               or has_table_privilege('authenticated', 'public.notification_events', 'INSERT')
+               or has_table_privilege('authenticated', 'public.notification_events', 'DELETE') then
+              raise exception 'Unexpected notification_events table privileges';
+            end if;
+            if not has_column_privilege('authenticated', 'public.notification_events', 'read_at', 'UPDATE')
+               or has_column_privilege('authenticated', 'public.notification_events', 'scheduled_for', 'UPDATE') then
+              raise exception 'Unexpected notification_events column privileges';
+            end if;
+            if not exists (select 1 from pg_trigger where tgrelid = 'public.reminders'::regclass and tgname = 'reminders_sync_notification_events' and not tgisinternal) then
+              raise exception 'Reminder notification trigger is missing';
+            end if;
           end
           $$;
           SQL

@@ -8,6 +8,7 @@ import {
   ReminderCreateForm,
   type ManualReminderCreatedResult,
 } from "@/components/reminders/ReminderCreateForm";
+import { ReminderEditForm } from "@/components/reminders/ReminderEditForm";
 import {
   getDaysOverdue,
   getReminderDisplayStatus,
@@ -83,6 +84,7 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
   const [isCompleting, setIsCompleting] = useState(false);
   const [completeError, setCompleteError] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingReminder, setEditingReminder] = useState<ReminderListItem | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
   const completionGuard = useRef(false);
@@ -282,6 +284,7 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
                   highlighted={reminder.reminder_id === highlightedReminderId}
                   key={reminder.reminder_id}
                   onComplete={openComplete}
+                  onEdit={setEditingReminder}
                   reminder={reminder}
                 />
               ))}
@@ -309,6 +312,17 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
           onSubmittingChange={setIsCreating}
           pets={pets}
         />
+      )}
+      {editingReminder && (
+        <div className={styles.createReminderBackdrop} onMouseDown={(event) => { if (event.target === event.currentTarget) setEditingReminder(null); }}>
+          <div aria-label="Chỉnh sửa nhắc hẹn" aria-modal="true" className={styles.createReminderDialog} role="dialog">
+            <button aria-label="Đóng form chỉnh sửa nhắc hẹn" className={styles.createReminderClose} onClick={() => setEditingReminder(null)} type="button">×</button>
+            <ReminderEditForm reminder={editingReminder} onCancel={() => setEditingReminder(null)} onSaved={(updated) => {
+              setReminders((current) => current.map((item) => item.reminder_id === updated.reminder_id ? { ...item, ...updated } : item));
+              setEditingReminder(null); setToast({ kind: "success", message: "Đã cập nhật nhắc hẹn." });
+            }} />
+          </div>
+        </div>
       )}
 
       {toast && <div className={`${styles.toast} ${toast.kind === "error" ? styles.errorToast : ""}`} role={toast.kind === "error" ? "alert" : "status"}>{toast.message}</div>}
@@ -391,10 +405,11 @@ function CreateReminderModal({
   );
 }
 
-function ReminderCard({ reminder, highlighted, onComplete }: {
+function ReminderCard({ reminder, highlighted, onComplete, onEdit }: {
   reminder: ReminderListItem;
   highlighted: boolean;
   onComplete: (reminder: ReminderListItem, trigger: HTMLButtonElement) => void;
+  onEdit: (reminder: ReminderListItem) => void;
 }) {
   const displayStatus = getReminderDisplayStatus(reminder.status, reminder.due_date);
   const overdueDays = getDaysOverdue(reminder.due_date);
@@ -420,7 +435,10 @@ function ReminderCard({ reminder, highlighted, onComplete }: {
         {displayStatus === "Completed" && reminder.completed_at && <p className={styles.completedText}>Hoàn thành ngày {formatCompletedAt(reminder.completed_at)}</p>}
       </div>
       {displayStatus !== "Completed" && (
-        <button className={styles.completeButton} onClick={(event) => onComplete(reminder, event.currentTarget)} type="button">Hoàn thành</button>
+        <div className={styles.reminderCardActions}>
+          <button aria-label={`Chỉnh sửa nhắc hẹn cho ${reminder.pet_name}`} className={styles.editButton} onClick={() => onEdit(reminder)} type="button">Chỉnh sửa</button>
+          <button className={styles.completeButton} onClick={(event) => onComplete(reminder, event.currentTarget)} type="button">Hoàn thành</button>
+        </div>
       )}
     </article>
   );

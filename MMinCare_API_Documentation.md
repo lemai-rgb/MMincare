@@ -95,6 +95,9 @@
 | Reminder | GET | `/pets/{pet_id}/reminders` | Xem Reminder theo pet |
 | Reminder | POST | `/pets/{pet_id}/reminders` | Owner tạo Reminder |
 | Reminder | PATCH | `/reminders/{reminder_id}/complete` | Owner đánh dấu hoàn thành |
+| Reminder | PATCH | `/reminders/{reminder_id}` | Owner sửa ngày hẹn/ghi chú của Reminder Upcoming |
+| Notification | GET | `/notifications` | Owner xem event đã đến lịch, chưa hủy |
+| Notification | PATCH | `/notifications/{notification_id}/read` | Owner đánh dấu event đã đọc |
 | HealthLog | GET | `/pets/{pet_id}/health-logs` | Xem Health Log |
 | HealthLog | POST | `/pets/{pet_id}/health-logs` | Thêm Health Log |
 | Dashboard | GET | `/dashboard` | Tổng quan nhiều pet |
