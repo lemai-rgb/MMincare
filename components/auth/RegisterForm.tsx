@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
-import { getAuthEmailRedirectOrigin } from "@/lib/authEmailRedirect";
+import { getAuthEmailConfirmationUrl } from "@/lib/authEmailRedirect";
+import { mapAuthError } from "@/lib/auth/errors";
 import { getAvailableAuthDestination, getOnboardingPath } from "@/lib/authRedirect";
 import type { OnboardingSpecies } from "@/lib/authRedirect";
 import type { AuthFieldErrors } from "@/lib/authValidation";
@@ -13,6 +14,7 @@ import { normalizeEmail, validateRegister } from "@/lib/authValidation";
 import { createClient } from "@/lib/supabase/client";
 import styles from "@/styles/auth.module.css";
 import { AuthFormCard } from "./AuthFormCard";
+import { EmailConfirmationNotice } from "./EmailConfirmationNotice";
 import { AuthInput } from "./AuthInput";
 import { PasswordInput } from "./PasswordInput";
 
@@ -28,6 +30,7 @@ export function RegisterForm({ species }: RegisterFormProps) {
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const next = species ? getOnboardingPath(species) : "/dashboard";
 
   useEffect(() => {
     if (Object.keys(errors).length === 0) return;
@@ -49,38 +52,42 @@ export function RegisterForm({ species }: RegisterFormProps) {
     if (Object.keys(nextErrors).length > 0) return;
 
     setIsLoading(true);
-    const next = species ? getOnboardingPath(species) : "/dashboard";
-    const confirmUrl = new URL(
-      "/auth/confirm",
-      getAuthEmailRedirectOrigin(window.location.origin),
-    );
-    confirmUrl.searchParams.set("next", next);
+    try {
+      const { data, error } = await createClient().auth.signUp({
+        email: normalizedEmail,
+        password,
+        options: { emailRedirectTo: getAuthEmailConfirmationUrl(window.location.origin, next) },
+      });
 
-    const { data, error } = await createClient().auth.signUp({
-      email: normalizedEmail,
-      password,
-      options: { emailRedirectTo: confirmUrl.toString() },
-    });
+      if (error) {
+        setFormError(mapAuthError(error, { operation: "signup" }).message);
+        return;
+      }
 
-    if (error) {
-      const duplicateCodes = new Set(["email_exists", "user_already_exists"]);
-      setFormError(
-        duplicateCodes.has(error.code ?? "")
-          ? "Email này đã được đăng ký. Vui lòng đăng nhập."
-          : "Không thể đăng ký lúc này. Vui lòng thử lại.",
-      );
+      if (data.session) {
+        router.replace(getAvailableAuthDestination(next));
+        router.refresh();
+        return;
+      }
+
+      setSuccessMessage("Đăng ký thành công");
+    } catch (error) {
+      setFormError(mapAuthError(error, { operation: "signup" }).message);
+    } finally {
       setIsLoading(false);
-      return;
     }
+  }
 
-    if (data.session) {
-      router.replace(getAvailableAuthDestination(next));
-      router.refresh();
-      return;
-    }
-
-    setSuccessMessage("Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản.");
-    setIsLoading(false);
+  if (successMessage) {
+    return (
+      <AuthFormCard title="Đăng ký thành công">
+        <p className={styles.formSuccess} role="status">
+          Chúng mình đã gửi liên kết xác nhận đến email của bạn. Vui lòng kiểm tra Hộp thư đến hoặc Thư rác trước khi đăng nhập.
+        </p>
+        <EmailConfirmationNotice email={email} next={next} initialCooldownSeconds={60} />
+        <p className={styles.switchPrompt}><Link href="/login">Quay lại đăng nhập</Link></p>
+      </AuthFormCard>
+    );
   }
 
   return (

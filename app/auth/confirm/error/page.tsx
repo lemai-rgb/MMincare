@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { mapAuthError } from "@/lib/auth/errors";
 import { getAvailableAuthDestination, getSafeAuthNext, parseSpecies } from "@/lib/authRedirect";
 import styles from "@/styles/authStatus.module.css";
 
@@ -17,18 +18,21 @@ export default async function ConfirmationErrorPage({ searchParams }: Confirmati
     ? parseSpecies(destinationUrl.searchParams.get("species"))
     : undefined;
   const loginHref = species ? `/login?species=${species}` : "/login";
-  const isExpiredOtp = errorCode === "otp_expired";
   const isRecoveryError = next === "/reset-password";
+  const authError = mapAuthError(
+    { code: isRecoveryError && !errorCode ? "recovery_session_missing" : errorCode },
+    { operation: "confirm" },
+  );
   const title = isRecoveryError
     ? "Không thể đặt lại mật khẩu"
-    : isExpiredOtp
+    : errorCode === "otp_expired"
       ? "Email có thể đã được xác nhận"
       : "Không thể xác nhận email";
   const message = isRecoveryError
     ? "Liên kết đặt lại mật khẩu đã hết hạn hoặc không hợp lệ. Vui lòng yêu cầu liên kết mới."
-    : isExpiredOtp
+    : errorCode === "otp_expired"
       ? "Liên kết này đã được sử dụng hoặc không còn hiệu lực. Hãy đăng nhập để tiếp tục."
-      : "Liên kết có thể đã hết hạn hoặc không hợp lệ. Bạn có thể đăng nhập để tiếp tục.";
+      : authError.message;
 
   return (
     <main className={styles.page}>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
+import { mapAuthError } from "@/lib/auth/errors";
 import { validatePasswordReset, type AuthFieldErrors } from "@/lib/authValidation";
 import { createClient } from "@/lib/supabase/client";
 import styles from "@/styles/auth.module.css";
@@ -40,13 +41,13 @@ export function PasswordResetForm() {
     try {
       const { error } = await createClient().auth.updateUser({ password });
       if (error) {
-        setFormError("Liên kết đặt lại mật khẩu đã hết hạn hoặc không hợp lệ. Vui lòng yêu cầu liên kết mới.");
+        setFormError(mapAuthError(error, { operation: "reset_password" }).message);
         return;
       }
 
       setSuccessMessage("Mật khẩu đã được cập nhật. Bạn có thể đăng nhập bằng mật khẩu mới.");
-    } catch {
-      setFormError("Không thể cập nhật mật khẩu lúc này. Vui lòng yêu cầu liên kết mới.");
+    } catch (error) {
+      setFormError(mapAuthError(error, { operation: "reset_password" }).message);
     } finally {
       setIsLoading(false);
     }
