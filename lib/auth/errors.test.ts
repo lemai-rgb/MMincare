@@ -35,8 +35,13 @@ assert.equal(
 );
 
 const unknown = mapAuthError({ code: "future_code", message: "password=secret" }, { operation: "signup" });
-assert.match(unknown.message, /^Không thể thực hiện yêu cầu lúc này\. Mã tham chiếu: AUTH-SIGNUP-[A-Z0-9]{4}\.$/);
+assert.equal(unknown.message, "Không thể thực hiện yêu cầu lúc này. Vui lòng thử lại sau.");
 assert.doesNotMatch(unknown.message, /password=secret/);
+assert.doesNotMatch(unknown.message, /AUTH-/);
+assert.equal(
+  mapAuthError({ code: "email_exists" }, { operation: "signup" }).message,
+  "Không thể hoàn tất đăng ký. Nếu bạn đã có tài khoản, hãy đăng nhập hoặc khôi phục mật khẩu.",
+);
 assert.equal(getCooldownLabel(59), "Gửi lại sau 59 giây");
 
 console.log("Auth error mapping tests passed.");

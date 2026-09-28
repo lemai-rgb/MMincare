@@ -7,6 +7,7 @@ import type { FormEvent } from "react";
 
 import { getAuthEmailConfirmationUrl } from "@/lib/authEmailRedirect";
 import { mapAuthError } from "@/lib/auth/errors";
+import { shouldShowEmailConfirmation } from "@/lib/auth/signup";
 import { getAvailableAuthDestination, getOnboardingPath } from "@/lib/authRedirect";
 import type { OnboardingSpecies } from "@/lib/authRedirect";
 import type { AuthFieldErrors } from "@/lib/authValidation";
@@ -64,7 +65,7 @@ export function RegisterForm({ species }: RegisterFormProps) {
         return;
       }
 
-      if (data.session) {
+      if (!shouldShowEmailConfirmation(data, error) && data.session) {
         router.replace(getAvailableAuthDestination(next));
         router.refresh();
         return;

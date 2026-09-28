@@ -10,7 +10,6 @@ export type AuthErrorResult = {
   message: string;
   retryable: boolean;
   cooldownSeconds?: number;
-  referenceId?: string;
   code?: string;
 };
 
@@ -56,19 +55,10 @@ function getDetails(error: unknown): AuthErrorLike {
   return error as AuthErrorLike;
 }
 
-function getReferenceId(operation: AuthOperation) {
-  const suffix = typeof globalThis.crypto?.randomUUID === "function"
-    ? globalThis.crypto.randomUUID().replaceAll("-", "").slice(0, 4).toUpperCase()
-    : Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `AUTH-${operation.replaceAll("_", "-").toUpperCase()}-${suffix}`;
-}
-
-function unknownResult(operation: AuthOperation): AuthErrorResult {
-  const referenceId = getReferenceId(operation);
+function unknownResult(): AuthErrorResult {
   return {
-    message: `Không thể thực hiện yêu cầu lúc này. Mã tham chiếu: ${referenceId}.`,
+    message: "Không thể thực hiện yêu cầu lúc này. Vui lòng thử lại sau.",
     retryable: true,
-    referenceId,
   };
 }
 
@@ -80,6 +70,7 @@ export function mapAuthError(
   error: unknown,
   options: { operation: AuthOperation },
 ): AuthErrorResult {
+  void options.operation;
   const details = getDetails(error);
   const code = typeof details.code === "string" ? details.code : undefined;
   const status = typeof details.status === "number" ? details.status : undefined;
@@ -123,7 +114,7 @@ export function mapAuthError(
     case "email_exists":
     case "user_already_exists":
       return {
-        message: "Nếu email này có thể nhận thư, chúng mình sẽ gửi hướng dẫn đến hộp thư của bạn.",
+        message: "Không thể hoàn tất đăng ký. Nếu bạn đã có tài khoản, hãy đăng nhập hoặc khôi phục mật khẩu.",
         retryable: true,
         code,
       };
@@ -145,5 +136,5 @@ export function mapAuthError(
     return { message: "Dịch vụ xác thực đang tạm thời gặp sự cố. Vui lòng thử lại sau.", retryable: true, code };
   }
 
-  return { ...unknownResult(options.operation), code };
+  return { ...unknownResult(), code };
 }
