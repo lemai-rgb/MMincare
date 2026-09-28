@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
-import { getAuthEmailRedirectOrigin } from "@/lib/authEmailRedirect";
+import { getAuthEmailConfirmationUrl } from "@/lib/authEmailRedirect";
+import { getCooldownLabel } from "@/lib/auth/cooldown";
+import { mapAuthError } from "@/lib/auth/errors";
 import type { AuthFieldErrors } from "@/lib/authValidation";
 import { normalizeEmail, validateEmail, validateLogin } from "@/lib/authValidation";
 import { createClient } from "@/lib/supabase/client";
 import styles from "@/styles/auth.module.css";
 import { AuthFormCard } from "./AuthFormCard";
+import { EmailConfirmationNotice } from "./EmailConfirmationNotice";
 import { AuthInput } from "./AuthInput";
 import { PasswordInput } from "./PasswordInput";
 
@@ -23,7 +26,9 @@ export function LoginForm({ next = "/dashboard" }: LoginFormProps) {
   const [errors, setErrors] = useState<AuthFieldErrors>({});
   const [formError, setFormError] = useState("");
   const [resetMessage, setResetMessage] = useState("");
+  const [emailConfirmationRequired, setEmailConfirmationRequired] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
+  const [resetCooldown, setResetCooldown] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -35,6 +40,14 @@ export function LoginForm({ next = "/dashboard" }: LoginFormProps) {
     return () => cancelAnimationFrame(frameId);
   }, [errors]);
 
+  useEffect(() => {
+    if (resetCooldown <= 0) return;
+    const timerId = window.setInterval(() => {
+      setResetCooldown((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearInterval(timerId);
+  }, [resetCooldown]);
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isLoading || isResetLoading) return;
@@ -45,6 +58,7 @@ export function LoginForm({ next = "/dashboard" }: LoginFormProps) {
     setErrors(nextErrors);
     setFormError("");
     setResetMessage("");
+    setEmailConfirmationRequired(false);
     if (Object.keys(nextErrors).length > 0) return;
 
     setIsLoading(true);
@@ -55,48 +69,53 @@ export function LoginForm({ next = "/dashboard" }: LoginFormProps) {
       });
 
       if (error) {
-        setFormError("Email hoặc mật khẩu không đúng");
+        const result = mapAuthError(error, { operation: "login" });
+        setFormError(result.message);
+        setEmailConfirmationRequired(result.code === "email_not_confirmed");
         return;
       }
 
       router.replace(next);
       router.refresh();
-    } catch {
-      setFormError("Email hoặc mật khẩu không đúng");
+    } catch (error) {
+      const result = mapAuthError(error, { operation: "login" });
+      setFormError(result.message);
+      setEmailConfirmationRequired(result.code === "email_not_confirmed");
     } finally {
       setIsLoading(false);
     }
   }
 
   async function handleForgotPassword() {
-    if (isLoading || isResetLoading) return;
+    if (isLoading || isResetLoading || resetCooldown > 0) return;
 
     const normalizedEmail = normalizeEmail(email);
     const emailError = validateEmail(normalizedEmail);
     setEmail(normalizedEmail);
     setFormError("");
     setResetMessage("");
+    setEmailConfirmationRequired(false);
     setErrors(emailError ? { email: emailError } : {});
     if (emailError) return;
 
     setIsResetLoading(true);
     try {
-      const redirectUrl = new URL(
-        "/auth/confirm",
-        getAuthEmailRedirectOrigin(window.location.origin),
-      );
-      redirectUrl.searchParams.set("next", "/reset-password");
       const { error } = await createClient().auth.resetPasswordForEmail(normalizedEmail, {
-        redirectTo: redirectUrl.toString(),
+        redirectTo: getAuthEmailConfirmationUrl(window.location.origin, "/reset-password"),
       });
 
       if (error) {
-        setFormError("Không thể gửi yêu cầu lúc này. Vui lòng thử lại.");
+        const result = mapAuthError(error, { operation: "password_recovery" });
+        setFormError(result.message);
+        if (result.cooldownSeconds) setResetCooldown(result.cooldownSeconds);
       } else {
         setResetMessage("Nếu email tồn tại, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu.");
+        setResetCooldown(60);
       }
-    } catch {
-      setFormError("Không thể gửi yêu cầu lúc này. Vui lòng thử lại.");
+    } catch (error) {
+      const result = mapAuthError(error, { operation: "password_recovery" });
+      setFormError(result.message);
+      if (result.cooldownSeconds) setResetCooldown(result.cooldownSeconds);
     } finally {
       setIsResetLoading(false);
     }
@@ -118,6 +137,7 @@ export function LoginForm({ next = "/dashboard" }: LoginFormProps) {
             setEmail(event.target.value);
             setFormError("");
             setResetMessage("");
+            setEmailConfirmationRequired(false);
             if (errors.email) setErrors((current) => ({ ...current, email: undefined }));
           }}
           onBlur={() => setEmail((current) => normalizeEmail(current))}
@@ -134,6 +154,7 @@ export function LoginForm({ next = "/dashboard" }: LoginFormProps) {
             setPassword(event.target.value);
             setFormError("");
             setResetMessage("");
+            setEmailConfirmationRequired(false);
             if (errors.password) setErrors((current) => ({ ...current, password: undefined }));
           }}
         />
@@ -141,12 +162,13 @@ export function LoginForm({ next = "/dashboard" }: LoginFormProps) {
         <button
           className={styles.forgotPassword}
           type="button"
-          disabled={isLoading || isResetLoading}
+          disabled={isLoading || isResetLoading || resetCooldown > 0}
           onClick={handleForgotPassword}
         >
-          {isResetLoading ? "Đang gửi…" : "Quên mật khẩu?"}
+          {isResetLoading ? "Đang gửi…" : resetCooldown > 0 ? getCooldownLabel(resetCooldown) : "Quên mật khẩu?"}
         </button>
         {formError && <p className={styles.formError} role="alert">{formError}</p>}
+        {emailConfirmationRequired && <EmailConfirmationNotice email={email} next={next} />}
         {resetMessage && <p className={styles.formSuccess} role="status">{resetMessage}</p>}
         <button className={styles.primaryButton} type="submit" disabled={isLoading || isResetLoading}>
           {isLoading ? "Đang đăng nhập…" : "Tiếp tục"}

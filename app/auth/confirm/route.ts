@@ -1,6 +1,7 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { isKnownAuthErrorCode } from "@/lib/auth/errors";
 import { getAvailableAuthDestination, getSafeAuthNext } from "@/lib/authRedirect";
 import { createClient } from "@/lib/supabase/server";
 
@@ -34,6 +35,8 @@ export async function GET(request: NextRequest) {
 
   const errorUrl = new URL("/auth/confirm/error", request.url);
   errorUrl.searchParams.set("next", safeNext);
-  if (confirmationErrorCode) errorUrl.searchParams.set("error_code", confirmationErrorCode);
+  if (isKnownAuthErrorCode(confirmationErrorCode)) {
+    errorUrl.searchParams.set("error_code", confirmationErrorCode);
+  }
   return NextResponse.redirect(errorUrl);
 }
