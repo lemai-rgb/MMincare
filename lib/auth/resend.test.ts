@@ -45,6 +45,9 @@ async function run() {
       return {};
     },
   });
+  assert.equal(successfulTimer.activeTimers, 0);
+  assert.equal(successfulController.start(), true);
+  assert.equal(successfulController.start(), false);
   const firstRequest = successfulController.resend();
   const secondRequest = successfulController.resend();
   assert.equal(await firstRequest, true);
@@ -59,6 +62,80 @@ async function run() {
   assert.equal(successfulTimer.activeTimers, 0);
   assert.equal(successfulTimer.clearCount, 1);
 
+  let strictModeRequests = 0;
+  const strictTimer = createFakeTimer();
+  const firstStrictController = createResendController({
+    timer: strictTimer.timer,
+    send: async () => {
+      strictModeRequests += 1;
+      return {};
+    },
+  });
+  const firstStrictUnsubscribe = firstStrictController.subscribe(() => undefined);
+  firstStrictController.start(60);
+  assert.equal(strictTimer.activeTimers, 1);
+  firstStrictUnsubscribe();
+  firstStrictController.dispose();
+  assert.equal(strictTimer.activeTimers, 0);
+
+  const secondStrictController = createResendController({
+    timer: strictTimer.timer,
+    send: async () => {
+      strictModeRequests += 1;
+      return {};
+    },
+  });
+  secondStrictController.start();
+  assert.equal(await secondStrictController.resend(), true);
+  assert.equal(strictModeRequests, 1);
+  secondStrictController.dispose();
+
+  const oldPropsTimer = createFakeTimer();
+  let oldPropsRequests = 0;
+  const oldPropsController = createResendController({
+    timer: oldPropsTimer.timer,
+    send: async () => {
+      oldPropsRequests += 1;
+      return {};
+    },
+  });
+  oldPropsController.start(60);
+  oldPropsController.dispose();
+  assert.equal(oldPropsTimer.activeTimers, 0);
+  const newPropsController = createResendController({
+    timer: oldPropsTimer.timer,
+    send: async () => {
+      oldPropsRequests += 1;
+      return {};
+    },
+  });
+  newPropsController.start();
+  assert.equal(await newPropsController.resend(), true);
+  assert.equal(oldPropsRequests, 1);
+  newPropsController.dispose();
+
+  const lateTimer = createFakeTimer();
+  let resolveLateRequest: (value: { error?: unknown | null }) => void = () => undefined;
+  const lateRequestPromise = new Promise<{ error?: unknown | null }>((resolve) => {
+    resolveLateRequest = resolve;
+  });
+  const lateController = createResendController({
+    timer: lateTimer.timer,
+    send: async () => lateRequestPromise,
+  });
+  lateController.start();
+  let lateEvents = 0;
+  lateController.subscribe(() => {
+    lateEvents += 1;
+  });
+  const lateRequest = lateController.resend();
+  const eventsBeforeDispose = lateEvents;
+  lateController.dispose();
+  resolveLateRequest({});
+  await lateRequest;
+  assert.equal(lateEvents, eventsBeforeDispose);
+  assert.equal(lateTimer.activeTimers, 0);
+
   const rateLimitTimer = createFakeTimer();
   let rateLimitRequests = 0;
   const rateLimitController = createResendController({
@@ -68,6 +145,7 @@ async function run() {
       return { error: { status: 429, message: "raw provider error" } };
     },
   });
+  rateLimitController.start();
   assert.equal(await rateLimitController.resend(), false);
   assert.equal(rateLimitRequests, 1);
   assert.equal(rateLimitController.getState().error, "Bạn thao tác quá nhanh. Vui lòng đợi một chút rồi thử lại.");

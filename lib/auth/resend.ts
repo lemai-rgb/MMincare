@@ -15,7 +15,6 @@ export type ResendTimer = {
 type ResendControllerOptions = {
   send: () => Promise<{ error?: unknown | null }>;
   cooldownSeconds?: number;
-  initialCooldownSeconds?: number;
   timer?: ResendTimer;
 };
 
@@ -27,7 +26,6 @@ const browserTimer: ResendTimer = {
 export function createResendController({
   send,
   cooldownSeconds = 60,
-  initialCooldownSeconds = 0,
   timer = browserTimer,
 }: ResendControllerOptions) {
   let state: ResendState = {
@@ -38,6 +36,7 @@ export function createResendController({
   };
   let interval: unknown;
   let disposed = false;
+  let started = false;
   const listeners = new Set<(nextState: ResendState) => void>();
 
   function emit(nextState: ResendState) {
@@ -54,6 +53,7 @@ export function createResendController({
   }
 
   function startCooldown(seconds: number) {
+    if (disposed) return;
     stopTimer();
     emit({ ...state, cooldownSeconds: seconds });
     interval = timer.setInterval(() => {
@@ -64,7 +64,7 @@ export function createResendController({
   }
 
   async function resend() {
-    if (disposed || state.status === "loading" || state.cooldownSeconds > 0) return false;
+    if (!started || disposed || state.status === "loading" || state.cooldownSeconds > 0) return false;
 
     emit({ ...state, status: "loading", message: "", error: "" });
     try {
@@ -92,7 +92,13 @@ export function createResendController({
     }
   }
 
-  if (initialCooldownSeconds > 0) startCooldown(initialCooldownSeconds);
+  function start(initialCooldownSeconds = 0) {
+    if (disposed || started) return false;
+    started = true;
+    if (initialCooldownSeconds > 0) startCooldown(initialCooldownSeconds);
+    else emit({ ...state });
+    return true;
+  }
 
   return {
     getState: () => state,
@@ -100,6 +106,7 @@ export function createResendController({
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
+    start,
     resend,
     dispose() {
       disposed = true;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { getAuthEmailConfirmationUrl } from "@/lib/authEmailRedirect";
 import { getCooldownLabel } from "@/lib/auth/cooldown";
@@ -17,32 +17,38 @@ type EmailConfirmationNoticeProps = {
 
 export function EmailConfirmationNotice({ email, next, initialCooldownSeconds = 0 }: EmailConfirmationNoticeProps) {
   const [validationError, setValidationError] = useState("");
-  const controller = useMemo(() => createResendController({
-    cooldownSeconds: 60,
-    initialCooldownSeconds,
-    send: async () => createClient().auth.resend({
-      type: "signup",
-      email: normalizeEmail(email),
-      options: {
-        emailRedirectTo: getAuthEmailConfirmationUrl(window.location.origin, next),
-      },
-    }),
-  }), [email, initialCooldownSeconds, next]);
-  const [state, setState] = useState<ResendState>(() => ({
-    ...controller.getState(),
-    cooldownSeconds: initialCooldownSeconds,
-  }));
+  const controllerRef = useRef<ReturnType<typeof createResendController> | null>(null);
+  const [state, setState] = useState<ResendState>({
+    status: "idle",
+    message: "",
+    error: "",
+    cooldownSeconds: 0,
+  });
 
   useEffect(() => {
+    const controller = createResendController({
+      cooldownSeconds: 60,
+      send: async () => createClient().auth.resend({
+        type: "signup",
+        email: normalizeEmail(email),
+        options: {
+          emailRedirectTo: getAuthEmailConfirmationUrl(window.location.origin, next),
+        },
+      }),
+    });
+    controllerRef.current = controller;
     const unsubscribe = controller.subscribe(setState);
+    controller.start(initialCooldownSeconds);
     return () => {
       unsubscribe();
       controller.dispose();
+      if (controllerRef.current === controller) controllerRef.current = null;
     };
-  }, [controller]);
+  }, [email, initialCooldownSeconds, next]);
 
   async function handleResend() {
-    if (state.status === "loading" || state.cooldownSeconds > 0) return;
+    const controller = controllerRef.current;
+    if (!controller || state.status === "loading" || state.cooldownSeconds > 0) return;
 
     const normalizedEmail = normalizeEmail(email);
     const validationError = validateEmail(normalizedEmail);
