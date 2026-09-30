@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { NotificationCenter } from "@/components/layout/NotificationCenter";
 import { PetListHeaderDecorations } from "@/components/pets/PetListDecorations";
 import styles from "@/styles/dashboard.module.css";
 
@@ -29,7 +30,6 @@ export function AppHeader({ activeNav }: AppHeaderProps) {
             href="/dashboard"
           >
             Thú cưng
-            <span className={styles.navChevron} aria-hidden="true" />
           </Link>
           <Link
             aria-current={activeNav === "reminders" ? "page" : undefined}
@@ -37,13 +37,13 @@ export function AppHeader({ activeNav }: AppHeaderProps) {
             href="/reminders"
           >
             Nhắc hẹn
-            <span className={styles.navChevron} aria-hidden="true" />
           </Link>
           <span className={activeNav === "account" ? styles.activeNavItem : styles.navItem}>
             Tài khoản
             <span className={styles.navChevron} aria-hidden="true" />
           </span>
         </nav>
+        <NotificationCenter />
         <LogoutButton />
       </div>
     </header>

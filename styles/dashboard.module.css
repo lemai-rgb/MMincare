@@ -56,6 +56,7 @@
 
 .populatedHeader {
   position: relative;
+  z-index: 20;
   box-sizing: border-box;
   display: flex;
   height: 80px;
@@ -74,7 +75,7 @@
   align-items: baseline;
   gap: 22px;
   color: var(--mm-primary);
-  font-size: 40px;
+  font-size: clamp(28px, 3vw, 36px);
   font-weight: 700;
   line-height: 1;
   text-decoration: none;
@@ -103,7 +104,7 @@
   align-items: center;
   gap: 7px;
   color: #4d4d4d;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 500;
   line-height: 1.2;
   white-space: nowrap;
@@ -131,7 +132,7 @@
   min-width: 0;
   flex: 0 0 auto;
   align-items: center;
-  gap: 28px;
+  gap: 20px;
   margin-left: auto;
 }
 
@@ -159,6 +160,213 @@
   background: transparent;
   color: var(--mm-text-secondary);
   font-size: 12px;
+}
+
+.notificationContainer {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+}
+
+.notificationTrigger {
+  position: relative;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--mm-primary-dark);
+  cursor: pointer;
+}
+
+.notificationTrigger:hover { background: #f1f6f0; }
+
+.notificationTrigger:focus-visible,
+.notificationRetry:focus-visible,
+.notificationItem:focus-visible {
+  outline: 2px solid var(--mm-primary-dark);
+  outline-offset: 3px;
+}
+
+.notificationBellIcon {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.notificationBadge {
+  position: absolute;
+  top: -1px;
+  right: -2px;
+  display: grid;
+  min-width: 19px;
+  height: 19px;
+  align-items: center;
+  padding: 0 4px;
+  border: 2px solid var(--mm-surface);
+  border-radius: 999px;
+  background: #d9776a;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+}
+
+.notificationPanel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 50;
+  display: grid;
+  width: min(382px, calc(100vw - 24px));
+  max-height: min(620px, calc(100dvh - 96px));
+  overflow: hidden;
+  border: 1px solid #dfe8dc;
+  border-radius: 18px;
+  background: var(--mm-surface);
+  box-shadow: 0 16px 36px rgb(43 62 43 / 18%);
+}
+
+.notificationPanelHeader {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #edf1eb;
+}
+
+.notificationPanelHeader h2 {
+  margin: 0;
+  color: var(--mm-primary-dark);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.notificationList {
+  display: grid;
+  overflow-y: auto;
+}
+
+.notificationItem {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  padding: 15px 34px 15px 20px;
+  border: 0;
+  border-bottom: 1px solid #edf1eb;
+  background: #fff;
+  color: var(--mm-text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.notificationItem:hover { background: #f7faf6; }
+.notificationItem:disabled { cursor: wait; opacity: .68; }
+.notificationItemUnread { background: #f0f6ef; }
+.notificationItemUnread:hover { background: #eaf3e8; }
+
+.notificationItemTopline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.notificationType {
+  color: var(--mm-primary-dark);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.notificationTypeOverdue { color: #b85c50; }
+
+.notificationRelativeTime {
+  color: var(--mm-text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.notificationItem strong {
+  color: var(--mm-text);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.notificationPet {
+  color: var(--mm-text-secondary);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.notificationUnreadDot {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--mm-primary);
+  transform: translateY(-50%);
+}
+
+.notificationState,
+.notificationEmpty {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  margin: 0;
+  padding: 28px 24px;
+  color: var(--mm-text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.notificationState p { margin: 0 0 12px; }
+
+.notificationRetry {
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid var(--mm-border);
+  border-radius: 10px;
+  background: var(--mm-surface-soft);
+  color: var(--mm-primary-dark);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.notificationRetry:hover { background: #f1f6f0; }
+
+.notificationEmpty {
+  align-content: center;
+  gap: 5px;
+}
+
+.notificationEmpty p {
+  margin: 0;
+  color: var(--mm-primary-dark);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.notificationEmptyMark {
+  color: #aec5ac;
+  font-size: 34px;
+  line-height: 1;
 }
 
 .brandLink:focus-visible,
@@ -369,7 +577,7 @@
 .petListDetails h2 {
   margin: 0 0 8px;
   color: var(--mm-text);
-  font-size: 32px;
+  font-size: 22px;
   font-weight: 600;
   line-height: 1.2;
   text-align: center;
@@ -383,7 +591,7 @@
   margin: 0;
   padding: 0;
   color: var(--mm-text);
-  font-size: 24px;
+  font-size: 16px;
   line-height: 1.35;
   list-style: none;
 }
@@ -401,7 +609,7 @@
 .petListHealthStatus {
   margin: 8px 0 0;
   color: var(--mm-primary-dark);
-  font-size: 24px;
+  font-size: 16px;
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
@@ -423,7 +631,7 @@
   background: color-mix(in srgb, var(--mm-primary) 72%, white);
   color: white;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 15px;
   font-weight: 500;
   text-decoration: none;
 }
@@ -441,7 +649,7 @@
   max-width: 210px;
   margin: 0;
   color: var(--mm-text-secondary);
-  font-size: 18px;
+  font-size: 14px;
   line-height: 1.35;
   overflow-wrap: anywhere;
   text-align: center;
@@ -624,7 +832,7 @@
 
   .populatedBrand {
     gap: 16px;
-    font-size: 32px;
+    font-size: 30px;
   }
 
   .populatedBrand span + span {
@@ -831,8 +1039,9 @@
   .populatedHeader { display: flex; min-height: 64px; height: auto; padding: 0 16px; }
   .populatedBrand { gap: 0; font-size: 25px; }
   .populatedBrand span + span, .populatedHeader .logoutArea { display: none; }
-  .headerActions { margin-left: auto; }
+  .headerActions { gap: 10px; margin-left: auto; }
   .addPetAction { padding: 5px 10px; font-size: 12px; }
+  .notificationPanel { right: -2px; }
   .petListShell { width: calc(100% - 20px); min-height: calc(100dvh - 74px); margin-top: 10px; padding: 18px; border-radius: 24px; }
   .petListToolbar { display: flex; align-items: flex-start; flex-direction: column; gap: 8px; }
   .petListToolbar h1 { font-size: 18px; }

@@ -125,9 +125,14 @@ Open `http://localhost:3000`.
 ```bash
 npm run lint
 npm run build
+npm run test:notifications
+npm run test:reminders
+npm run test:auth
 ```
 
-The repository does not currently define an automated test command. Production smoke testing should cover authentication, pet ownership isolation, record creation, attachment failure/retry, reminder state, dashboard periods, and password recovery.
+Production smoke testing should cover authentication, pet ownership isolation, record creation, attachment failure/retry, reminder state, dashboard periods, Notification Center read/navigation behavior, and password recovery.
+
+The shared web header includes the Owner-only Notification Center. It consumes the existing notification GET/read endpoints, shows loading/retry/empty and read/unread states, and links each current event to the existing Reminder screen. Email, browser push and bulk notification management are not part of this UI.
 
 ## Deployment requirements
 

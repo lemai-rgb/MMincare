@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:auth": "tsx lib/auth/errors.test.ts && tsx lib/auth/resend.test.ts",
-    "test:notifications": "tsx lib/notifications/current.test.ts",
+    "test:notifications": "tsx lib/notifications/current.test.ts && tsx lib/notifications/center.test.ts",
     "test:reminders": "tsx lib/reminders/edit.test.ts"
   },
   "overrides": {

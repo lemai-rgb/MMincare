@@ -100,6 +100,8 @@
 | Notification | PATCH | `/notifications/{notification_id}/read` | Owner đánh dấu event đã đọc |
 
 `GET /notifications` chỉ trả notification hiện hành: event chưa hủy, `scheduled_for <= now`, Reminder còn `Upcoming`; từ D+2 `overdue` thay thế `due_soon`, tối đa một event cho mỗi Reminder. Endpoint read chỉ đánh dấu event hiện hành và idempotent.
+
+Web Notification Center dùng hai endpoint này trong shared header. Chuông hiển thị số event chưa đọc; panel có loading, retry, empty state và danh sách theo `event_type`. Chọn event chưa đọc gọi `PATCH /notifications/{notification_id}/read` một lần rồi điều hướng đến `/reminders?highlight={reminder_id}`; event đã đọc điều hướng trực tiếp. Không có thao tác đánh dấu tất cả, xóa notification hoặc push/email trong phạm vi web UI.
 | HealthLog | GET | `/pets/{pet_id}/health-logs` | Xem Health Log |
 | HealthLog | POST | `/pets/{pet_id}/health-logs` | Thêm Health Log |
 | Dashboard | GET | `/dashboard` | Tổng quan nhiều pet |
