@@ -24,7 +24,8 @@ export type NotificationCenterAction =
   | { type: "load-error"; message: string }
   | { type: "read-start"; notificationId: string }
   | { type: "read-success"; notificationId: string; readAt: string }
-  | { type: "read-failure"; notificationId: string; message: string };
+  | { type: "read-failure"; notificationId: string; message: string }
+  | { type: "read-cancel"; notificationId: string };
 
 export function notificationCenterReducer(
   state: NotificationCenterState,
@@ -55,6 +56,11 @@ export function notificationCenterReducer(
         ...state,
         pendingReadIds: state.pendingReadIds.filter((id) => id !== action.notificationId),
         readErrorMessage: action.message,
+      };
+    case "read-cancel":
+      return {
+        ...state,
+        pendingReadIds: state.pendingReadIds.filter((id) => id !== action.notificationId),
       };
   }
 }

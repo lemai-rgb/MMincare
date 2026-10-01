@@ -104,7 +104,12 @@ export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: Not
   useEffect(() => {
     const invalidate = () => {
       readGeneration.current += 1;
-      for (const controller of readRequestsRef.current.values()) controller.abort();
+      for (const [notificationId, controller] of readRequestsRef.current.entries()) {
+        controller.abort();
+        pendingReadRef.current.delete(notificationId);
+        dispatch({ type: "read-cancel", notificationId });
+      }
+      readRequestsRef.current.clear();
       void loadNotifications();
     };
     window.addEventListener(NOTIFICATION_CENTER_INVALIDATED_EVENT, invalidate);
@@ -155,6 +160,7 @@ export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: Not
     const isCurrent = () => mountedRef.current
       && readGeneration.current === operationGeneration
       && pendingReadRef.current.has(item.notification_event_id)
+      && readRequestsRef.current.get(item.notification_event_id) === controller
       && !controller.signal.aborted;
     try {
       const response = await fetch(`/api/notifications/${encodeURIComponent(item.notification_event_id)}/read`, { method: "PATCH", signal: controller.signal });
@@ -179,8 +185,11 @@ export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: Not
     } catch (error: unknown) {
       if (isCurrent()) dispatch({ type: "read-failure", notificationId: item.notification_event_id, message: error instanceof NotificationApiError ? error.message : "Không thể cập nhật thông báo lúc này." });
     } finally {
-      pendingReadRef.current.delete(item.notification_event_id);
-      if (readRequestsRef.current.get(item.notification_event_id) === controller) readRequestsRef.current.delete(item.notification_event_id);
+      if (readRequestsRef.current.get(item.notification_event_id) === controller) {
+        readRequestsRef.current.delete(item.notification_event_id);
+        pendingReadRef.current.delete(item.notification_event_id);
+        if (mountedRef.current) dispatch({ type: "read-cancel", notificationId: item.notification_event_id });
+      }
     }
   }
 

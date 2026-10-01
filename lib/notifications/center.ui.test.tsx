@@ -205,6 +205,37 @@ describe("NotificationCenter rendered behavior", () => {
     expect(push).not.toHaveBeenCalled();
   });
 
+  it("releases pending state when invalidation refetch still returns the event", async () => {
+    const oldPatch = deferred<Response>();
+    const newPatch = deferred<Response>();
+    let patchCount = 0;
+    const fetchMock = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === "PATCH") {
+        patchCount += 1;
+        return patchCount === 1 ? oldPatch.promise : newPatch.promise;
+      }
+      return Promise.resolve(jsonResponse({ notifications: [notification] }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<NotificationCenter />);
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([, init]) => init?.method !== "PATCH")).toHaveLength(1));
+    fireEvent.click(screen.getByRole("button", { name: /Thông báo/ }));
+    const item = await screen.findByRole("button", { name: /Sắp đến hạn: Tiêm phòng cho Meo/ });
+    fireEvent.click(item);
+    await waitFor(() => expect(patchCount).toBe(1));
+
+    invalidateNotificationCenter();
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([, init]) => init?.method !== "PATCH")).toHaveLength(3));
+    const refreshedItem = await screen.findByRole("button", { name: /Sắp đến hạn: Tiêm phòng cho Meo/ });
+    oldPatch.resolve(jsonResponse({ notification: { read_at: "2026-09-30T10:01:00.000Z" } }));
+    await waitFor(() => expect(refreshedItem.hasAttribute("disabled")).toBe(false));
+
+    fireEvent.click(refreshedItem);
+    await waitFor(() => expect(patchCount).toBe(2));
+    newPatch.resolve(jsonResponse({ notification: { read_at: "2026-09-30T10:02:00.000Z" } }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/reminders?highlight=reminder-1"));
+  });
+
   it("keeps the canonical GET result when an older GET resolves later", async () => {
     const first = deferred<Response>();
     const second = deferred<Response>();
