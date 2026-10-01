@@ -54,6 +54,16 @@ function installFetch(responses: Response[]) {
   return fetchMock;
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
 describe("NotificationCenter rendered behavior", () => {
   beforeEach(() => {
     push.mockReset();
@@ -171,6 +181,134 @@ describe("NotificationCenter rendered behavior", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Thông báo" })).toBeTruthy());
   });
 
+  it("does not apply a PATCH result invalidated by a Reminder update", async () => {
+    const patch = deferred<Response>();
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === "PATCH") return patch.promise;
+      if (fetchMock.mock.calls.filter(([, callInit]) => callInit?.method !== "PATCH").length <= 2) {
+        return Promise.resolve(jsonResponse({ notifications: [notification] }));
+      }
+      return Promise.resolve(jsonResponse({ notifications: [] }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<NotificationCenter />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole("button", { name: /Thông báo/ }));
+    const item = await screen.findByRole("button", { name: /Sắp đến hạn: Tiêm phòng cho Meo/ });
+    fireEvent.click(item);
+    await waitFor(() => expect(fetchMock.mock.calls.some(([, init]) => init?.method === "PATCH")).toBe(true));
+
+    invalidateNotificationCenter();
+    await waitFor(() => expect(screen.queryByText("Tiêm phòng")).toBeNull());
+    patch.resolve(jsonResponse({ notification: { read_at: "2026-09-30T10:01:00.000Z" } }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("keeps the canonical GET result when an older GET resolves later", async () => {
+    const first = deferred<Response>();
+    const second = deferred<Response>();
+    let getCount = 0;
+    const newer = { ...notification, reminders: { ...notification.reminders, note: "Bản ghi mới" } };
+    const older = { ...notification, reminders: { ...notification.reminders, note: "Bản ghi cũ" } };
+    const fetchMock = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === "PATCH") return Promise.resolve(jsonResponse({ notification: { read_at: "2026-09-30T10:01:00.000Z" } }));
+      getCount += 1;
+      return getCount === 1 ? first.promise : second.promise;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<NotificationCenter />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole("button", { name: /Thông báo/ }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    second.resolve(jsonResponse({ notifications: [newer] }));
+    await screen.findByText("Bản ghi mới");
+    first.resolve(jsonResponse({ notifications: [older] }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(screen.getByText("Bản ghi mới")).toBeTruthy();
+    expect(screen.queryByText("Bản ghi cũ")).toBeNull();
+  });
+
+  it("does not cancel a valid PATCH when a normal GET revalidates", async () => {
+    const patch = deferred<Response>();
+    const fetchMock = installFetch([
+      jsonResponse({ notifications: [notification] }),
+      jsonResponse({ notifications: [notification] }),
+      jsonResponse({ notifications: [notification] }),
+    ]);
+    render(<NotificationCenter />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole("button", { name: /Thông báo/ }));
+    const item = await screen.findByRole("button", { name: /Sắp đến hạn: Tiêm phòng cho Meo/ });
+    fetchMock.mockImplementationOnce(async () => patch.promise);
+    fireEvent.click(item);
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([, init]) => init?.method === "PATCH")).toHaveLength(1));
+    fireEvent.click(screen.getByRole("button", { name: /Thông báo/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Thông báo/ }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4));
+    patch.resolve(jsonResponse({ notification: { read_at: "2026-09-30T10:01:00.000Z" } }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/reminders?highlight=reminder-1"));
+  });
+
+  it("does not navigate or dispatch after a pending PATCH resolves after unmount", async () => {
+    const patch = deferred<Response>();
+    const fetchMock = installFetch([
+      jsonResponse({ notifications: [notification] }),
+      jsonResponse({ notifications: [notification] }),
+    ]);
+    const view = render(<NotificationCenter />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole("button", { name: /Thông báo/ }));
+    const item = await screen.findByRole("button", { name: /Sắp đến hạn: Tiêm phòng cho Meo/ });
+    fetchMock.mockImplementationOnce(async () => patch.promise);
+    fireEvent.click(item);
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([, init]) => init?.method === "PATCH")).toHaveLength(1));
+    view.unmount();
+    patch.resolve(jsonResponse({ notification: { read_at: "2026-09-30T10:01:00.000Z" } }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed notification rows with a generic retryable error", async () => {
+    const fetchMock = installFetch([
+      jsonResponse({ notifications: [{ ...notification, notification_event_id: null }] }),
+      jsonResponse({ notifications: [] }),
+    ]);
+    render(<NotificationCenter isOpen />);
+    await screen.findByRole("alert");
+    expect(screen.getByRole("alert").textContent).toContain("Không thể tải thông báo");
+    expect(screen.queryByText("database stack trace")).toBeNull();
+    fireEvent.click(screen.getAllByRole("button", { name: /Th.*i/ }).find((button) => button.className.includes("notificationRetry"))!);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    // Retry was already exercised above; keep this assertion focused on the malformed response.
+  });
+
+  it("rejects an invalid PATCH read_at without exposing server payload", async () => {
+    const fetchMock = installFetch([
+      jsonResponse({ notifications: [notification] }),
+      jsonResponse({ notifications: [notification] }),
+      jsonResponse({ notification: { read_at: "not-a-timestamp" } }),
+    ]);
+    render(<NotificationCenter />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole("button", { name: /Thông báo/ }));
+    const item = await screen.findByRole("button", { name: /Sắp đến hạn: Tiêm phòng cho Meo/ });
+    fireEvent.click(item);
+    await screen.findByRole("alert");
+    expect(screen.getByRole("alert").textContent).toContain("Không thể cập nhật thông báo");
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("accepts embedded Reminder and Pet arrays from the canonical contract", async () => {
+    const arrayNotification = {
+      ...notification,
+      reminders: [{ ...notification.reminders, pet: [{ ...notification.reminders.pet }] }],
+    };
+    installFetch([jsonResponse({ notifications: [arrayNotification] })]);
+    render(<NotificationCenter isOpen />);
+    await screen.findByRole("button", { name: /Sắp đến hạn: Tiêm phòng cho Meo/ });
+  });
+
   it("renders a generic load error and recovers through Retry", async () => {
     const fetchMock = installFetch([
       jsonResponse({ error: "database stack trace" }, { status: 500 }),
@@ -186,7 +324,7 @@ describe("NotificationCenter rendered behavior", () => {
   });
 
   it("supports Escape/outside close and the mobile menu mutually excludes the panel", async () => {
-    installFetch([jsonResponse({ notifications: [] }), jsonResponse({ notifications: [] })]);
+    installFetch([jsonResponse({ notifications: [] }), jsonResponse({ notifications: [] }), jsonResponse({ notifications: [] })]);
     render(<AppHeader activeNav="reminders" />);
     const menuTrigger = screen.getByRole("button", { name: "Mở menu điều hướng" });
     fireEvent.click(menuTrigger);
@@ -195,6 +333,9 @@ describe("NotificationCenter rendered behavior", () => {
     fireEvent.click(screen.getByRole("button", { name: "Thông báo" }));
     expect(screen.queryByRole("navigation", { name: "Điều hướng trên thiết bị di động" })).toBeNull();
     expect(screen.getByRole("heading", { name: "Thông báo" })).toBeTruthy();
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole("heading", { name: "Thông báo" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Thông báo" }));
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("heading", { name: "Thông báo" })).toBeNull();
     expect(document.activeElement).toBe(screen.getByRole("button", { name: /Thông báo/ }));

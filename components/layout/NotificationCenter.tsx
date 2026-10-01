@@ -12,13 +12,13 @@ import {
   initialNotificationCenterState,
   notificationCenterReducer,
 } from "@/lib/notifications/center";
-import type { NotificationRow } from "@/lib/notifications/current";
+import { parseNotificationReadAt, parseNotificationRows, type NotificationRow } from "@/lib/notifications/current";
 import { NOTIFICATION_CENTER_INVALIDATED_EVENT } from "@/lib/notifications/events";
 import styles from "@/styles/dashboard.module.css";
 
 const PANEL_ID = "notification-center-panel";
 
-type NotificationResponse = { notifications?: NotificationRow[]; error?: string };
+type NotificationResponse = { notifications?: unknown; error?: string };
 
 type NotificationCenterProps = {
   isOpen?: boolean;
@@ -46,8 +46,10 @@ export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: Not
   const isOpen = controlledOpen ?? uncontrolledOpen;
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
-  const requestRef = useRef<AbortController | null>(null);
-  const requestSequence = useRef(0);
+  const loadRequestRef = useRef<AbortController | null>(null);
+  const loadSequence = useRef(0);
+  const readRequestsRef = useRef(new Map<string, AbortController>());
+  const readGeneration = useRef(0);
   const mountedRef = useRef(false);
   const pendingReadRef = useRef(new Set<string>());
   const readOverridesRef = useRef(new Map<string, string>());
@@ -59,19 +61,20 @@ export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: Not
   }, [controlledOpen, onOpenChange]);
 
   const loadNotifications = useCallback(async () => {
-    requestRef.current?.abort();
+    loadRequestRef.current?.abort();
     const controller = new AbortController();
-    requestRef.current = controller;
-    const sequence = ++requestSequence.current;
+    loadRequestRef.current = controller;
+    const sequence = ++loadSequence.current;
     dispatch({ type: "load-start" });
 
     try {
       const response = await fetch("/api/notifications", { cache: "no-store", signal: controller.signal });
       const payload = await parseResponse<NotificationResponse>(response, "Không thể tải thông báo lúc này.");
       if (!response.ok) throw serverError(payload, "Không thể tải thông báo lúc này.");
-      if (!Array.isArray(payload.notifications)) throw new NotificationApiError("Không thể tải thông báo lúc này.");
-      if (!mountedRef.current || controller.signal.aborted || sequence !== requestSequence.current) return;
-      const items = payload.notifications.map((item) => {
+      const rows = parseNotificationRows(payload.notifications);
+      if (!rows) throw new NotificationApiError("Không thể tải thông báo lúc này.");
+      if (!mountedRef.current || controller.signal.aborted || sequence !== loadSequence.current) return;
+      const items = rows.map((item) => {
         const override = readOverridesRef.current.get(item.notification_event_id);
         if (override && !item.read_at) return { ...item, read_at: override };
         if (item.read_at) readOverridesRef.current.delete(item.notification_event_id);
@@ -79,7 +82,7 @@ export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: Not
       });
       dispatch({ type: "load-success", items });
     } catch (error: unknown) {
-      if (!mountedRef.current || controller.signal.aborted || sequence !== requestSequence.current) return;
+      if (!mountedRef.current || controller.signal.aborted || sequence !== loadSequence.current) return;
       dispatch({ type: "load-error", message: error instanceof NotificationApiError ? error.message : "Không thể tải thông báo lúc này." });
     }
   }, []);
@@ -87,15 +90,23 @@ export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: Not
   useEffect(() => {
     mountedRef.current = true;
     void loadNotifications();
+    const readRequests = readRequestsRef.current;
     return () => {
       mountedRef.current = false;
-      requestRef.current?.abort();
-      requestRef.current = null;
+      readGeneration.current += 1;
+      loadRequestRef.current?.abort();
+      loadRequestRef.current = null;
+      for (const controller of readRequests.values()) controller.abort();
+      readRequests.clear();
     };
   }, [loadNotifications]);
 
   useEffect(() => {
-    const invalidate = () => { void loadNotifications(); };
+    const invalidate = () => {
+      readGeneration.current += 1;
+      for (const controller of readRequestsRef.current.values()) controller.abort();
+      void loadNotifications();
+    };
     window.addEventListener(NOTIFICATION_CENTER_INVALIDATED_EVENT, invalidate);
     return () => window.removeEventListener(NOTIFICATION_CENTER_INVALIDATED_EVENT, invalidate);
   }, [loadNotifications]);
@@ -136,32 +147,40 @@ export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: Not
       return;
     }
 
-    requestRef.current?.abort();
-    requestSequence.current += 1;
+    const operationGeneration = readGeneration.current;
+    const controller = new AbortController();
+    readRequestsRef.current.set(item.notification_event_id, controller);
     pendingReadRef.current.add(item.notification_event_id);
     dispatch({ type: "read-start", notificationId: item.notification_event_id });
+    const isCurrent = () => mountedRef.current
+      && readGeneration.current === operationGeneration
+      && pendingReadRef.current.has(item.notification_event_id)
+      && !controller.signal.aborted;
     try {
-      const response = await fetch(`/api/notifications/${encodeURIComponent(item.notification_event_id)}/read`, { method: "PATCH" });
+      const response = await fetch(`/api/notifications/${encodeURIComponent(item.notification_event_id)}/read`, { method: "PATCH", signal: controller.signal });
+      if (!isCurrent()) return;
       if (response.status === 404) {
         const staleMessage = "Thông báo này không còn hiệu lực. Danh sách đã được cập nhật.";
-        if (mountedRef.current) {
-          await loadNotifications();
-          if (mountedRef.current) dispatch({ type: "read-failure", notificationId: item.notification_event_id, message: staleMessage });
-        }
+        await loadNotifications();
+        if (!isCurrent()) return;
+        dispatch({ type: "read-failure", notificationId: item.notification_event_id, message: staleMessage });
         return;
       }
       const payload = await parseResponse<{ notification?: { read_at?: string | null }; error?: string }>(response, "Không thể cập nhật thông báo lúc này.");
+      if (!isCurrent()) return;
       if (!response.ok) throw serverError(payload, "Không thể cập nhật thông báo lúc này.");
-      if (!payload.notification?.read_at) throw new NotificationApiError("Không thể cập nhật thông báo lúc này.");
-      if (!mountedRef.current) return;
-      readOverridesRef.current.set(item.notification_event_id, payload.notification.read_at);
-      dispatch({ type: "read-success", notificationId: item.notification_event_id, readAt: payload.notification.read_at });
+      const readAt = parseNotificationReadAt(payload);
+      if (!readAt) throw new NotificationApiError("Không thể cập nhật thông báo lúc này.");
+      if (!isCurrent()) return;
+      readOverridesRef.current.set(item.notification_event_id, readAt);
+      dispatch({ type: "read-success", notificationId: item.notification_event_id, readAt });
       setIsOpen(false);
       router.push(`/reminders?highlight=${encodeURIComponent(reminder.reminder_id)}`);
     } catch (error: unknown) {
-      if (mountedRef.current) dispatch({ type: "read-failure", notificationId: item.notification_event_id, message: error instanceof NotificationApiError ? error.message : "Không thể cập nhật thông báo lúc này." });
+      if (isCurrent()) dispatch({ type: "read-failure", notificationId: item.notification_event_id, message: error instanceof NotificationApiError ? error.message : "Không thể cập nhật thông báo lúc này." });
     } finally {
       pendingReadRef.current.delete(item.notification_event_id);
+      if (readRequestsRef.current.get(item.notification_event_id) === controller) readRequestsRef.current.delete(item.notification_event_id);
     }
   }
 
