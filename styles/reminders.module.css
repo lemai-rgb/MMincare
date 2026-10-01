@@ -22,7 +22,7 @@
   align-items: baseline;
   gap: 22px;
   color: var(--mm-primary);
-  font-size: 40px;
+  font-size: clamp(28px, 3vw, 36px);
   font-weight: 700;
   line-height: 1;
   text-decoration: none;
@@ -49,7 +49,7 @@
   align-items: center;
   gap: 7px;
   color: #4d4d4d;
-  font-size: 20px;
+  font-size: var(--mm-font-nav);
   font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
@@ -124,7 +124,7 @@
 .pageHeading p {
   margin: 0;
   color: #303030;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 400;
   letter-spacing: .08em;
   line-height: 1.35;
@@ -489,7 +489,7 @@
 }
 
 .stateIcon { color: #9ab097; font-size: 42px; }
-.stateCard h2 { margin: 14px 0 0; color: var(--mm-primary-dark); font-size: 22px; }
+.stateCard h2 { margin: 14px 0 0; color: var(--mm-primary-dark); font-size: var(--mm-font-section-heading); }
 .stateCard p { max-width: 430px; margin: 10px 0 22px; color: var(--mm-text-secondary); line-height: 1.55; }
 
 .secondaryButton {

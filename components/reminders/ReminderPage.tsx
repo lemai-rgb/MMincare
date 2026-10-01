@@ -19,6 +19,7 @@ import {
   type ReminderPetOption,
   type ReminderUpdate,
 } from "@/lib/reminders";
+import { invalidateNotificationCenter } from "@/lib/notifications/events";
 import styles from "@/styles/reminders.module.css";
 
 type ReminderFilter = "all" | ReminderDisplayStatus;
@@ -94,6 +95,7 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
   const createTrigger = useRef<HTMLButtonElement | null>(null);
   const lastTrigger = useRef<HTMLButtonElement | null>(null);
   const editTrigger = useRef<HTMLButtonElement | null>(null);
+  const lastProcessedHighlight = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (!editingReminder) return;
@@ -171,6 +173,34 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
 
   const hasFilters = statusFilter !== "all" || petFilter !== "all";
 
+  useEffect(() => {
+    if (!highlightedReminderId || isLoading || lastProcessedHighlight.current === highlightedReminderId) return;
+    const targetReminder = reminders.find((reminder) => reminder.reminder_id === highlightedReminderId);
+    if (!targetReminder) {
+      lastProcessedHighlight.current = highlightedReminderId;
+      return;
+    }
+
+    const targetStatus = getReminderDisplayStatus(targetReminder.status, targetReminder.due_date);
+    if ((statusFilter !== "all" && statusFilter !== targetStatus) || (petFilter !== "all" && petFilter !== targetReminder.pet_id)) {
+      const frame = window.requestAnimationFrame(() => {
+        setStatusFilter("all");
+        setPetFilter("all");
+      });
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    const target = document.getElementById(`reminder-${highlightedReminderId}`);
+    if (!target) return;
+    lastProcessedHighlight.current = highlightedReminderId;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const frame = window.requestAnimationFrame(() => {
+      target.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "center" });
+      target.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [highlightedReminderId, isLoading, petFilter, reminders, statusFilter, visibleReminders]);
+
   function openComplete(reminder: ReminderListItem, trigger: HTMLButtonElement) {
     lastTrigger.current = trigger;
     setCompleteError("");
@@ -204,6 +234,7 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
             completed_at: payload.reminder?.completed_at ?? reminder.completed_at,
           }
         : reminder));
+      invalidateNotificationCenter();
       setSelectedReminder(null);
       setToast({ kind: "success", message: "Đã đánh dấu nhắc hẹn hoàn thành." });
       window.setTimeout(() => lastTrigger.current?.focus(), 0);
@@ -460,7 +491,7 @@ function ReminderCard({ reminder, highlighted, onComplete, onEdit }: {
   const statusLabel = displayStatus === "Upcoming" ? "Sắp tới" : displayStatus === "Overdue" ? "Quá hạn" : "Hoàn thành";
 
   return (
-    <article className={`${styles.reminderCard} ${styles[`card${displayStatus}`]} ${highlighted ? styles.highlightedCard : ""}`}>
+    <article aria-label={`Nhắc hẹn ${reminder.pet_name}`} className={`${styles.reminderCard} ${styles[`card${displayStatus}`]} ${highlighted ? styles.highlightedCard : ""}`} id={`reminder-${reminder.reminder_id}`} tabIndex={highlighted ? -1 : undefined}>
       <div className={styles.dateBlock}>
         <span aria-hidden="true">{displayStatus === "Completed" ? "✓" : "◷"}</span>
         <time dateTime={reminder.due_date}>{formatDate(reminder.due_date)}</time>

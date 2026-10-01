@@ -28,7 +28,7 @@
 }
 
 .brand span:first-child {
-  font-size: 40px;
+  font-size: clamp(28px, 3vw, 36px);
   font-weight: 700;
   letter-spacing: -0.055em;
 }
@@ -54,7 +54,7 @@
   gap: clamp(32px, 4vw, 64px);
   margin-left: auto;
   color: #4d4d4d;
-  font-size: 20px;
+  font-size: var(--mm-font-nav);
   font-weight: 500;
 }
 

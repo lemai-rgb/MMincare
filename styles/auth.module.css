@@ -105,9 +105,9 @@
 .authTitle {
   margin-top: 4px;
   color: var(--mm-text);
-  font-size: 48px;
+  font-size: clamp(32px, 4vw, 40px);
   font-weight: 600;
-  line-height: 58px;
+  line-height: 1.2;
 }
 
 .authForm {
