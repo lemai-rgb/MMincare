@@ -661,6 +661,29 @@ values (
   array['image/jpeg', 'image/png', 'application/pdf']::text[]
 );
 
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'pet-photos',
+  'pet-photos',
+  true,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/webp']::text[]
+);
+
+create policy pet_photos_owner_insert
+on storage.objects for insert to authenticated
+with check (
+  storage.objects.bucket_id = 'pet-photos'
+  and (storage.foldername(storage.objects.name))[1] = (select auth.uid())::text
+);
+
+create policy pet_photos_owner_delete
+on storage.objects for delete to authenticated
+using (
+  storage.objects.bucket_id = 'pet-photos'
+  and (storage.foldername(storage.objects.name))[1] = (select auth.uid())::text
+);
+
 create policy medical_record_attachments_owner_select
 on storage.objects for select to authenticated
 using (

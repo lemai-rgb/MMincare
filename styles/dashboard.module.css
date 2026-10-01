@@ -268,23 +268,15 @@
   stroke-width: 1.7;
 }
 
-.notificationBadge {
+.notificationTriggerDot {
   position: absolute;
-  top: -1px;
-  right: -2px;
-  display: grid;
-  min-width: 19px;
-  height: 19px;
-  align-items: center;
-  padding: 0 4px;
+  top: 5px;
+  right: 6px;
+  width: 9px;
+  height: 9px;
   border: 2px solid var(--mm-surface);
-  border-radius: 999px;
+  border-radius: 50%;
   background: #d9776a;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
-  text-align: center;
 }
 
 .notificationPanel {

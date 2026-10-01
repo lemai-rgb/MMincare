@@ -1,18 +1,13 @@
 import { NextResponse } from "next/server";
 
+import { getPetPhotoUrl, PET_PHOTO_BUCKET, validatePetImage, type ValidatedPetImage } from "@/lib/petImage";
 import { PET_GENDERS, PET_SPECIES } from "@/lib/pets";
+import { getSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
-type CreatePetBody = {
-  name?: unknown;
-  species?: unknown;
-  gender?: unknown;
-  breed?: unknown;
-  date_of_birth?: unknown;
-  picture_url?: unknown;
-};
+const GENERIC_CREATE_ERROR = "Không thể tạo hồ sơ thú cưng lúc này. Vui lòng thử lại.";
 
-function optionalString(value: unknown) {
+function optionalString(value: FormDataEntryValue | null) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
@@ -22,34 +17,53 @@ function isValidDate(value: string) {
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
 
+async function uploadPetPhoto(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, file: File, validated: ValidatedPetImage) {
+  const objectPath = `${userId}/${crypto.randomUUID()}.${validated.extension}`;
+  const { error } = await supabase.storage.from(PET_PHOTO_BUCKET).upload(objectPath, file, {
+    contentType: validated.contentType,
+    upsert: false,
+  });
+  return error ? { error: true as const } : { error: false as const, objectPath };
+}
+
+async function parsePetForm(request: Request) {
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return { error: "Dữ liệu gửi lên không hợp lệ." } as const;
+  }
+
+  const fileEntry = formData.get("image");
+  const file = fileEntry instanceof File && fileEntry.size > 0 ? fileEntry : null;
+  return {
+    formData,
+    file,
+    name: optionalString(formData.get("name")),
+    species: formData.get("species"),
+    gender: formData.get("gender"),
+    breed: optionalString(formData.get("breed")),
+    dateOfBirth: optionalString(formData.get("date_of_birth")),
+  } as const;
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   const userId = claimsData?.claims?.sub;
-
   if (claimsError || !userId) {
     return NextResponse.json({ error: "Vui lòng đăng nhập để tạo hồ sơ thú cưng." }, { status: 401 });
   }
 
-  let body: CreatePetBody;
-  try {
-    body = await request.json() as CreatePetBody;
-  } catch {
-    return NextResponse.json({ error: "Dữ liệu gửi lên không hợp lệ." }, { status: 400 });
-  }
+  const parsed = await parsePetForm(request);
+  if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
+  const { name, species, gender, breed, dateOfBirth, file } = parsed;
 
-  const name = optionalString(body.name);
-  const breed = optionalString(body.breed);
-  const dateOfBirth = optionalString(body.date_of_birth);
-  const pictureUrl = optionalString(body.picture_url);
-
-  if (!name) {
-    return NextResponse.json({ error: "Vui lòng nhập tên thú cưng.", field: "name" }, { status: 400 });
-  }
-  if (typeof body.species !== "string" || !PET_SPECIES.includes(body.species as (typeof PET_SPECIES)[number])) {
+  if (!name) return NextResponse.json({ error: "Vui lòng nhập tên thú cưng.", field: "name" }, { status: 400 });
+  if (typeof species !== "string" || !PET_SPECIES.includes(species as (typeof PET_SPECIES)[number])) {
     return NextResponse.json({ error: "Loài thú cưng không hợp lệ.", field: "species" }, { status: 400 });
   }
-  if (typeof body.gender !== "string" || !PET_GENDERS.includes(body.gender as (typeof PET_GENDERS)[number])) {
+  if (typeof gender !== "string" || !PET_GENDERS.includes(gender as (typeof PET_GENDERS)[number])) {
     return NextResponse.json({ error: "Giới tính thú cưng không hợp lệ.", field: "gender" }, { status: 400 });
   }
   if (dateOfBirth) {
@@ -58,31 +72,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Ngày sinh không hợp lệ hoặc ở trong tương lai.", field: "dateOfBirth" }, { status: 400 });
     }
   }
-  if (pictureUrl) {
+
+  let uploadedPath: string | null = null;
+  let pictureUrl: string | null = null;
+  if (file) {
+    let validated: ValidatedPetImage | null;
     try {
-      const url = new URL(pictureUrl);
-      if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error("Unsupported protocol");
+      validated = await validatePetImage(file);
     } catch {
-      return NextResponse.json({ error: "URL ảnh phải là địa chỉ HTTP hoặc HTTPS hợp lệ.", field: "pictureUrl" }, { status: 400 });
+      validated = null;
     }
+    if (!validated) return NextResponse.json({ error: file.size > 5 * 1024 * 1024 ? "Ảnh không được vượt quá 5MB." : "Chỉ hỗ trợ ảnh JPG, JPEG, PNG hoặc WebP hợp lệ.", field: "image" }, { status: 400 });
+    const upload = await uploadPetPhoto(supabase, userId, file, validated);
+    if (upload.error) return NextResponse.json({ error: "Không thể tải ảnh thú cưng lúc này. Vui lòng thử lại.", field: "image" }, { status: 500 });
+    uploadedPath = upload.objectPath;
+    pictureUrl = getPetPhotoUrl(getSupabaseEnv().url, uploadedPath);
   }
 
   const { data: pet, error: insertError } = await supabase
     .from("pets")
-    .insert({
-      owner_id: userId,
-      name,
-      species: body.species,
-      gender: body.gender,
-      breed,
-      date_of_birth: dateOfBirth,
-      picture_url: pictureUrl,
-    })
+    .insert({ owner_id: userId, name, species, gender, breed, date_of_birth: dateOfBirth, picture_url: pictureUrl })
     .select("pet_id, name, species, gender, breed, date_of_birth, picture_url")
     .single();
 
   if (insertError || !pet) {
-    return NextResponse.json({ error: "Không thể tạo hồ sơ thú cưng lúc này. Vui lòng thử lại." }, { status: 500 });
+    if (uploadedPath) await supabase.storage.from(PET_PHOTO_BUCKET).remove([uploadedPath]);
+    return NextResponse.json({ error: GENERIC_CREATE_ERROR }, { status: 500 });
   }
 
   return NextResponse.json({ pet }, { status: 201 });

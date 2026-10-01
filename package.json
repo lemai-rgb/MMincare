@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test:auth": "tsx lib/auth/errors.test.ts && tsx lib/auth/resend.test.ts",
     "test:notifications": "tsx lib/notifications/current.test.ts && tsx lib/notifications/center.test.ts && vitest run lib/notifications/center.ui.test.tsx",
-    "test:reminders": "tsx lib/reminders/edit.test.ts"
+    "test:reminders": "tsx lib/reminders/edit.test.ts",
+    "test:pet-images": "vitest run --no-cache --no-file-parallelism lib/petImage.test.ts components/pets/PetImagePicker.test.tsx"
   },
   "overrides": {
     "baseline-browser-mapping": "2.11.25"
