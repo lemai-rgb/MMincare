@@ -19,6 +19,7 @@ vi.mock("@/lib/supabase/client", () => ({
 
 import { AppHeader } from "@/components/layout/AppHeader";
 import { NotificationCenter } from "@/components/layout/NotificationCenter";
+import { invalidateNotificationCenter } from "@/lib/notifications/events";
 
 const notification = {
   notification_event_id: "event-1",
@@ -156,6 +157,32 @@ describe("NotificationCenter rendered behavior", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     expect(screen.getByRole("button", { name: "Thông báo, 100 chưa đọc" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Thông báo, 100 chưa đọc" }).textContent).toContain("99+");
+  });
+
+  it("refetches after a successful Reminder invalidation event", async () => {
+    const fetchMock = installFetch([
+      jsonResponse({ notifications: [notification] }),
+      jsonResponse({ notifications: [] }),
+    ]);
+    render(<NotificationCenter />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    invalidateNotificationCenter();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Thông báo" })).toBeTruthy());
+  });
+
+  it("renders a generic load error and recovers through Retry", async () => {
+    const fetchMock = installFetch([
+      jsonResponse({ error: "database stack trace" }, { status: 500 }),
+      jsonResponse({ notifications: [] }),
+    ]);
+    render(<NotificationCenter isOpen />);
+    await screen.findByRole("alert");
+    expect(screen.getByRole("alert").textContent).toContain("Không thể tải thông báo");
+    expect(screen.queryByText("database stack trace")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    await screen.findByText("Chưa có thông báo.");
   });
 
   it("supports Escape/outside close and the mobile menu mutually excludes the panel", async () => {
