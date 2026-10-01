@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:auth": "tsx lib/auth/errors.test.ts && tsx lib/auth/resend.test.ts",
-    "test:notifications": "tsx lib/notifications/current.test.ts && tsx lib/notifications/center.test.ts",
+    "test:notifications": "tsx lib/notifications/current.test.ts && tsx lib/notifications/center.test.ts && vitest run lib/notifications/center.ui.test.tsx",
     "test:reminders": "tsx lib/reminders/edit.test.ts"
   },
   "overrides": {
@@ -23,13 +23,16 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
+    "jsdom": "^24.1.3",
     "tailwindcss": "^4",
     "tsx": "4.23.15",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.9"
   }
 }

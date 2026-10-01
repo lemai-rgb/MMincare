@@ -47,4 +47,4 @@ assert.deepEqual(state.pendingReadIds, []);
 state = notificationCenterReducer(state, { type: "read-start", notificationId: "event-2" });
 state = notificationCenterReducer(state, { type: "read-failure", notificationId: "event-2", message: "Thử lại" });
 assert.equal(state.items[1]?.read_at, read.read_at, "PATCH lỗi không làm thay đổi trạng thái đã đọc");
-assert.equal(state.errorMessage, "Thử lại");
+assert.equal(state.readErrorMessage, "Thử lại");

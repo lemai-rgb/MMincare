@@ -162,6 +162,73 @@
   font-size: 12px;
 }
 
+.mobileMenuTrigger {
+  display: none;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--mm-border);
+  border-radius: 12px;
+  background: var(--mm-surface);
+  color: var(--mm-primary-dark);
+  cursor: pointer;
+}
+
+.mobileMenuTrigger:focus-visible,
+.mobileMenuLink:focus-visible {
+  outline: 2px solid var(--mm-primary-dark);
+  outline-offset: 3px;
+}
+
+.mobileMenuIcon {
+  display: grid;
+  width: 20px;
+  gap: 4px;
+}
+
+.mobileMenuIcon i {
+  display: block;
+  height: 2px;
+  border-radius: 2px;
+  background: currentcolor;
+}
+
+.mobileMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 16px;
+  z-index: 60;
+  display: grid;
+  width: min(280px, calc(100vw - 32px));
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid #dfe8dc;
+  border-radius: 16px;
+  background: var(--mm-surface);
+  box-shadow: 0 16px 36px rgb(43 62 43 / 18%);
+}
+
+.mobileMenuLink {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 9px 12px;
+  border-radius: 10px;
+  color: var(--mm-text);
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.mobileMenuLink:hover,
+.mobileMenuLink[aria-current="page"] { background: #f0f6ef; color: var(--mm-primary-dark); }
+
+.mobileMenuLogout { padding: 4px 0 0; border-top: 1px solid #edf1eb; }
+.mobileMenuLogout .logoutArea { display: block; text-align: left; }
+.mobileMenuLogout .logoutButton { width: 100%; min-height: 44px; justify-content: flex-start; padding: 9px 12px; color: var(--mm-text); font-size: 16px; }
+
 .notificationContainer {
   position: relative;
   z-index: 2;
@@ -336,6 +403,16 @@
 }
 
 .notificationState p { margin: 0 0 12px; }
+
+.notificationReadError {
+  margin: 0;
+  padding: 10px 20px;
+  border-bottom: 1px solid #efd7d1;
+  background: #fff6f3;
+  color: #9b4a40;
+  font-size: 13px;
+  line-height: 1.45;
+}
 
 .notificationRetry {
   min-height: 40px;
@@ -830,6 +907,8 @@
     display: none;
   }
 
+  .mobileMenuTrigger { display: inline-flex; }
+
   .populatedBrand {
     gap: 16px;
     font-size: 30px;
@@ -1039,6 +1118,7 @@
   .populatedHeader { display: flex; min-height: 64px; height: auto; padding: 0 16px; }
   .populatedBrand { gap: 0; font-size: 25px; }
   .populatedBrand span + span, .populatedHeader .logoutArea { display: none; }
+  .mobileMenuLogout .logoutArea { display: block; }
   .headerActions { gap: 10px; margin-left: auto; }
   .addPetAction { padding: 5px 10px; font-size: 12px; }
   .notificationPanel { right: -2px; }

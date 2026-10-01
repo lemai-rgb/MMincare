@@ -9,6 +9,7 @@ import { MedicalRecordCreateForm } from "@/components/pets/MedicalRecordCreateFo
 import { VaccineCreateForm, type VaccineSavedResult } from "@/components/pets/VaccineCreateForm";
 import type { MedicalHistoryAttachment, MedicalHistoryEntry } from "@/lib/medicalHistory";
 import type { PetSpecies } from "@/lib/pets";
+import { invalidateNotificationCenter } from "@/lib/notifications/events";
 import styles from "@/styles/petDetail.module.css";
 
 type MedicalHistoryFilter = "all" | "vaccines" | "visits";
@@ -301,6 +302,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
       });
       const payload = (await response.json()) as { reminder?: { reminder_id: string }; error?: string };
       if (!response.ok || !payload.reminder?.reminder_id) throw new Error(payload.error || "Không thể tạo nhắc hẹn.");
+      invalidateNotificationCenter();
       goToHistory(isMedicalSource ? "Đã tạo nhắc tái khám." : "Đã tạo nhắc hẹn thành công", payload.reminder.reminder_id);
     } catch {
       if (!controller.signal.aborted) {

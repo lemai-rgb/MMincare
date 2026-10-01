@@ -5,14 +5,16 @@ export type NotificationCenterStatus = "idle" | "loading" | "ready" | "error";
 export type NotificationCenterState = {
   items: NotificationRow[];
   status: NotificationCenterStatus;
-  errorMessage: string;
+  loadErrorMessage: string;
+  readErrorMessage: string;
   pendingReadIds: string[];
 };
 
 export const initialNotificationCenterState: NotificationCenterState = {
   items: [],
   status: "idle",
-  errorMessage: "",
+  loadErrorMessage: "",
+  readErrorMessage: "",
   pendingReadIds: [],
 };
 
@@ -30,11 +32,11 @@ export function notificationCenterReducer(
 ): NotificationCenterState {
   switch (action.type) {
     case "load-start":
-      return { ...state, status: "loading", errorMessage: "" };
+      return { ...state, status: "loading", loadErrorMessage: "", readErrorMessage: "" };
     case "load-success":
-      return { ...state, items: action.items, status: "ready", errorMessage: "" };
+      return { ...state, items: action.items, status: "ready", loadErrorMessage: "" };
     case "load-error":
-      return { ...state, status: "error", errorMessage: action.message };
+      return { ...state, status: "error", loadErrorMessage: action.message };
     case "read-start":
       return state.pendingReadIds.includes(action.notificationId)
         ? state
@@ -46,13 +48,13 @@ export function notificationCenterReducer(
           ? { ...item, read_at: action.readAt }
           : item),
         pendingReadIds: state.pendingReadIds.filter((id) => id !== action.notificationId),
-        errorMessage: "",
+        readErrorMessage: "",
       };
     case "read-failure":
       return {
         ...state,
         pendingReadIds: state.pendingReadIds.filter((id) => id !== action.notificationId),
-        errorMessage: action.message,
+        readErrorMessage: action.message,
       };
   }
 }

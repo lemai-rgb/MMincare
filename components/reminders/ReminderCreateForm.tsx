@@ -8,6 +8,7 @@ import {
   type ReminderPetOption,
   type ReminderType,
 } from "@/lib/reminders";
+import { invalidateNotificationCenter } from "@/lib/notifications/events";
 import styles from "@/styles/petDetail.module.css";
 
 export type ManualReminderCreatedResult = {
@@ -159,7 +160,10 @@ export function ReminderCreateForm(props: ReminderCreateFormProps) {
       props.onSubmittingChange?.(false);
     }
 
-    if (createdResult) props.onCreated(createdResult);
+    if (createdResult) {
+      invalidateNotificationCenter();
+      props.onCreated(createdResult);
+    }
   }
 
   return (

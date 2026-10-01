@@ -2,6 +2,7 @@
 
 import { FormEvent, useRef, useState } from "react";
 import type { ReminderListItem, ReminderUpdate } from "@/lib/reminders";
+import { invalidateNotificationCenter } from "@/lib/notifications/events";
 import styles from "@/styles/petDetail.module.css";
 
 export function ReminderEditForm({ reminder, titleId, onCancel, onSaved, onSavingChange }: {
@@ -28,6 +29,7 @@ export function ReminderEditForm({ reminder, titleId, onCancel, onSaved, onSavin
       });
       const payload = await response.json() as { reminder?: ReminderUpdate; error?: string };
       if (!response.ok || !payload.reminder) throw new Error(payload.error || "Không thể lưu thay đổi.");
+      invalidateNotificationCenter();
       await onSaved(payload.reminder);
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Không thể lưu thay đổi."); }
     finally { guard.current = false; setSaving(false); onSavingChange?.(false); }

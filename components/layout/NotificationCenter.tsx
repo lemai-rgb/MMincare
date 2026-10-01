@@ -13,23 +13,50 @@ import {
   notificationCenterReducer,
 } from "@/lib/notifications/center";
 import type { NotificationRow } from "@/lib/notifications/current";
+import { NOTIFICATION_CENTER_INVALIDATED_EVENT } from "@/lib/notifications/events";
 import styles from "@/styles/dashboard.module.css";
 
 const PANEL_ID = "notification-center-panel";
 
 type NotificationResponse = { notifications?: NotificationRow[]; error?: string };
 
-export function NotificationCenter() {
+type NotificationCenterProps = {
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
+};
+
+class NotificationApiError extends Error {}
+
+async function parseResponse<T>(response: Response, fallback: string) {
+  try {
+    return await response.json() as T;
+  } catch {
+    throw new Error(fallback);
+  }
+}
+
+function serverError(_payload: { error?: string }, fallback: string) {
+  return new NotificationApiError(fallback);
+}
+
+export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: NotificationCenterProps = {}) {
   const router = useRouter();
   const [state, dispatch] = useReducer(notificationCenterReducer, initialNotificationCenterState);
-  const [isOpen, setIsOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isOpen = controlledOpen ?? uncontrolledOpen;
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const requestRef = useRef<AbortController | null>(null);
   const requestSequence = useRef(0);
   const mountedRef = useRef(false);
   const pendingReadRef = useRef(new Set<string>());
+  const readOverridesRef = useRef(new Map<string, string>());
   const unreadCount = getUnreadNotificationCount(state.items);
+
+  const setIsOpen = useCallback((nextOpen: boolean) => {
+    if (controlledOpen === undefined) setUncontrolledOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  }, [controlledOpen, onOpenChange]);
 
   const loadNotifications = useCallback(async () => {
     requestRef.current?.abort();
@@ -40,13 +67,20 @@ export function NotificationCenter() {
 
     try {
       const response = await fetch("/api/notifications", { cache: "no-store", signal: controller.signal });
-      const payload = await response.json() as NotificationResponse;
-      if (!response.ok) throw new Error(payload.error || "Không thể tải thông báo lúc này.");
+      const payload = await parseResponse<NotificationResponse>(response, "Không thể tải thông báo lúc này.");
+      if (!response.ok) throw serverError(payload, "Không thể tải thông báo lúc này.");
+      if (!Array.isArray(payload.notifications)) throw new NotificationApiError("Không thể tải thông báo lúc này.");
       if (!mountedRef.current || controller.signal.aborted || sequence !== requestSequence.current) return;
-      dispatch({ type: "load-success", items: Array.isArray(payload.notifications) ? payload.notifications : [] });
+      const items = payload.notifications.map((item) => {
+        const override = readOverridesRef.current.get(item.notification_event_id);
+        if (override && !item.read_at) return { ...item, read_at: override };
+        if (item.read_at) readOverridesRef.current.delete(item.notification_event_id);
+        return item;
+      });
+      dispatch({ type: "load-success", items });
     } catch (error: unknown) {
       if (!mountedRef.current || controller.signal.aborted || sequence !== requestSequence.current) return;
-      dispatch({ type: "load-error", message: error instanceof Error ? error.message : "Không thể tải thông báo lúc này." });
+      dispatch({ type: "load-error", message: error instanceof NotificationApiError ? error.message : "Không thể tải thông báo lúc này." });
     }
   }, []);
 
@@ -58,6 +92,12 @@ export function NotificationCenter() {
       requestRef.current?.abort();
       requestRef.current = null;
     };
+  }, [loadNotifications]);
+
+  useEffect(() => {
+    const invalidate = () => { void loadNotifications(); };
+    window.addEventListener(NOTIFICATION_CENTER_INVALIDATED_EVENT, invalidate);
+    return () => window.removeEventListener(NOTIFICATION_CENTER_INVALIDATED_EVENT, invalidate);
   }, [loadNotifications]);
 
   useEffect(() => {
@@ -79,7 +119,13 @@ export function NotificationCenter() {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, setIsOpen]);
+
+  function togglePanel() {
+    const nextOpen = !isOpen;
+    if (nextOpen) void loadNotifications();
+    setIsOpen(nextOpen);
+  }
 
   async function handleNotificationClick(item: NotificationRow) {
     const reminder = getNotificationReminder(item);
@@ -90,18 +136,30 @@ export function NotificationCenter() {
       return;
     }
 
+    requestRef.current?.abort();
+    requestSequence.current += 1;
     pendingReadRef.current.add(item.notification_event_id);
     dispatch({ type: "read-start", notificationId: item.notification_event_id });
     try {
       const response = await fetch(`/api/notifications/${encodeURIComponent(item.notification_event_id)}/read`, { method: "PATCH" });
-      const payload = await response.json() as { notification?: { read_at?: string | null }; error?: string };
-      if (!response.ok || !payload.notification?.read_at) throw new Error(payload.error || "Không thể cập nhật thông báo lúc này.");
+      if (response.status === 404) {
+        const staleMessage = "Thông báo này không còn hiệu lực. Danh sách đã được cập nhật.";
+        if (mountedRef.current) {
+          await loadNotifications();
+          if (mountedRef.current) dispatch({ type: "read-failure", notificationId: item.notification_event_id, message: staleMessage });
+        }
+        return;
+      }
+      const payload = await parseResponse<{ notification?: { read_at?: string | null }; error?: string }>(response, "Không thể cập nhật thông báo lúc này.");
+      if (!response.ok) throw serverError(payload, "Không thể cập nhật thông báo lúc này.");
+      if (!payload.notification?.read_at) throw new NotificationApiError("Không thể cập nhật thông báo lúc này.");
       if (!mountedRef.current) return;
+      readOverridesRef.current.set(item.notification_event_id, payload.notification.read_at);
       dispatch({ type: "read-success", notificationId: item.notification_event_id, readAt: payload.notification.read_at });
       setIsOpen(false);
       router.push(`/reminders?highlight=${encodeURIComponent(reminder.reminder_id)}`);
     } catch (error: unknown) {
-      if (mountedRef.current) dispatch({ type: "read-failure", notificationId: item.notification_event_id, message: error instanceof Error ? error.message : "Không thể cập nhật thông báo lúc này." });
+      if (mountedRef.current) dispatch({ type: "read-failure", notificationId: item.notification_event_id, message: error instanceof NotificationApiError ? error.message : "Không thể cập nhật thông báo lúc này." });
     } finally {
       pendingReadRef.current.delete(item.notification_event_id);
     }
@@ -114,7 +172,7 @@ export function NotificationCenter() {
         aria-expanded={isOpen}
         aria-label={unreadCount > 0 ? `Thông báo, ${unreadCount} chưa đọc` : "Thông báo"}
         className={styles.notificationTrigger}
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={togglePanel}
         ref={triggerRef}
         type="button"
       >
@@ -131,9 +189,10 @@ export function NotificationCenter() {
             <h2 id="notification-center-title">Thông báo</h2>
           </header>
           {state.status === "loading" && <p className={styles.notificationState} role="status">Đang tải thông báo…</p>}
+          {state.readErrorMessage && <p className={styles.notificationReadError} role="alert">{state.readErrorMessage}</p>}
           {state.status === "error" && (
             <div className={styles.notificationState} role="alert">
-              <p>{state.errorMessage}</p>
+              <p>{state.loadErrorMessage}</p>
               <button className={styles.notificationRetry} onClick={() => void loadNotifications()} type="button">Thử lại</button>
             </div>
           )}
