@@ -39,17 +39,49 @@ export async function validatePetImage(file: File): Promise<ValidatedPetImage | 
   return null;
 }
 
-export function getPetPhotoUrl(supabaseUrl: string, objectPath: string) {
-  return `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/${PET_PHOTO_BUCKET}/${objectPath
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/")}`;
+export function isManagedPetPhotoReference(reference: string | null | undefined) {
+  if (!reference) return false;
+  if (reference.includes("/storage/v1/object/public/" + PET_PHOTO_BUCKET + "/")) return true;
+  return /^[^/]+\/[^/]+\.(?:jpg|png|webp)$/i.test(reference.split("?")[0]);
 }
 
-export function getManagedPetPhotoPath(pictureUrl: string | null, supabaseUrl: string, userId: string) {
-  if (!pictureUrl) return null;
-  const prefix = `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/${PET_PHOTO_BUCKET}/`;
-  if (!pictureUrl.startsWith(prefix)) return null;
-  const path = pictureUrl.slice(prefix.length).split("?")[0];
-  return path.startsWith(`${userId}/`) ? path : null;
+export function getManagedPetPhotoPath(pictureReference: string | null, supabaseUrl: string, userId: string) {
+  if (!pictureReference) return null;
+  const normalizedReference = pictureReference.split("?")[0];
+  const ownerPrefix = userId + "/";
+  if (normalizedReference.startsWith(ownerPrefix) && isManagedPetPhotoReference(normalizedReference)) {
+    return normalizedReference;
+  }
+
+  const prefix = supabaseUrl.replace(/\/$/, "") + "/storage/v1/object/public/" + PET_PHOTO_BUCKET + "/";
+  if (!normalizedReference.startsWith(prefix)) return null;
+  const path = normalizedReference.slice(prefix.length);
+  return path.startsWith(ownerPrefix) ? path : null;
+}
+
+export function getPetPhotoReference(objectPath: string) {
+  return objectPath;
+}
+
+export async function hashPetCreationPayload(input: {
+  name: string;
+  species: string;
+  gender: string;
+  breed: string | null;
+  dateOfBirth: string | null;
+  file: File | null;
+}) {
+  const fileBytes = input.file ? new Uint8Array(await input.file.arrayBuffer()) : new Uint8Array();
+  const fileDigest = await crypto.subtle.digest("SHA-256", fileBytes);
+  const fileHash = Array.from(new Uint8Array(fileDigest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const canonical = JSON.stringify({
+    name: input.name,
+    species: input.species,
+    gender: input.gender,
+    breed: input.breed,
+    dateOfBirth: input.dateOfBirth,
+    fileHash,
+  });
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonical));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }

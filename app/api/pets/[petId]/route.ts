@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getManagedPetPhotoPath, getPetPhotoUrl, PET_PHOTO_BUCKET, validatePetImage, type ValidatedPetImage } from "@/lib/petImage";
+import { getManagedPetPhotoPath, getPetPhotoReference, PET_PHOTO_BUCKET, validatePetImage, type ValidatedPetImage } from "@/lib/petImage";
 import { PET_GENDERS, PET_SPECIES } from "@/lib/pets";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -25,6 +25,50 @@ async function uploadPetPhoto(supabase: Awaited<ReturnType<typeof createClient>>
     upsert: false,
   });
   return error ? { error: true as const } : { error: false as const, objectPath };
+}
+
+async function cleanupUploadedPhoto(supabase: Awaited<ReturnType<typeof createClient>>, objectPath: string) {
+  const { data, error } = await supabase.storage.from(PET_PHOTO_BUCKET).remove([objectPath]);
+  if (error || !data?.length) {
+    console.error("[PET-PHOTO-CLEANUP] Unlinked upload cleanup pending", {
+      code: error?.name ?? "empty_remove_result",
+      status: error?.statusCode ?? null,
+    });
+    return false;
+  }
+  return true;
+}
+
+export async function GET(request: Request, { params }: RouteContext) {
+  const { petId } = await params;
+  if (!UUID_PATTERN.test(petId)) return new NextResponse(null, { status: 404 });
+  if (new URL(request.url).searchParams.get("photo") !== "1") {
+    return new NextResponse(null, { status: 405 });
+  }
+
+  const supabase = await createClient();
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub;
+  if (claimsError || !userId) return new NextResponse(null, { status: 401 });
+
+  const { data: pet, error: petError } = await supabase
+    .from("pets")
+    .select("picture_url")
+    .eq("pet_id", petId)
+    .eq("owner_id", userId)
+    .maybeSingle();
+  if (petError || !pet?.picture_url) return new NextResponse(null, { status: 404 });
+
+  const objectPath = getManagedPetPhotoPath(pet.picture_url, getSupabaseEnv().url, userId);
+  if (!objectPath) return new NextResponse(null, { status: 404 });
+  const { data: file, error: downloadError } = await supabase.storage.from(PET_PHOTO_BUCKET).download(objectPath);
+  if (downloadError || !file) return new NextResponse(null, { status: 404 });
+
+  const extension = objectPath.split(".").pop()?.toLowerCase();
+  const contentType = extension === "png" ? "image/png" : extension === "webp" ? "image/webp" : "image/jpeg";
+  return new NextResponse(file, {
+    headers: { "Cache-Control": "private, no-store", "Content-Type": contentType },
+  });
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
@@ -88,7 +132,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const upload = await uploadPetPhoto(supabase, userId, file, validated);
     if (upload.error) return NextResponse.json({ error: "Không thể tải ảnh thú cưng lúc này. Vui lòng thử lại.", field: "image" }, { status: 500 });
     uploadedPath = upload.objectPath;
-    pictureUrl = getPetPhotoUrl(getSupabaseEnv().url, uploadedPath);
+    pictureUrl = getPetPhotoReference(uploadedPath);
   } else if (removePicture) {
     pictureUrl = null;
   }
@@ -104,14 +148,26 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     .single();
 
   if (updateError || !pet) {
-    if (uploadedPath) await supabase.storage.from(PET_PHOTO_BUCKET).remove([uploadedPath]);
+    if (uploadedPath) await cleanupUploadedPhoto(supabase, uploadedPath);
     return NextResponse.json({ error: "Không thể lưu hồ sơ thú cưng lúc này. Vui lòng thử lại." }, { status: 500 });
   }
 
+  let pictureCleanup: "complete" | "pending" = "complete";
+  const warnings: string[] = [];
   if (pictureUrl !== undefined && existingPet.picture_url && existingPet.picture_url !== pictureUrl) {
     const oldPath = getManagedPetPhotoPath(existingPet.picture_url, getSupabaseEnv().url, userId);
-    if (oldPath) await supabase.storage.from(PET_PHOTO_BUCKET).remove([oldPath]);
+    if (oldPath) {
+      const { count, error: referenceError } = await supabase
+        .from("pets")
+        .select("pet_id", { count: "exact", head: true })
+        .eq("picture_url", existingPet.picture_url)
+        .neq("pet_id", petId);
+      if (referenceError || (count ?? 0) > 0 || !(await cleanupUploadedPhoto(supabase, oldPath))) {
+        pictureCleanup = "pending";
+        warnings.push("Hồ sơ đã được lưu nhưng ảnh cũ đang chờ hệ thống dọn dẹp.");
+      }
+    }
   }
 
-  return NextResponse.json({ pet });
+  return NextResponse.json({ pet, picture_cleanup: pictureCleanup, warnings });
 }

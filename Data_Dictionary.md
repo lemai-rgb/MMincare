@@ -161,7 +161,9 @@ Quy tắc mật khẩu tối thiểu 8 ký tự và có ít nhất một chữ s
 | `gender` | `pet_gender` | Không | `Male`, `Female`, `Unknown` | Giới tính |
 | `breed` | `text` | Có | — | Giống thú cưng |
 | `date_of_birth` | `date` | Có | Không lớn hơn ngày hiện tại khi nhập chính thức | Ngày sinh; có thể chưa biết |
-| `picture_url` | `text` | Có | URL/path Storage hợp lệ | Ảnh riêng của thú cưng |
+| `picture_url` | `text` | Có | URL/path Storage hợp lệ | Ảnh riêng của thú cưng; ảnh mới là object path private |
+| `creation_key` | `text` | Có | Unique theo `owner_id` khi khác NULL | Khóa idempotency cho cùng một lần tạo |
+| `creation_payload_hash` | `text` | Có | Hash payload tạo tương ứng | Phát hiện retry cùng khóa nhưng khác dữ liệu |
 | `created_at` | `timestamptz` | Không | Default `now()` | Thời điểm tạo |
 | `updated_at` | `timestamptz` | Không | Default `now()` | Thời điểm cập nhật |
 
@@ -172,6 +174,8 @@ Quy tắc mật khẩu tối thiểu 8 ký tự và có ít nhất một chữ s
 - Chỉ chấp nhận `cat` hoặc `dog`; giá trị khác bị từ chối. Khi tạo pet, ánh xạ `cat → Cat` và `dog → Dog` trước khi ghi `pets.species`.
 - Lựa chọn hợp lệ phải được bảo toàn qua Email Confirmation để callback chuyển đến `/pets/new?species=cat|dog` sau khi có session.
 - Khi `picture_url IS NULL`, frontend chọn avatar mặc định theo `species`.
+- Ảnh mới dùng bucket private `pet-photos`; URL signed không được lưu vào database. URL cũ/legacy vẫn được giữ.
+- `creation_key` được scope theo Owner và unique để retry POST không tạo Pet trùng.
 - Chỉ owner được sửa hồ sơ thú cưng. Caretaker chỉ được xem khi quyền chia sẻ còn hiệu lực.
 
 ---
@@ -422,7 +426,7 @@ Không đặt UNIQUE trên Reminder theo ngày/loại vì Business Rules cho ph�
 
 | Nhóm | Nội dung | Quyền |
 |---|---|---|
-| `pet-images` | Ảnh đại diện thú cưng JPG/PNG | Owner upload/update; người có quyền xem pet được đọc |
+| `pet-photos` | Ảnh đại diện thú cưng JPG/PNG/WebP, tối đa 5 MB | Private; Owner của Pet upload/đọc/xóa theo prefix user |
 | `medical-attachments` | JPG/PNG/PDF tối đa 5 MB | Owner/caretaker active được đọc và thêm theo quyền Medical Record |
 
 Không dùng public bucket cho hồ sơ y tế. Storage policies phải kiểm tra quyền dựa trên `pet_id`/`record_id`, tương thích với RLS bảng dữ liệu.

@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { getPetPhotoUrl, PET_PHOTO_BUCKET, validatePetImage, type ValidatedPetImage } from "@/lib/petImage";
+import { getPetPhotoReference, hashPetCreationPayload, PET_PHOTO_BUCKET, validatePetImage, type ValidatedPetImage } from "@/lib/petImage";
 import { PET_GENDERS, PET_SPECIES } from "@/lib/pets";
-import { getSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 const GENERIC_CREATE_ERROR = "Không thể tạo hồ sơ thú cưng lúc này. Vui lòng thử lại.";
@@ -26,6 +25,18 @@ async function uploadPetPhoto(supabase: Awaited<ReturnType<typeof createClient>>
   return error ? { error: true as const } : { error: false as const, objectPath };
 }
 
+async function cleanupUploadedPhoto(supabase: Awaited<ReturnType<typeof createClient>>, objectPath: string) {
+  const { data, error } = await supabase.storage.from(PET_PHOTO_BUCKET).remove([objectPath]);
+  if (error || !data?.length) {
+    console.error("[PET-PHOTO-CLEANUP] Unlinked upload cleanup pending", {
+      code: error?.name ?? "empty_remove_result",
+      status: error?.statusCode ?? null,
+    });
+    return false;
+  }
+  return true;
+}
+
 async function parsePetForm(request: Request) {
   let formData: FormData;
   try {
@@ -44,6 +55,7 @@ async function parsePetForm(request: Request) {
     gender: formData.get("gender"),
     breed: optionalString(formData.get("breed")),
     dateOfBirth: optionalString(formData.get("date_of_birth")),
+    idempotencyKey: optionalString(formData.get("idempotency_key")),
   } as const;
 }
 
@@ -57,7 +69,11 @@ export async function POST(request: Request) {
 
   const parsed = await parsePetForm(request);
   if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
-  const { name, species, gender, breed, dateOfBirth, file } = parsed;
+  const { name, species, gender, breed, dateOfBirth, file, idempotencyKey } = parsed;
+
+  if (!idempotencyKey || idempotencyKey.length > 128) {
+    return NextResponse.json({ error: "Yêu cầu tạo hồ sơ không hợp lệ. Vui lòng thử lại." }, { status: 400 });
+  }
 
   if (!name) return NextResponse.json({ error: "Vui lòng nhập tên thú cưng.", field: "name" }, { status: 400 });
   if (typeof species !== "string" || !PET_SPECIES.includes(species as (typeof PET_SPECIES)[number])) {
@@ -73,6 +89,28 @@ export async function POST(request: Request) {
     }
   }
 
+  const payloadHash = await hashPetCreationPayload({
+    name,
+    species,
+    gender,
+    breed,
+    dateOfBirth,
+    file,
+  });
+  const { data: existingPet, error: existingPetError } = await supabase
+    .from("pets")
+    .select("pet_id, name, species, gender, breed, date_of_birth, picture_url, creation_payload_hash")
+    .eq("owner_id", userId)
+    .eq("creation_key", idempotencyKey)
+    .maybeSingle();
+  if (existingPetError) return NextResponse.json({ error: GENERIC_CREATE_ERROR }, { status: 500 });
+  if (existingPet) {
+    if (existingPet.creation_payload_hash !== payloadHash) {
+      return NextResponse.json({ error: "Mã tạo đã được dùng cho dữ liệu khác.", field: "idempotency_key" }, { status: 409 });
+    }
+    return NextResponse.json({ pet: existingPet }, { status: 200 });
+  }
+
   let uploadedPath: string | null = null;
   let pictureUrl: string | null = null;
   if (file) {
@@ -86,17 +124,41 @@ export async function POST(request: Request) {
     const upload = await uploadPetPhoto(supabase, userId, file, validated);
     if (upload.error) return NextResponse.json({ error: "Không thể tải ảnh thú cưng lúc này. Vui lòng thử lại.", field: "image" }, { status: 500 });
     uploadedPath = upload.objectPath;
-    pictureUrl = getPetPhotoUrl(getSupabaseEnv().url, uploadedPath);
+    pictureUrl = getPetPhotoReference(uploadedPath);
   }
 
   const { data: pet, error: insertError } = await supabase
     .from("pets")
-    .insert({ owner_id: userId, name, species, gender, breed, date_of_birth: dateOfBirth, picture_url: pictureUrl })
+    .insert({
+      owner_id: userId,
+      name,
+      species,
+      gender,
+      breed,
+      date_of_birth: dateOfBirth,
+      picture_url: pictureUrl,
+      creation_key: idempotencyKey,
+      creation_payload_hash: payloadHash,
+    })
     .select("pet_id, name, species, gender, breed, date_of_birth, picture_url")
     .single();
 
   if (insertError || !pet) {
-    if (uploadedPath) await supabase.storage.from(PET_PHOTO_BUCKET).remove([uploadedPath]);
+    if (uploadedPath) await cleanupUploadedPhoto(supabase, uploadedPath);
+    if (insertError?.code === "23505") {
+      const { data: concurrentPet } = await supabase
+        .from("pets")
+        .select("pet_id, name, species, gender, breed, date_of_birth, picture_url, creation_payload_hash")
+        .eq("owner_id", userId)
+        .eq("creation_key", idempotencyKey)
+        .maybeSingle();
+      if (concurrentPet?.creation_payload_hash === payloadHash) {
+        return NextResponse.json({ pet: concurrentPet }, { status: 200 });
+      }
+      if (concurrentPet) {
+        return NextResponse.json({ error: "Mã tạo đã được dùng cho dữ liệu khác.", field: "idempotency_key" }, { status: 409 });
+      }
+    }
     return NextResponse.json({ error: GENERIC_CREATE_ERROR }, { status: 500 });
   }
 

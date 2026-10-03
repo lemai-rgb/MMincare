@@ -11,7 +11,7 @@
 - Security: authenticated Owners can select their own events and update only `read_at`; clients cannot insert, delete or change scheduling fields. The trigger function is `SECURITY DEFINER` because authenticated callers intentionally have no scheduling-field grants; it uses an empty `search_path`, schema-qualified objects, and has EXECUTE revoked from client roles.
 - Current notification selection: `overdue` supersedes `due_soon` after D+2, so at most one active notification is returned per Reminder.
 - Reminder updates are guarded by a database trigger: edit keeps `Upcoming` and only changes due date/note; completion changes only status/completed_at. `updated_at` is database-managed and not client-writable.
-- Migration history remains immutable. CI takes `database/schema.sql` from the base branch as the pre-Notification baseline, verifies that it contains no Notification Phase 1 objects, then replays each migration exactly once.
+- Migration history remains immutable. CI uses the committed `supabase/ci-legacy-baseline.sql` snapshot sourced from `2396d45^` (the pre-Notification schema), verifies that it contains no Notification Phase 1 objects, then replays each migration exactly once.
 
 ## ADR-002 — In-app Notification Center
 
@@ -19,3 +19,10 @@
 - Decision: render one accessible notification popover in the shared header and consume the existing Owner-only GET/read API without duplicating event-selection rules in the client.
 - Read flow: opening the popover never marks events read; selecting an unread event performs one idempotent read request, updates the badge only after success, and navigates to the existing Reminder route with its supported `highlight` contract.
 - Scope: loading, retry, empty and read/unread states are supported. Email delivery, browser push, notification deletion, bulk read and settings remain outside this UI decision.
+
+## ADR-003 — Owner-private Pet photos and idempotent creation
+
+- Status: Proposed for PR #19; production Storage/database are unchanged until separately reviewed and applied.
+- Decision: new Pet photos use the private `pet-photos` bucket, with Owner-scoped Storage SELECT/INSERT/DELETE policies. `pets.picture_url` stores a stable object path; authenticated server rendering streams the object through the Pet route, while existing external/legacy URLs remain readable.
+- Cleanup: only objects owned by the current Owner and managed by the application are eligible for removal, after the new database reference is committed. Cleanup failures are reported as pending and never roll back a successful Pet update.
+- Creation retries: nullable `creation_key` and `creation_payload_hash` plus a unique `(owner_id, creation_key)` index make concurrent retries converge on one Pet; a reused key with a different payload returns `409`.

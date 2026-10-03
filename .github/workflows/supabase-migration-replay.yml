@@ -45,10 +45,9 @@ jobs:
         run: |
           set -euo pipefail
           baseline="supabase/migrations/00000000000000_local_ci_baseline.sql"
-          base_ref="${GITHUB_BASE_REF:-main}"
-          git show "origin/${base_ref}:database/schema.sql" > "$baseline"
-          # This snapshot is the schema from the base branch, before
-          # Notification Phase 1. It must not contain any Phase 1 objects.
+          cp supabase/ci-legacy-baseline.sql "$baseline"
+          # The committed snapshot is sourced from 2396d45^, immediately
+          # before Notification Phase 1. It must not contain Phase 1 objects.
           if grep -Eq "notification_events|reminders_owner_edit|reminders_guard_update|sync_reminder_notification_events" "$baseline"; then
             echo "The legacy baseline contains Notification Phase 1 objects" >&2
             exit 1
@@ -326,6 +325,47 @@ jobs:
             end if;
             if not exists (select 1 from pg_trigger where tgrelid = 'public.reminders'::regclass and tgname = 'reminders_guard_update' and not tgisinternal) then
               raise exception 'Reminder guard trigger is missing';
+            end if;
+
+            if not exists (
+              select 1
+              from storage.buckets
+              where id = 'pet-photos'
+                and public = false
+                and file_size_limit = 5242880
+            ) then
+              raise exception 'pet-photos bucket is not private or has the wrong size limit';
+            end if;
+            if not exists (
+              select 1 from pg_policies
+              where schemaname = 'storage'
+                and tablename = 'objects'
+                and policyname = 'pet_photos_owner_select'
+            ) or not exists (
+              select 1 from pg_policies
+              where schemaname = 'storage'
+                and tablename = 'objects'
+                and policyname = 'pet_photos_owner_insert'
+            ) or not exists (
+              select 1 from pg_policies
+              where schemaname = 'storage'
+                and tablename = 'objects'
+                and policyname = 'pet_photos_owner_delete'
+            ) then
+              raise exception 'pet-photos Owner storage policies are missing';
+            end if;
+            if not exists (
+              select 1 from information_schema.columns
+              where table_schema = 'public'
+                and table_name = 'pets'
+                and column_name = 'creation_key'
+            ) or not exists (
+              select 1 from information_schema.columns
+              where table_schema = 'public'
+                and table_name = 'pets'
+                and column_name = 'creation_payload_hash'
+            ) then
+              raise exception 'Pet idempotency columns are missing';
             end if;
           end
           $$;

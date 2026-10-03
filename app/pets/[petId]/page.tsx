@@ -253,7 +253,7 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
 
           <section className={styles.profileCard} aria-label={`Hồ sơ của ${pet.name}`}>
             <div className={styles.avatarWrap}>
-              <PetAvatar className={styles.avatar} species={pet.species} pictureUrl={pet.picture_url} />
+              <PetAvatar className={styles.avatar} petId={pet.pet_id} species={pet.species} pictureUrl={pet.picture_url} />
             </div>
 
             <div className={styles.profileDetails}>

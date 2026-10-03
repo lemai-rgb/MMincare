@@ -264,9 +264,12 @@ Request:
 | gender | enum | Yes | `Male`, `Female`, `Unknown` |
 | breed | string | No | Giống |
 | date_of_birth | date | No | Ngày sinh |
-| picture_url | string | No | URL ảnh đại diện |
+| image | file | No | JPG/JPEG/PNG/WebP, tối đa 5 MB; upload multipart |
+| idempotency_key | string | Yes | Khóa retry cho cùng một thao tác tạo, scope theo Owner |
 
-Success `201` data: Pet vừa tạo.
+Success `201` data: Pet vừa tạo. `picture_url` là object path ổn định, không phải signed URL.
+
+`POST` cùng `idempotency_key` và cùng payload trả lại cùng Pet; cùng khóa nhưng payload khác trả `409`.
 
 ### 5.3. GET `/pets/{pet_id}`
 
@@ -285,7 +288,11 @@ Success data:
 **Actor:** Owner  
 **Business Rules:** BR-PET-01, BR-PET-02, BR-PET-06, BR-PET-07
 
-Request giống POST `/pets`. Success data là Pet sau cập nhật.
+Request giống POST `/pets`, thêm `remove_picture=true` để bỏ ảnh. Success data là Pet sau cập nhật; cleanup ảnh cũ thất bại trả `picture_cleanup: "pending"`.
+
+### 5.5. GET `/api/pets/{pet_id}?photo=1`
+
+Owner đã xác thực có thể đọc ảnh private của Pet mình. Server kiểm tra ownership rồi stream object từ bucket `pet-photos`; không phát hành URL public hoặc lưu signed URL vào database. Pet khác/anonymous nhận `401/404`.
 
 Không cung cấp Pet Delete trong MVP.
 

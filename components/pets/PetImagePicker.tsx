@@ -9,8 +9,10 @@ import type { PetSpecies } from "@/lib/pets";
 import styles from "@/styles/createPet.module.css";
 
 type PetImagePickerProps = {
+  petId?: string;
   species?: PetSpecies;
   currentPictureUrl: string | null;
+  isSaving?: boolean;
   onSelectionChange: (selection: { file: File | null; remove: boolean }) => void;
 };
 
@@ -19,25 +21,57 @@ function readableFileError(file: File) {
   return "Chỉ hỗ trợ ảnh JPG, JPEG, PNG hoặc WebP hợp lệ.";
 }
 
-export function PetImagePicker({ species, currentPictureUrl, onSelectionChange }: PetImagePickerProps) {
+export function PetImagePicker({
+  petId,
+  species,
+  currentPictureUrl,
+  isSaving = false,
+  onSelectionChange,
+}: PetImagePickerProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const mountedRef = useRef(true);
+  const validationTokenRef = useRef(0);
+  const blobUrlRef = useRef<string | null>(null);
+  const dirtyRef = useRef(false);
   const [previewUrl, setPreviewUrl] = useState(currentPictureUrl);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!selectedFile) return;
-    return () => {
-      if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl, selectedFile]);
+  function releaseBlobUrl() {
+    if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    blobUrlRef.current = null;
+  }
 
-async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      validationTokenRef.current += 1;
+      releaseBlobUrl();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (dirtyRef.current) return;
+    setPreviewUrl(currentPictureUrl);
+  }, [currentPictureUrl]);
+
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file) return;
+    if (!file || isSaving) return;
 
-    const validated = await validatePetImage(file);
+    const token = ++validationTokenRef.current;
+    let validated;
+    try {
+      validated = await validatePetImage(file);
+    } catch {
+      if (mountedRef.current && token === validationTokenRef.current) {
+        setError("Không thể đọc ảnh này. Vui lòng chọn ảnh khác.");
+      }
+      return;
+    }
+    if (!mountedRef.current || token !== validationTokenRef.current) return;
     if (!validated) {
       setError(readableFileError(file));
       return;
@@ -48,12 +82,18 @@ async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
         const bitmap = await createImageBitmap(file);
         bitmap.close();
       } catch {
-        setError("Không thể đọc ảnh này. Vui lòng chọn ảnh khác.");
+        if (mountedRef.current && token === validationTokenRef.current) {
+          setError("Không thể đọc ảnh này. Vui lòng chọn ảnh khác.");
+        }
         return;
       }
     }
+    if (!mountedRef.current || token !== validationTokenRef.current) return;
 
     const nextPreviewUrl = URL.createObjectURL(file);
+    releaseBlobUrl();
+    blobUrlRef.current = nextPreviewUrl;
+    dirtyRef.current = true;
     setError("");
     setSelectedFile(file);
     setPreviewUrl(nextPreviewUrl);
@@ -61,7 +101,10 @@ async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
   }
 
   function removeImage() {
-    if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
+    if (isSaving) return;
+    validationTokenRef.current += 1;
+    releaseBlobUrl();
+    dirtyRef.current = true;
     setPreviewUrl(null);
     setSelectedFile(null);
     setError("");
@@ -74,10 +117,10 @@ async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
   return (
     <div className={styles.imagePicker}>
       <div className={styles.avatarBox}>
-        {hasPreview && species ? (
-          <PetAvatar className={styles.petAvatar} species={species} pictureUrl={previewUrl} />
+        {species ? (
+          <PetAvatar className={styles.petAvatar} petId={petId} species={species} pictureUrl={previewUrl} />
         ) : (
-          <span className={styles.avatarPrompt}>{species ? "Chưa có ảnh" : "Chọn loài để thêm ảnh"}</span>
+          <span className={styles.avatarPrompt}>Chọn loài để thêm ảnh</span>
         )}
       </div>
       <label className={styles.imagePickerLabel} htmlFor="pet-picture-file">
@@ -87,18 +130,20 @@ async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
         ref={inputRef}
         accept="image/jpeg,image/png,image/webp"
         className={styles.visuallyHiddenInput}
+        disabled={isSaving}
         id="pet-picture-file"
         onChange={(event) => void handleFileChange(event)}
         type="file"
       />
       <div className={styles.imagePickerControls}>
-        <button className={styles.imagePickerButton} onClick={() => inputRef.current?.click()} type="button">
+        <button className={styles.imagePickerButton} disabled={isSaving} onClick={() => inputRef.current?.click()} type="button">
           {hasPreview ? "Đổi ảnh" : "+ Thêm ảnh"}
         </button>
         {hasPreview && (
-          <button className={styles.imagePickerRemove} onClick={removeImage} type="button">Bỏ ảnh</button>
+          <button className={styles.imagePickerRemove} disabled={isSaving} onClick={removeImage} type="button">Bỏ ảnh</button>
         )}
       </div>
+      {selectedFile && <span className={styles.visuallyHiddenInput}>Ảnh mới đã chọn</span>}
       {error && <small className={styles.imagePickerError} role="alert">{error}</small>}
     </div>
   );

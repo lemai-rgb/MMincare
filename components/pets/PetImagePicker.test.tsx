@@ -16,7 +16,7 @@ describe("PetImagePicker", () => {
     vi.stubGlobal("URL", { ...URL, createObjectURL: vi.fn(() => "blob:pet"), revokeObjectURL: vi.fn() });
     const onSelectionChange = vi.fn();
     render(<PetImagePicker currentPictureUrl={null} onSelectionChange={onSelectionChange} species="Cat" />);
-    const input = screen.getByLabelText("Ảnh thú cưng (không bắt buộc)") as HTMLInputElement;
+    const input = screen.getByLabelText(/Ảnh thú cưng/) as HTMLInputElement;
 
     fireEvent.change(input, { target: { files: [jpegFile()] } });
     await waitFor(() => expect(screen.getByRole("button", { name: "Đổi ảnh" })).toBeTruthy());
@@ -35,10 +35,15 @@ describe("PetImagePicker", () => {
   it("rejects files over 5MB without replacing the current picture", async () => {
     vi.stubGlobal("URL", { ...URL, createObjectURL: vi.fn(() => "blob:pet"), revokeObjectURL: vi.fn() });
     render(<PetImagePicker currentPictureUrl="https://legacy.example/pet.jpg" onSelectionChange={vi.fn()} species="Dog" />);
-    const input = screen.getByLabelText("Ảnh thú cưng (không bắt buộc)") as HTMLInputElement;
+    const input = screen.getByLabelText(/Ảnh thú cưng/) as HTMLInputElement;
     const large = new File([new Uint8Array(5 * 1024 * 1024 + 1)], "large.jpg", { type: "image/jpeg" });
     fireEvent.change(input, { target: { files: [large] } });
     expect((await screen.findByRole("alert")).textContent).toContain("5MB");
     expect(screen.getByRole("button", { name: "Đổi ảnh" })).toBeTruthy();
+  });
+
+  it("shows the species avatar when no picture is selected", () => {
+    render(<PetImagePicker currentPictureUrl={null} onSelectionChange={vi.fn()} species="Dog" />);
+    expect(screen.getByTestId("mock-image")).toBeTruthy();
   });
 });

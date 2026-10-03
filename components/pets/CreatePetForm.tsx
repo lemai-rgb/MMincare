@@ -39,7 +39,9 @@ export function CreatePetForm({ initialSpecies, mode = "create", petId, initialP
   const [formSuccess, setFormSuccess] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [createdPetId, setCreatedPetId] = useState<string | null>(null);
+  const [imageResetKey, setImageResetKey] = useState(0);
   const submitGuardRef = useRef(false);
+  const creationKeyRef = useRef<string | null>(null);
 
   function clearFieldError(field: keyof FieldErrors) {
     if (errors[field]) setErrors((current) => ({ ...current, [field]: undefined }));
@@ -76,6 +78,8 @@ export function CreatePetForm({ initialSpecies, mode = "create", petId, initialP
     if (removePicture) formData.set("remove_picture", "true");
 
     if (mode === "create") {
+      if (!creationKeyRef.current) creationKeyRef.current = crypto.randomUUID();
+      formData.set("idempotency_key", creationKeyRef.current);
       try {
         const response = await fetch("/api/pets", { method: "POST", body: formData });
         const result = await response.json() as CreatePetResponse;
@@ -114,6 +118,7 @@ export function CreatePetForm({ initialSpecies, mode = "create", petId, initialP
       setPictureUrl(result.pet.picture_url ?? null);
       setSelectedImage(null);
       setRemovePicture(false);
+      setImageResetKey((current) => current + 1);
       setFormSuccess("Đã lưu thay đổi");
       router.refresh();
     } catch {
@@ -180,7 +185,10 @@ export function CreatePetForm({ initialSpecies, mode = "create", petId, initialP
         >
           <div className={styles.leftColumn}>
             <PetImagePicker
+              key={(petId ?? "new") + ":" + imageResetKey}
+              petId={petId}
               currentPictureUrl={pictureUrl}
+              isSaving={isSaving}
               onSelectionChange={({ file, remove }) => {
                 setSelectedImage(file);
                 setRemovePicture(remove);

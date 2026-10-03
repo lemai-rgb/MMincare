@@ -137,7 +137,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 <article className={styles.petListCard} key={pet.pet_id}>
                   <PetListCardDecorations species={pet.species} />
                   <div className={styles.petListAvatar}>
-                    <PetAvatar className={styles.petListAvatarImage} species={pet.species} pictureUrl={pet.picture_url} />
+                    <PetAvatar className={styles.petListAvatarImage} petId={pet.pet_id} species={pet.species} pictureUrl={pet.picture_url} />
                   </div>
                   <div className={styles.petListDetails}>
                     <h2>{pet.name}</h2>
