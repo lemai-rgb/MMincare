@@ -1,6 +1,6 @@
 -- Legacy baseline captured from commit 2396d45^ (before Notification Phase 1).
 -- This snapshot is used only by local/CI migration replay. Do not apply it to remote.
-+-- MMinCare target schema — PostgreSQL / Supabase
+-- MMinCare target schema — PostgreSQL / Supabase
 -- Source of truth: Data Dictionary 2.0, Business Rules, and API Documentation.
 -- This file describes the desired end state. Apply incremental migrations in
 -- supabase/migrations to existing environments; do not run this baseline over
