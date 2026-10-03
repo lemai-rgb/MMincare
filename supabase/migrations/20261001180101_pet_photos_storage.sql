@@ -4,7 +4,7 @@ insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 values (
   'pet-photos',
   'pet-photos',
-  true,
+  false,
   5242880,
   array['image/jpeg', 'image/png', 'image/webp']::text[]
 )
