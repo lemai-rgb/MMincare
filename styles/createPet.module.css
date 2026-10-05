@@ -81,6 +81,8 @@
 .brandLink:focus-visible,
 .saveButton:focus-visible,
 .cancelButton:focus-visible,
+.imagePickerButton:focus-visible,
+.imagePickerRemove:focus-visible,
 .field input:focus-visible,
 .field select:focus-visible {
   outline: 2px solid var(--mm-primary-dark);
@@ -128,10 +130,17 @@
   padding-top: 17px;
 }
 
+.imagePicker {
+  display: grid;
+  width: min(100%, 360px);
+  justify-items: center;
+  gap: 12px;
+}
+
 .avatarBox {
   display: grid;
-  width: 280px;
-  height: 200px;
+  width: min(280px, 100%);
+  aspect-ratio: 1;
   overflow: hidden;
   place-items: center;
   border-radius: 20px;
@@ -147,25 +156,66 @@
 .avatarPrompt {
   color: #999;
   font-size: 16px;
+  text-align: center;
 }
 
-.avatarTitle {
-  margin: 20px 0 0;
+.imagePickerLabel {
+  margin-top: 4px;
   color: var(--mm-text-secondary);
   font-size: 20px;
   font-weight: 600;
 }
 
-.avatarHelp {
-  margin: 10px 0 0;
-  color: var(--mm-text-secondary);
+.imagePickerControls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.imagePickerButton,
+.imagePickerRemove {
+  min-height: 42px;
+  padding: 9px 18px;
+  border-radius: var(--radius-button);
+  font: inherit;
   font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.imagePickerButton {
+  border: 1px solid var(--mm-primary);
+  background: var(--mm-primary);
+  color: #fff;
+}
+
+.imagePickerButton:hover { background: var(--mm-primary-dark); }
+
+.imagePickerRemove {
+  border: 1px solid var(--mm-border);
+  background: var(--mm-surface);
+  color: var(--mm-primary-dark);
+}
+
+.imagePickerRemove:hover { background: #f5f8f4; }
+
+.imagePickerError {
+  min-height: 16px;
+  color: #b34f49;
+  font-size: 13px;
+  line-height: 1.2;
   text-align: center;
 }
 
-.urlField {
-  width: min(100%, 430px);
-  margin-top: 23px;
+.visuallyHiddenInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .rightColumn {

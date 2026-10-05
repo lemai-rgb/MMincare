@@ -36,6 +36,8 @@ create table public.pets (
   breed text,
   date_of_birth date,
   picture_url text,
+  creation_key text,
+  creation_payload_hash text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint pets_name_not_empty_check check (length(btrim(name)) > 0),
@@ -197,6 +199,10 @@ create table public.pet_access (
 
 create index pets_owner_created_at_idx
   on public.pets (owner_id, created_at desc);
+
+create unique index pets_owner_creation_key_uidx
+  on public.pets (owner_id, creation_key)
+  where creation_key is not null;
 create index vaccine_schedule_rules_lookup_idx
   on public.vaccine_schedule_rules (species, lower(vaccine_name), is_active);
 create index vaccine_records_pet_date_idx
@@ -659,6 +665,36 @@ values (
   false,
   5242880,
   array['image/jpeg', 'image/png', 'application/pdf']::text[]
+);
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'pet-photos',
+  'pet-photos',
+  false,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/webp']::text[]
+);
+
+create policy pet_photos_owner_select
+on storage.objects for select to authenticated
+using (
+  storage.objects.bucket_id = 'pet-photos'
+  and (storage.foldername(storage.objects.name))[1] = (select auth.uid())::text
+);
+
+create policy pet_photos_owner_insert
+on storage.objects for insert to authenticated
+with check (
+  storage.objects.bucket_id = 'pet-photos'
+  and (storage.foldername(storage.objects.name))[1] = (select auth.uid())::text
+);
+
+create policy pet_photos_owner_delete
+on storage.objects for delete to authenticated
+using (
+  storage.objects.bucket_id = 'pet-photos'
+  and (storage.foldername(storage.objects.name))[1] = (select auth.uid())::text
 );
 
 create policy medical_record_attachments_owner_select

@@ -207,8 +207,7 @@ export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: Not
         <svg aria-hidden="true" className={styles.notificationBellIcon} viewBox="0 0 24 24">
           <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
         </svg>
-        {unreadCount > 0 && <span aria-hidden="true" className={styles.notificationBadge}>{unreadCount > 99 ? "99+" : unreadCount}</span>}
-        <span className={styles.srOnly}>{unreadCount > 0 ? `${unreadCount} thông báo chưa đọc` : "Không có thông báo chưa đọc"}</span>
+        {unreadCount > 0 && <span aria-hidden="true" className={styles.notificationTriggerDot} />}
       </button>
 
       {isOpen && (

@@ -148,6 +148,7 @@ describe("NotificationCenter rendered behavior", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     const trigger = screen.getByRole("button", { name: "Thông báo" });
     expect(trigger.textContent).not.toContain("99+");
+    expect(trigger.querySelector("span[aria-hidden=\"true\"]")).toBeNull();
     fireEvent.click(trigger);
     await screen.findByRole("heading", { name: "Thông báo" });
     const item = screen.getAllByRole("button", { name: /Sắp đến hạn: Tiêm phòng cho Meo/ })[0];
@@ -157,7 +158,7 @@ describe("NotificationCenter rendered behavior", () => {
     expect(push).toHaveBeenCalledWith("/reminders?highlight=reminder-1");
   });
 
-  it("shows 99+ for a canonical list with one hundred unread notifications", async () => {
+  it("shows only an unread dot for a canonical list with one hundred unread notifications", async () => {
     const unreadNotifications = Array.from({ length: 100 }, (_, index) => ({
       ...notification,
       notification_event_id: `event-${index}`,
@@ -165,8 +166,9 @@ describe("NotificationCenter rendered behavior", () => {
     const fetchMock = installFetch([jsonResponse({ notifications: unreadNotifications })]);
     render(<NotificationCenter />);
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
-    expect(screen.getByRole("button", { name: "Thông báo, 100 chưa đọc" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Thông báo, 100 chưa đọc" }).textContent).toContain("99+");
+    const trigger = screen.getByRole("button", { name: "Thông báo, 100 chưa đọc" });
+    expect(trigger.textContent).not.toContain("99+");
+    expect(trigger.querySelector("span[aria-hidden=\"true\"]")).toBeTruthy();
   });
 
   it("refetches after a successful Reminder invalidation event", async () => {

@@ -7,9 +7,8 @@ import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 
 import { LogoutButton } from "@/components/auth/LogoutButton";
-import { PetAvatar } from "@/components/pets/PetAvatar";
+import { PetImagePicker } from "@/components/pets/PetImagePicker";
 import { PET_GENDERS, PET_SPECIES, type Pet, type PetGender, type PetSpecies } from "@/lib/pets";
-import { createClient } from "@/lib/supabase/client";
 import styles from "@/styles/createPet.module.css";
 
 type CreatePetFormProps = {
@@ -19,7 +18,7 @@ type CreatePetFormProps = {
   initialPet?: Pick<Pet, "name" | "species" | "gender" | "breed" | "date_of_birth" | "picture_url">;
 };
 type FieldErrors = { name?: string; species?: string; gender?: string; dateOfBirth?: string };
-type CreatePetResponse = { pet?: { pet_id: string }; error?: string; field?: keyof FieldErrors | "pictureUrl" };
+type CreatePetResponse = { pet?: { pet_id: string; picture_url?: string | null }; error?: string; field?: keyof FieldErrors | "image" };
 
 const speciesLabels: Record<PetSpecies, string> = { Cat: "Mèo", Dog: "Chó" };
 const genderLabels: Record<PetGender, string> = { Male: "Đực", Female: "Cái", Unknown: "Chưa rõ" };
@@ -31,13 +30,18 @@ export function CreatePetForm({ initialSpecies, mode = "create", petId, initialP
   const [gender, setGender] = useState<PetGender | "">(initialPet?.gender ?? "");
   const [breed, setBreed] = useState(initialPet?.breed ?? "");
   const [dateOfBirth, setDateOfBirth] = useState(initialPet?.date_of_birth ?? "");
-  const [pictureUrl, setPictureUrl] = useState(initialPet?.picture_url ?? "");
+  const [pictureUrl, setPictureUrl] = useState(initialPet?.picture_url ?? null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [removePicture, setRemovePicture] = useState(false);
+  const [imageError, setImageError] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [createdPetId, setCreatedPetId] = useState<string | null>(null);
+  const [imageResetKey, setImageResetKey] = useState(0);
   const submitGuardRef = useRef(false);
+  const creationKeyRef = useRef<string | null>(null);
 
   function clearFieldError(field: keyof FieldErrors) {
     if (errors[field]) setErrors((current) => ({ ...current, [field]: undefined }));
@@ -64,24 +68,26 @@ export function CreatePetForm({ initialSpecies, mode = "create", petId, initialP
     submitGuardRef.current = true;
     setIsSaving(true);
 
+    const formData = new FormData();
+    formData.set("name", normalizedName);
+    formData.set("species", species);
+    formData.set("gender", gender);
+    formData.set("breed", breed.trim());
+    formData.set("date_of_birth", dateOfBirth);
+    if (selectedImage) formData.set("image", selectedImage);
+    if (removePicture) formData.set("remove_picture", "true");
+
     if (mode === "create") {
+      if (!creationKeyRef.current) creationKeyRef.current = crypto.randomUUID();
+      formData.set("idempotency_key", creationKeyRef.current);
       try {
-        const response = await fetch("/api/pets", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: normalizedName,
-            species,
-            gender,
-            breed: breed.trim() || null,
-            date_of_birth: dateOfBirth || null,
-            picture_url: pictureUrl.trim() || null,
-          }),
-        });
+        const response = await fetch("/api/pets", { method: "POST", body: formData });
         const result = await response.json() as CreatePetResponse;
 
         if (!response.ok || !result.pet?.pet_id) {
-          if (result.field && result.field !== "pictureUrl") {
+          if (result.field === "image") {
+            setImageError(result.error ?? "Ảnh không hợp lệ.");
+          } else if (result.field) {
             setErrors((current) => ({ ...current, [result.field as keyof FieldErrors]: result.error }));
           } else {
             setFormError(result.error ?? "Không thể tạo hồ sơ thú cưng lúc này. Vui lòng thử lại.");
@@ -100,38 +106,27 @@ export function CreatePetForm({ initialSpecies, mode = "create", petId, initialP
       return;
     }
 
-    const supabase = createClient();
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError || !authData.user) {
-      submitGuardRef.current = false;
-      router.replace("/login");
+    try {
+      const response = await fetch(`/api/pets/${encodeURIComponent(petId ?? "")}`, { method: "PATCH", body: formData });
+      const result = await response.json() as CreatePetResponse;
+      if (!response.ok || !result.pet?.pet_id) {
+        if (result.field === "image") setImageError(result.error ?? "Ảnh không hợp lệ.");
+        else if (result.field) setErrors((current) => ({ ...current, [result.field as keyof FieldErrors]: result.error }));
+        else setFormError(result.error ?? "Không thể lưu hồ sơ thú cưng lúc này. Vui lòng thử lại.");
+        return;
+      }
+      setPictureUrl(result.pet.picture_url ?? null);
+      setSelectedImage(null);
+      setRemovePicture(false);
+      setImageResetKey((current) => current + 1);
+      setFormSuccess("Đã lưu thay đổi");
       router.refresh();
-      return;
-    }
-
-    const petValues = {
-      name: normalizedName,
-      species,
-      gender,
-      breed: breed.trim() || null,
-      date_of_birth: dateOfBirth || null,
-      picture_url: pictureUrl.trim() || null,
-    };
-    const result = mode === "edit" && petId
-      ? await supabase.from("pets").update(petValues).eq("pet_id", petId).eq("owner_id", authData.user.id).select("pet_id").maybeSingle()
-      : await supabase.from("pets").insert({ owner_id: authData.user.id, ...petValues }).select("pet_id").maybeSingle();
-
-    if (result.error || !result.data) {
-      setFormError("Không thể lưu hồ sơ thú cưng lúc này. Vui lòng thử lại.");
+    } catch {
+      setFormError("Không thể kết nối để lưu hồ sơ thú cưng. Vui lòng thử lại.");
+    } finally {
       submitGuardRef.current = false;
       setIsSaving(false);
-      return;
     }
-
-    submitGuardRef.current = false;
-    setIsSaving(false);
-    setFormSuccess("Đã lưu thay đổi");
-    router.refresh();
   }
 
   if (createdPetId) {
@@ -189,16 +184,19 @@ export function CreatePetForm({ initialSpecies, mode = "create", petId, initialP
           onSubmit={handleSubmit}
         >
           <div className={styles.leftColumn}>
-            <div className={styles.avatarBox} aria-hidden="true">
-              {species ? <PetAvatar className={styles.petAvatar} species={species} pictureUrl={pictureUrl || null} /> : <span className={styles.avatarPrompt}>+ Thêm ảnh</span>}
-            </div>
-            <p className={styles.avatarTitle}>Ảnh đại diện</p>
-            <p className={styles.avatarHelp}>(Nếu chưa có ảnh, MMinCare sẽ dùng avatar mặc định theo loài)</p>
-            <div className={`${styles.field} ${styles.urlField}`}>
-              <label htmlFor="pet-picture-url">URL ảnh <span className={styles.optional}>(không bắt buộc)</span></label>
-              <input id="pet-picture-url" name="pictureUrl" type="url" value={pictureUrl} placeholder="https://…" autoComplete="url" onChange={(event) => setPictureUrl(event.target.value)} />
-              <small>Upload ảnh thật sẽ được bổ sung ở checkpoint Storage.</small>
-            </div>
+            <PetImagePicker
+              key={(petId ?? "new") + ":" + imageResetKey}
+              petId={petId}
+              currentPictureUrl={pictureUrl}
+              isSaving={isSaving}
+              onSelectionChange={({ file, remove }) => {
+                setSelectedImage(file);
+                setRemovePicture(remove);
+                setImageError("");
+                if (remove) setPictureUrl(null);
+              }}
+              species={species || undefined}
+            />
           </div>
 
           <div className={styles.rightColumn}>
@@ -239,6 +237,7 @@ export function CreatePetForm({ initialSpecies, mode = "create", petId, initialP
           </div>
 
           {formError && <p className={styles.formError} role="alert">{formError}</p>}
+          {imageError && <p className={styles.formError} role="alert">{imageError}</p>}
           {formSuccess && <p className={styles.formSuccess} role="status">{formSuccess}</p>}
 
           <div className={styles.actions}>
