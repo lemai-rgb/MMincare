@@ -980,6 +980,88 @@
   text-align: right;
 }
 
+.healthLogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.healthLogActions button {
+  min-height: 38px;
+  padding: 7px 16px;
+  color: #5e7c5d;
+  background: #fff;
+  border: 1px solid #b8cbb3;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.healthLogActions button:last-child {
+  color: #8f4038;
+  border-color: #d7aaa4;
+}
+
+.healthLogActions button:focus-visible,
+.healthDeleteDialog button:focus-visible {
+  outline: 2px solid #6e8b6b;
+  outline-offset: 3px;
+}
+
+.healthDialogBackdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  padding: 24px;
+  place-items: center;
+  background: rgb(31 33 30 / 45%);
+}
+
+.healthDeleteDialog {
+  width: min(100%, 520px);
+  box-sizing: border-box;
+  padding: 28px;
+  background: #fff;
+  border: 1px solid #e8e2da;
+  border-radius: 20px;
+  box-shadow: 0 18px 48px rgb(31 33 30 / 22%);
+}
+
+.healthDeleteDialog h3,
+.healthDeleteDialog p {
+  margin: 0;
+}
+
+.healthDeleteDialog h3 {
+  color: #20211f;
+  font-size: 24px;
+}
+
+.healthDeleteDialog p {
+  margin-top: 12px;
+  color: #44483f;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.healthDeleteDialog .healthCreateActions {
+  margin-top: 24px;
+}
+
+.healthDeleteDialog .healthCreateActions button:last-child {
+  background: #8f4038;
+  border-color: #8f4038;
+}
+
+.healthDeleteError {
+  color: #a45149 !important;
+  font-weight: 600;
+}
+
 .healthLogSkeleton {
   min-height: 224px;
   border: 1px solid #ede2da;
@@ -2804,6 +2886,11 @@
     grid-column: auto;
   }
 
+  .healthLogActions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
   .healthStatsCards {
     grid-template-columns: 1fr;
     width: 100%;
@@ -2815,6 +2902,14 @@
 }
 
 @media (max-width: 560px) {
+  .healthDialogBackdrop {
+    padding: 16px;
+  }
+
+  .healthDeleteDialog {
+    padding: 22px;
+  }
+
   .petHealthShell .profileCard {
     grid-template-columns: 1fr;
     padding: 24px;

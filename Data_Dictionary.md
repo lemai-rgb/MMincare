@@ -317,8 +317,9 @@ Storage policy phải đồng bộ với RLS của Medical Record: owner và car
 | `status` | `text` | Có | — | Trạng thái/tình trạng tổng quát |
 | `note` | `text` | Có | — | Ghi chú |
 | `logged_at` | `timestamptz` | Không | Default `now()` | Thời điểm ghi nhận |
+| `recorded_on` | `date` | Không | Không ở tương lai theo `Asia/Ho_Chi_Minh` | Ngày nhật ký do người dùng chọn |
 
-Phải có ít nhất một trong `weight`, `food_amount`, `food_type`, `status`, `note`. Mỗi lần ghi nhận tạo bản ghi mới; caretaker không được sửa/xóa bản ghi đã có.
+Phải có ít nhất một trong `weight`, `food_amount`, `food_type`, `status`, `note`. Mỗi lần ghi nhận tạo bản ghi mới. Owner được sửa các trường nghiệp vụ (có thể xóa giá trị tùy chọn nhưng vẫn phải còn ít nhất một trường) hoặc xóa sau xác nhận; `health_log_id`, `pet_id`, `created_by`, `logged_at` là bất biến. Caretaker không được sửa/xóa.
 
 ---
 
@@ -394,11 +395,11 @@ Các giá trị sau không được tạo thành cột lưu trữ độc lập:
 | `medical_records` | Xem, thêm | Xem, thêm | Không |
 | `medical_attachments` | Xem, thêm | Xem, thêm | Không |
 | `reminders` | Xem, tạo, sửa trạng thái | Chỉ xem | Không |
-| `health_logs` | Xem, thêm | Xem, thêm | Không |
+| `health_logs` | Xem, thêm, sửa, xóa | Xem, thêm | Không |
 | `pet_access` | Xem, cấp, thu hồi trên pet của mình | Xem quyền của chính mình | Không |
 | `vaccine_schedule_rules` | Không truy cập trực tiếp | Không truy cập trực tiếp | Không; backend/service role quản lý |
 
-Với Vaccine Record, Medical Record và Health Log, MVP/Business Rules không cho owner hoặc caretaker sửa/xóa bản ghi lịch sử đã tạo. Nếu cần hiệu chỉnh sau này, nên dùng cơ chế audit/correction riêng thay vì ghi đè lịch sử.
+Với Vaccine Record và Medical Record, MVP/Business Rules không cho sửa/xóa bản ghi lịch sử đã tạo. Health Log là ngoại lệ: Owner có thể sửa các trường nghiệp vụ được cho phép hoặc xóa sau xác nhận; Caretaker vẫn chỉ View + Add.
 
 ---
 

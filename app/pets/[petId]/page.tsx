@@ -316,6 +316,7 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
               currentUserId={claimsData.claims.sub}
               formOpen={form === "health-log"}
               initialPeriod={healthPeriod}
+              isOwner={pet.owner_id === claimsData.claims.sub}
               petId={pet.pet_id}
               petName={pet.name}
             />

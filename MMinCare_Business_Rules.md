@@ -134,11 +134,12 @@ Nguồn: US-12, US-13.
 
 | Mã BR | Business Rule | Loại Rule | Nguồn |
 |---|---|---|---|
-| BR-HLOG-01 | Mỗi lần nhập Health Log tạo một bản ghi mới có timestamp; không ghi đè dữ liệu cũ. | Data Integrity | US-12 |
+| BR-HLOG-01 | Mỗi lần nhập Health Log tạo một bản ghi mới có timestamp. Khi chỉnh sửa, chỉ cập nhật các trường nghiệp vụ được cho phép; không thay đổi `health_log_id`, `pet_id`, `created_by` hoặc `logged_at`. | Data Integrity | US-12 |
 | BR-HLOG-02 | Health Log phải có ít nhất một trong các trường: weight, food_amount, food_type, status hoặc note. | Validation | US-12 |
 | BR-HLOG-03 | Biểu đồ xu hướng cân nặng hiển thị theo tuần hoặc tháng tùy lựa chọn của người dùng. | Display / Computation | US-13 |
 | BR-HLOG-04 | Nếu pet có dưới hai bản ghi cân nặng, Dashboard hiển thị “Chưa đủ dữ liệu” thay vì biểu đồ trống. | Data Sufficiency | US-13 AC-03 |
 | BR-HLOG-05 | Caretaker được thêm Health Log cho pet được chia sẻ, nhưng không được sửa hoặc xóa Health Log đã tồn tại. | Authorization | US-12, US-14 |
+| BR-HLOG-06 | Chỉ Owner của Pet được chỉnh sửa hoặc xóa Health Log; thao tác xóa cần xác nhận và không thể hoàn tác. | Authorization / Process | US-12 |
 
 ### 3.8. Phân quyền và chia sẻ (SHARE)
 
@@ -201,7 +202,7 @@ Database chỉ cần lưu `Upcoming` hoặc `Completed`. API suy ra `display_sta
 | Medical Record | MED | 3 |
 | Medical History | MEDHIST | 5 |
 | Reminder | REM | 9 |
-| Health Log | HLOG | 5 |
+| Health Log | HLOG | 6 |
 | Sharing | SHARE | 8 |
 | **Tổng cộng** |  | **59** |
 
@@ -212,6 +213,6 @@ Database chỉ cần lưu `Upcoming` hoặc `Completed`. API suy ra `display_sta
 - Should Have / Phase 2: Health Log, Dashboard phân tích nâng cao và Caretaker Sharing.
 - Google OAuth được triển khai trong checkpoint riêng sau email/password Auth; BR-AUTH-08 không bị hủy bỏ.
 - Không hỗ trợ hard-delete tài khoản trong MVP; phương án tương lai là soft delete hoặc trạng thái inactive.
-- Không đưa API sửa/xóa Vaccine Record, Medical Record hoặc Health Log vào MVP.
+- Health Log hỗ trợ Owner chỉnh sửa các trường nghiệp vụ được phép và xóa có xác nhận; Caretaker không được sửa/xóa.
 - Không đưa Pet Delete vào MVP khi chưa có User Story và Business Rule riêng.
 - Không tích hợp AI, clinic-side system, booking hoặc payment trong MVP.

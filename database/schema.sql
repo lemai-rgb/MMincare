@@ -628,6 +628,36 @@ with check (
   )
 );
 
+create policy health_logs_owner_update on public.health_logs
+for update to authenticated
+using (
+  exists (
+    select 1
+    from public.pets
+    where pets.pet_id = health_logs.pet_id
+      and pets.owner_id = (select auth.uid())
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.pets
+    where pets.pet_id = health_logs.pet_id
+      and pets.owner_id = (select auth.uid())
+  )
+);
+
+create policy health_logs_owner_delete on public.health_logs
+for delete to authenticated
+using (
+  exists (
+    select 1
+    from public.pets
+    where pets.pet_id = health_logs.pet_id
+      and pets.owner_id = (select auth.uid())
+  )
+);
+
 -- No policies are intentionally defined for vaccine_schedule_rules,
 -- vaccine_schedule_rules and pet_access remain deny-all in this checkpoint.
 revoke all on table public.vaccine_schedule_rules from public, anon, authenticated;
@@ -649,6 +679,9 @@ grant select, insert, delete on table public.vaccine_records to authenticated;
 grant select, insert, delete on table public.medical_records to authenticated;
 grant select, insert on table public.medical_attachments to authenticated;
 grant select, insert on table public.health_logs to authenticated;
+grant update (recorded_on, weight, food_amount, food_type, status, note)
+  on table public.health_logs to authenticated;
+grant delete on table public.health_logs to authenticated;
 grant select, insert on table public.reminders to authenticated;
 revoke update on table public.reminders from anon;
 revoke update on table public.reminders from authenticated;
