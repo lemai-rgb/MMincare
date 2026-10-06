@@ -45,14 +45,19 @@ export async function GET(request: Request, { params }: RouteContext) {
   const userId = claimsData?.claims?.sub;
 
   if (claimsError || !userId) {
+    timing.finish("error");
     return jsonError("Bạn cần đăng nhập để xem thống kê sức khỏe.", 401);
   }
 
   const { petId } = await params;
-  if (!UUID_PATTERN.test(petId)) return jsonError("Mã thú cưng không hợp lệ.", 400);
+  if (!UUID_PATTERN.test(petId)) {
+    timing.finish("error");
+    return jsonError("Mã thú cưng không hợp lệ.", 400);
+  }
 
   const requestedPeriod = new URL(request.url).searchParams.get("period");
   if (requestedPeriod !== null && !isHealthDashboardPeriod(requestedPeriod)) {
+    timing.finish("error");
     return jsonError("Khoảng thời gian không hợp lệ.", 400);
   }
 
@@ -67,9 +72,13 @@ export async function GET(request: Request, { params }: RouteContext) {
 
   if (petError) {
     logDashboardError("pet ownership", petError);
+    timing.finish("error");
     return jsonError("Không thể kiểm tra thú cưng lúc này.", 500);
   }
-  if (!pet) return jsonError("Không tìm thấy thú cưng.", 404);
+  if (!pet) {
+    timing.finish("error");
+    return jsonError("Không tìm thấy thú cưng.", 404);
+  }
 
   const [periodHealthLogsResult, latestWeightResult, upcomingReminderResult, latestMedicalRecordResult] = await timing.measure("data.parallel", () => Promise.all([
     supabase
@@ -120,6 +129,7 @@ export async function GET(request: Request, { params }: RouteContext) {
   const failedQuery = queryResults.find(([, error]) => error);
   if (failedQuery) {
     logDashboardError(failedQuery[0], failedQuery[1] as QueryError);
+    timing.finish("error");
     return jsonError("Không thể tải thống kê sức khỏe lúc này.", 500);
   }
 

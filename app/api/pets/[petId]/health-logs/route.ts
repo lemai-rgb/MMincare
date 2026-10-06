@@ -87,15 +87,25 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const userId = claimsData?.claims?.sub;
 
   if (claimsError || !userId) {
+    timing.finish("error");
     return jsonError("Bạn cần đăng nhập để xem nhật ký sức khỏe.", 401);
   }
 
   const { petId } = await params;
-  if (!validUuid(petId)) return jsonError("Mã thú cưng không hợp lệ.", 400);
+  if (!validUuid(petId)) {
+    timing.finish("error");
+    return jsonError("Mã thú cưng không hợp lệ.", 400);
+  }
 
   const { data: pet, error: petError } = await timing.measure("pet_ownership", () => getOwnedPet(supabase, petId, userId));
-  if (petError) return jsonError("Không thể kiểm tra thú cưng lúc này.", 500);
-  if (!pet) return jsonError("Không tìm thấy thú cưng.", 404);
+  if (petError) {
+    timing.finish("error");
+    return jsonError("Không thể kiểm tra thú cưng lúc này.", 500);
+  }
+  if (!pet) {
+    timing.finish("error");
+    return jsonError("Không tìm thấy thú cưng.", 404);
+  }
 
   const { data: healthLogs, error: healthLogsError } = await timing.measure("health_logs", () => supabase
     .from("health_logs")
@@ -105,7 +115,10 @@ export async function GET(_request: Request, { params }: RouteContext) {
     .order("logged_at", { ascending: false })
     .order("health_log_id", { ascending: false }));
 
-  if (healthLogsError) return jsonError("Không thể tải nhật ký sức khỏe lúc này.", 500);
+  if (healthLogsError) {
+    timing.finish("error");
+    return jsonError("Không thể tải nhật ký sức khỏe lúc này.", 500);
+  }
 
   timing.finish("ok");
   return NextResponse.json({ health_logs: healthLogs ?? [] });

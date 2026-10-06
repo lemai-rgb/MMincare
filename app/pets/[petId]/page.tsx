@@ -139,7 +139,10 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await timing.measure("auth", () => supabase.auth.getClaims());
 
-  if (claimsError || !claimsData?.claims?.sub) redirect("/login");
+  if (claimsError || !claimsData?.claims?.sub) {
+    timing.finish("error");
+    redirect("/login");
+  }
 
   const { petId } = await params;
   const query = await searchParams;
@@ -167,7 +170,10 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
     .maybeSingle());
 
   // Do not disclose whether a missing row belongs to another owner.
-  if (petError || !petRow) redirect("/dashboard");
+  if (petError || !petRow) {
+    timing.finish("error");
+    redirect("/dashboard");
+  }
 
   const pet = petRow as Pet;
   const [vaccineSummary, medicalSummary, upcomingReminderResult, healthLogSummary] = await timing.measure("summary.parallel", () => Promise.all([

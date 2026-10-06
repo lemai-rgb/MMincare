@@ -11,11 +11,10 @@ import {
   type StatusCount,
   type WeightTrendPoint,
 } from "@/lib/healthLogs/dashboard";
+import { parseHealthDashboardData } from "@/lib/healthLogs/dashboardValidation";
 import { fetchJsonWithTimeout } from "@/lib/http/fetchJsonWithTimeout";
 import { getReminderTypeLabel, type ReminderType } from "@/lib/reminders";
 import styles from "@/styles/petDetail.module.css";
-
-type DashboardPayload = HealthDashboardData & { error?: string };
 
 // Reserve separate rows for the unit, date ticks, and horizontal-axis title.
 const WEIGHT_CHART_DIMENSIONS = { width: 600, height: 288, left: 72, right: 40, top: 40, bottom: 72 };
@@ -75,15 +74,8 @@ async function getDashboard(petId: string, period: HealthDashboardPeriod, signal
     `/api/pets/${encodeURIComponent(petId)}/dashboard?period=${encodeURIComponent(period)}`,
     { cache: "no-store", signal },
   );
-  const payload = (rawPayload && typeof rawPayload === "object" ? rawPayload : {}) as DashboardPayload;
-  if (!response.ok || payload.period !== period || typeof payload.period_start !== "string" || typeof payload.period_end !== "string"
-    || !payload.summary || typeof payload.summary !== "object" || !Array.isArray(payload.weight_trend) || !payload.weight_trend.every((point) => (
-      point && typeof point === "object" && typeof point.health_log_id === "string" && typeof point.recorded_on === "string"
-        && typeof point.logged_at === "string" && Number.isFinite(point.weight)
-    )) || !Array.isArray(payload.status_counts) || !payload.status_counts.every((item) => (
-      item && typeof item === "object" && typeof item.status === "string" && typeof item.label === "string"
-        && Number.isInteger(item.count) && item.count >= 0 && Array.isArray(item.records)
-    ))) {
+  const payload = parseHealthDashboardData(rawPayload, period);
+  if (!response.ok || !payload) {
     throw new Error("Health dashboard request failed");
   }
 

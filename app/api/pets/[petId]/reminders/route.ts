@@ -30,10 +30,16 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await timing.measure("auth", () => supabase.auth.getClaims());
   const userId = claimsData?.claims?.sub;
-  if (claimsError || !userId) return response("Bạn cần đăng nhập để xem nhắc hẹn.", 401);
+  if (claimsError || !userId) {
+    timing.finish("error");
+    return response("Bạn cần đăng nhập để xem nhắc hẹn.", 401);
+  }
 
   const { petId } = await params;
-  if (!validUuid(petId)) return response("Mã thú cưng không hợp lệ.", 400);
+  if (!validUuid(petId)) {
+    timing.finish("error");
+    return response("Mã thú cưng không hợp lệ.", 400);
+  }
 
   const { data: pet, error: petError } = await timing.measure("pet_ownership", () => supabase
     .from("pets")
@@ -42,8 +48,14 @@ export async function GET(_request: Request, { params }: RouteContext) {
     .eq("owner_id", userId)
     .maybeSingle());
 
-  if (petError) return response("Không thể kiểm tra quyền sở hữu thú cưng lúc này.", 500);
-  if (!pet) return response("Bạn không có quyền xem nhắc hẹn của thú cưng này.", 403);
+  if (petError) {
+    timing.finish("error");
+    return response("Không thể kiểm tra quyền sở hữu thú cưng lúc này.", 500);
+  }
+  if (!pet) {
+    timing.finish("error");
+    return response("Bạn không có quyền xem nhắc hẹn của thú cưng này.", 403);
+  }
 
   const { data: reminders, error: remindersError } = await timing.measure("reminders", () => supabase
     .from("reminders")
@@ -53,7 +65,10 @@ export async function GET(_request: Request, { params }: RouteContext) {
     .eq("status", "Upcoming")
     .order("due_date", { ascending: true }));
 
-  if (remindersError) return response("Không thể tải nhắc hẹn lúc này.", 500);
+  if (remindersError) {
+    timing.finish("error");
+    return response("Không thể tải nhắc hẹn lúc này.", 500);
+  }
 
   timing.finish("ok");
   return NextResponse.json({ reminders: reminders ?? [] });
