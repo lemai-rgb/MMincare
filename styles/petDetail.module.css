@@ -185,6 +185,13 @@
   object-fit: contain;
 }
 
+.avatar[data-pet-photo="true"] {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
 .profileDetails {
   min-width: 0;
   text-align: center;
@@ -3431,4 +3438,13 @@
   .suggestionActions button {
     width: 100%;
   }
+}
+
+/* Keep managed photos edge-to-edge after responsive context overrides. */
+.avatarWrap > .avatar[data-pet-photo="true"] {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }

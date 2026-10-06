@@ -625,8 +625,9 @@
 
 .petListAvatar {
   display: grid;
-  width: 180px;
-  height: 110px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  height: auto;
   overflow: hidden;
   place-items: center;
   border-radius: 12px;
@@ -634,9 +635,15 @@
 }
 
 .petListAvatarImage {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.petListAvatarImage[data-pet-photo="true"] {
+  object-fit: cover;
+  object-position: center;
 }
 
 .petListDetails {
@@ -925,8 +932,8 @@
   }
 
   .petListAvatar {
-    width: 150px;
-    height: 90px;
+    width: 100%;
+    height: auto;
   }
 
   .petListDetails h2 {
@@ -1088,7 +1095,7 @@
   .populatedBrand { font-size: 28px; }
   .petListShell { width: calc(100% - 32px); min-height: calc(100dvh - 100px); padding: 18px 28px 56px; }
   .petListCard { grid-template-columns: 130px minmax(0, 1fr) 145px; column-gap: 24px; min-height: 156px; padding: 20px 24px; }
-  .petListAvatar { width: 130px; height: 82px; }
+  .petListAvatar { width: 100%; height: auto; }
   .petListDetails h2 { font-size: 24px; }
   .petListMetadata, .petListHealthStatus { font-size: 17px; }
   .petListPreviewButton { min-height: 40px; padding: 8px 14px; font-size: 15px; }
@@ -1120,7 +1127,7 @@
   .petListToolbar p { font-size: 12px; text-align: left; }
   .petListGrid { grid-template-columns: 1fr; margin-top: 28px; }
   .petListCard { grid-template-columns: 92px minmax(0, 1fr); align-items: start; column-gap: 18px; row-gap: 18px; min-height: 0; padding: 22px; }
-  .petListAvatar { width: 92px; height: 54px; }
+  .petListAvatar { width: 100%; height: auto; }
   .petListDetails h2 { text-align: left; font-size: 22px; }
   .petListMetadata { gap: 6px 16px; margin-top: 8px; font-size: 16px; }
   .petListMetadata li + li::before { margin-right: 16px; }
