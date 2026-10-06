@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 
 import type { HealthLog } from "@/components/pets/PetHealthHistory";
 import {
@@ -90,6 +90,11 @@ export function HealthLogCreateForm({ petId, onCancel, onCreated }: HealthLogCre
     setErrors((current) => field
       ? { ...current, [field]: undefined, form: undefined }
       : { ...current, form: undefined });
+  }
+
+  function preventImplicitSubmit(event: KeyboardEvent<HTMLInputElement>) {
+    const composing = event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229;
+    if (event.key === "Enter" && !composing) event.preventDefault();
   }
 
   function resetForm() {
@@ -222,6 +227,7 @@ export function HealthLogCreateForm({ petId, onCancel, onCreated }: HealthLogCre
                 setWeight(event.target.value);
                 clearError("weight");
               }}
+              onKeyDown={preventImplicitSubmit}
               placeholder="VD: 2.00"
               ref={firstFieldRef}
               type="text"
@@ -240,6 +246,7 @@ export function HealthLogCreateForm({ petId, onCancel, onCreated }: HealthLogCre
               setFoodType(event.target.value);
               clearError();
             }}
+            onKeyDown={preventImplicitSubmit}
             placeholder="VD: Hạt Royal Canin, pate"
             type="text"
             value={foodType}
@@ -254,6 +261,7 @@ export function HealthLogCreateForm({ petId, onCancel, onCreated }: HealthLogCre
               setFoodAmount(event.target.value);
               clearError();
             }}
+            onKeyDown={preventImplicitSubmit}
             placeholder="VD: 80g/ngày"
             type="text"
             value={foodAmount}
