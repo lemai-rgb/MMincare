@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { REMINDER_TYPES, type ReminderType } from "@/lib/reminders";
 import { createClient } from "@/lib/supabase/server";
+import { createServerTiming } from "@/lib/performance/serverTiming";
 
 type RouteContext = { params: Promise<{ petId: string }> };
 
@@ -25,34 +26,36 @@ function validReminderType(value: unknown): value is ReminderType {
 }
 
 export async function GET(_request: Request, { params }: RouteContext) {
+  const timing = createServerTiming("api.pet.reminders");
   const supabase = await createClient();
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const { data: claimsData, error: claimsError } = await timing.measure("auth", () => supabase.auth.getClaims());
   const userId = claimsData?.claims?.sub;
   if (claimsError || !userId) return response("Bạn cần đăng nhập để xem nhắc hẹn.", 401);
 
   const { petId } = await params;
   if (!validUuid(petId)) return response("Mã thú cưng không hợp lệ.", 400);
 
-  const { data: pet, error: petError } = await supabase
+  const { data: pet, error: petError } = await timing.measure("pet_ownership", () => supabase
     .from("pets")
     .select("pet_id")
     .eq("pet_id", petId)
     .eq("owner_id", userId)
-    .maybeSingle();
+    .maybeSingle());
 
   if (petError) return response("Không thể kiểm tra quyền sở hữu thú cưng lúc này.", 500);
   if (!pet) return response("Bạn không có quyền xem nhắc hẹn của thú cưng này.", 403);
 
-  const { data: reminders, error: remindersError } = await supabase
+  const { data: reminders, error: remindersError } = await timing.measure("reminders", () => supabase
     .from("reminders")
     .select("reminder_id, pet_id, due_date, type, status, note, source_vaccine_record_id, source_medical_record_id, completed_at")
     .eq("user_id", userId)
     .eq("pet_id", petId)
     .eq("status", "Upcoming")
-    .order("due_date", { ascending: true });
+    .order("due_date", { ascending: true }));
 
   if (remindersError) return response("Không thể tải nhắc hẹn lúc này.", 500);
 
+  timing.finish("ok");
   return NextResponse.json({ reminders: reminders ?? [] });
 }
 

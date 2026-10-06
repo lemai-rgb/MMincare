@@ -11,6 +11,7 @@ import {
   type StatusCount,
   type WeightTrendPoint,
 } from "@/lib/healthLogs/dashboard";
+import { fetchJsonWithTimeout } from "@/lib/http/fetchJsonWithTimeout";
 import { getReminderTypeLabel, type ReminderType } from "@/lib/reminders";
 import styles from "@/styles/petDetail.module.css";
 
@@ -70,12 +71,19 @@ function formatReminderDays(dueDate: string) {
 }
 
 async function getDashboard(petId: string, period: HealthDashboardPeriod, signal: AbortSignal) {
-  const response = await fetch(
+  const { response, payload: rawPayload } = await fetchJsonWithTimeout(
     `/api/pets/${encodeURIComponent(petId)}/dashboard?period=${encodeURIComponent(period)}`,
     { cache: "no-store", signal },
   );
-  const payload = await response.json() as DashboardPayload;
-  if (!response.ok || !payload.summary || !Array.isArray(payload.weight_trend) || !Array.isArray(payload.status_counts)) {
+  const payload = (rawPayload && typeof rawPayload === "object" ? rawPayload : {}) as DashboardPayload;
+  if (!response.ok || payload.period !== period || typeof payload.period_start !== "string" || typeof payload.period_end !== "string"
+    || !payload.summary || typeof payload.summary !== "object" || !Array.isArray(payload.weight_trend) || !payload.weight_trend.every((point) => (
+      point && typeof point === "object" && typeof point.health_log_id === "string" && typeof point.recorded_on === "string"
+        && typeof point.logged_at === "string" && Number.isFinite(point.weight)
+    )) || !Array.isArray(payload.status_counts) || !payload.status_counts.every((item) => (
+      item && typeof item === "object" && typeof item.status === "string" && typeof item.label === "string"
+        && Number.isInteger(item.count) && item.count >= 0 && Array.isArray(item.records)
+    ))) {
     throw new Error("Health dashboard request failed");
   }
 
@@ -563,23 +571,31 @@ export function PetHealthStatistics({
   useEffect(() => {
     const activeRequestId = ++requestId.current;
     const controller = new AbortController();
+    let active = true;
+    queueMicrotask(() => {
+      if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
+      setIsRetrying(true);
+    });
 
     void getDashboard(petId, period, controller.signal)
       .then((nextData) => {
-        if (activeRequestId !== requestId.current || controller.signal.aborted) return;
+        if (!active || activeRequestId !== requestId.current || controller.signal.aborted) return;
         setData(nextData);
         setFailedPeriod(null);
       })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError") return;
-        if (activeRequestId !== requestId.current || controller.signal.aborted) return;
+        if (!active || activeRequestId !== requestId.current || controller.signal.aborted) return;
         setFailedPeriod(period);
       })
       .finally(() => {
-        if (activeRequestId === requestId.current && !controller.signal.aborted) setIsRetrying(false);
+        if (active && activeRequestId === requestId.current && !controller.signal.aborted) setIsRetrying(false);
       });
 
-    return () => controller.abort();
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [period, petId, retryToken]);
 
   function retry() {

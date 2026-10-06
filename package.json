@@ -10,7 +10,8 @@
     "test:auth": "tsx lib/auth/errors.test.ts && tsx lib/auth/resend.test.ts",
     "test:notifications": "tsx lib/notifications/current.test.ts && tsx lib/notifications/center.test.ts && vitest run lib/notifications/center.ui.test.tsx",
     "test:reminders": "tsx lib/reminders/edit.test.ts",
-    "test:pet-images": "vitest run --no-cache --no-file-parallelism lib/petImage.test.ts components/pets/PetImagePicker.test.tsx"
+    "test:pet-images": "vitest run --no-cache --no-file-parallelism lib/petImage.test.ts components/pets/PetImagePicker.test.tsx",
+    "test:performance": "tsx lib/http/fetchJsonWithTimeout.test.ts && vitest run --no-file-parallelism components/pets/PetReminders.ui.test.tsx"
   },
   "overrides": {
     "baseline-browser-mapping": "2.11.25"

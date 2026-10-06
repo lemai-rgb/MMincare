@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { HealthLogCreateForm } from "@/components/pets/HealthLogCreateForm";
 import { PetHealthStatistics } from "@/components/pets/PetHealthStatistics";
 import type { HealthDashboardPeriod } from "@/lib/healthLogs/dashboard";
+import { fetchJsonWithTimeout } from "@/lib/http/fetchJsonWithTimeout";
 import styles from "@/styles/petDetail.module.css";
 
 export type HealthLog = {
@@ -69,13 +70,21 @@ function sortHealthLogs(logs: HealthLog[]) {
 }
 
 async function getHealthLogs(petId: string, signal: AbortSignal) {
-  const response = await fetch(`/api/pets/${encodeURIComponent(petId)}/health-logs`, {
+  const { response, payload: rawPayload } = await fetchJsonWithTimeout(`/api/pets/${encodeURIComponent(petId)}/health-logs`, {
     cache: "no-store",
     signal,
   });
-  const payload = await response.json() as HealthLogsPayload;
+  const payload = (rawPayload && typeof rawPayload === "object" ? rawPayload : {}) as HealthLogsPayload;
 
-  if (!response.ok || !Array.isArray(payload.health_logs)) {
+  if (!response.ok || !Array.isArray(payload.health_logs) || !payload.health_logs.every((log) => {
+    if (!log || typeof log !== "object") return false;
+    const row = log as Partial<HealthLog>;
+    return typeof row.health_log_id === "string" && typeof row.pet_id === "string"
+      && typeof row.created_by === "string" && typeof row.recorded_on === "string"
+      && typeof row.logged_at === "string" && Number.isFinite(Date.parse(row.logged_at))
+      && (row.weight === null || (typeof row.weight === "number" && Number.isFinite(row.weight)))
+      && [row.food_amount, row.food_type, row.status, row.note].every((value) => value === null || typeof value === "string");
+  })) {
     throw new Error("Health log request failed");
   }
 
@@ -179,8 +188,9 @@ export function PetHealthHistory({
     if (activeView !== "history") return undefined;
 
     const controller = new AbortController();
+    let active = true;
     queueMicrotask(() => {
-      if (controller.signal.aborted || activeRequestId !== requestId.current) return;
+      if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
       setIsLoading(true);
       setLoadError(false);
       setHealthLogs([]);
@@ -188,19 +198,22 @@ export function PetHealthHistory({
 
     void getHealthLogs(petId, controller.signal)
       .then((nextLogs) => {
-        if (controller.signal.aborted || activeRequestId !== requestId.current) return;
+        if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
         setHealthLogs(nextLogs);
         setLoadError(false);
       })
       .catch(() => {
-        if (controller.signal.aborted || activeRequestId !== requestId.current) return;
+        if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
         setLoadError(true);
       })
       .finally(() => {
-        if (activeRequestId === requestId.current) setIsLoading(false);
+        if (active && !controller.signal.aborted && activeRequestId === requestId.current) setIsLoading(false);
       });
 
-    return () => controller.abort();
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [activeView, petId, reloadToken]);
 
   const upperPetName = petName.toLocaleUpperCase("vi-VN");
@@ -232,6 +245,7 @@ export function PetHealthHistory({
     ]));
     setNotice("Đã lưu chỉ số sức khỏe.");
     setFormState(false);
+    router.refresh();
   }
 
   function handleHealthTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, currentView: "history" | "statistics") {

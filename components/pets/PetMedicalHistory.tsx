@@ -10,6 +10,7 @@ import { VaccineCreateForm, type VaccineSavedResult } from "@/components/pets/Va
 import type { MedicalHistoryAttachment, MedicalHistoryEntry } from "@/lib/medicalHistory";
 import type { PetSpecies } from "@/lib/pets";
 import { invalidateNotificationCenter } from "@/lib/notifications/events";
+import { fetchJsonWithTimeout } from "@/lib/http/fetchJsonWithTimeout";
 import styles from "@/styles/petDetail.module.css";
 
 type MedicalHistoryFilter = "all" | "vaccines" | "visits";
@@ -74,6 +75,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const requestController = useRef<AbortController | null>(null);
+  const requestId = useRef(0);
   const reminderSubmissionGuard = useRef(false);
   const deleteSubmissionGuard = useRef(false);
   const deleteDialogRef = useRef<HTMLDivElement | null>(null);
@@ -88,24 +90,35 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
   }, [deleteTarget, isDeleting]);
 
   useEffect(() => {
+    const activeRequestId = ++requestId.current;
     const controller = new AbortController();
+    requestController.current?.abort();
+    requestController.current = controller;
     const endpoint = form === "medical-record" ? "medical-records" : "medical-history";
-    fetch(`/api/pets/${encodeURIComponent(petId)}/${endpoint}`, { signal: controller.signal })
-      .then(async (response) => {
-        const payload = (await response.json()) as ApiHistoryResponse;
-        if (!response.ok) throw new Error(payload.error || "Không thể tải hồ sơ y tế.");
+    fetchJsonWithTimeout(`/api/pets/${encodeURIComponent(petId)}/${endpoint}`, { signal: controller.signal })
+      .then(({ response, payload: rawPayload }) => {
+        const payload = (rawPayload && typeof rawPayload === "object" ? rawPayload : {}) as ApiHistoryResponse;
+        if (!response.ok) throw new Error("Medical history request failed");
         if (!controller.signal.aborted) {
           setError(null);
-          setEntries(Array.isArray(payload.records) ? payload.records : []);
+          if (!payload || !Array.isArray(payload.records) || activeRequestId !== requestId.current) throw new Error("Medical history response invalid");
+          setEntries(payload.records);
         }
       })
-      .catch((requestError: unknown) => {
-        if (!controller.signal.aborted) setError(requestError instanceof Error ? requestError.message : "Không thể tải hồ sơ y tế.");
+      .catch(() => {
+        if (controller.signal.aborted || activeRequestId !== requestId.current) return;
+        if (!controller.signal.aborted && activeRequestId === requestId.current) {
+          setError("Không thể tải hồ sơ y tế lúc này. Vui lòng thử lại.");
+          return;
+        }
       })
       .finally(() => {
-        if (!controller.signal.aborted) setIsLoading(false);
+        if (!controller.signal.aborted && activeRequestId === requestId.current) setIsLoading(false);
       });
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      if (requestController.current === controller) requestController.current = null;
+    };
   }, [form, petId]);
 
   useEffect(() => {

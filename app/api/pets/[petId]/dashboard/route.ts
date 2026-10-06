@@ -11,6 +11,7 @@ import {
   type HealthLogDashboardRow,
 } from "@/lib/healthLogs/dashboard";
 import { createClient } from "@/lib/supabase/server";
+import { createServerTiming } from "@/lib/performance/serverTiming";
 
 type RouteContext = { params: Promise<{ petId: string }> };
 
@@ -38,8 +39,9 @@ function logDashboardError(stage: string, error: QueryError) {
 }
 
 export async function GET(request: Request, { params }: RouteContext) {
+  const timing = createServerTiming("api.pet.dashboard");
   const supabase = await createClient();
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const { data: claimsData, error: claimsError } = await timing.measure("auth", () => supabase.auth.getClaims());
   const userId = claimsData?.claims?.sub;
 
   if (claimsError || !userId) {
@@ -56,12 +58,12 @@ export async function GET(request: Request, { params }: RouteContext) {
 
   const range = getPeriodRange(requestedPeriod ?? "week");
   const today = getVietnamToday();
-  const { data: pet, error: petError } = await supabase
+  const { data: pet, error: petError } = await timing.measure("pet_ownership", () => supabase
     .from("pets")
     .select("pet_id")
     .eq("pet_id", petId)
     .eq("owner_id", userId)
-    .maybeSingle();
+    .maybeSingle());
 
   if (petError) {
     logDashboardError("pet ownership", petError);
@@ -69,7 +71,7 @@ export async function GET(request: Request, { params }: RouteContext) {
   }
   if (!pet) return jsonError("Không tìm thấy thú cưng.", 404);
 
-  const [periodHealthLogsResult, latestWeightResult, upcomingReminderResult, latestMedicalRecordResult] = await Promise.all([
+  const [periodHealthLogsResult, latestWeightResult, upcomingReminderResult, latestMedicalRecordResult] = await timing.measure("data.parallel", () => Promise.all([
     supabase
       .from("health_logs")
       .select("health_log_id, recorded_on, weight, status, logged_at", { count: "exact" })
@@ -107,7 +109,7 @@ export async function GET(request: Request, { params }: RouteContext) {
       .order("record_id", { ascending: false })
       .limit(1)
       .maybeSingle(),
-  ]);
+  ]));
 
   const queryResults = [
     ["health_logs", periodHealthLogsResult.error],
@@ -138,5 +140,6 @@ export async function GET(request: Request, { params }: RouteContext) {
     status_counts: aggregateStatusCounts(periodRows, range),
   };
 
+  timing.finish("ok");
   return NextResponse.json(response);
 }
