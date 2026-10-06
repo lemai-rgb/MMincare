@@ -690,6 +690,43 @@
   overflow-wrap: anywhere;
 }
 
+.petListHealthSummary {
+  display: grid;
+  gap: 3px;
+  margin-top: 10px;
+  color: var(--mm-primary-dark);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.petListHealthSummary p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.petListHealthSummary span {
+  color: var(--mm-text-secondary);
+}
+
+.petListHealthLatest {
+  font-weight: 600;
+}
+
+.petListHealthLink {
+  width: fit-content;
+  margin-top: 3px;
+  color: var(--mm-primary-dark);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.petListHealthLink:hover { text-decoration: underline; }
+
+.petListHealthLink:focus-visible {
+  outline: 2px solid var(--mm-primary-dark);
+  outline-offset: 3px;
+}
+
 .petListActions {
   display: grid;
   min-width: 0;
@@ -1098,6 +1135,7 @@
   .petListAvatar { width: 100%; height: auto; }
   .petListDetails h2 { font-size: 24px; }
   .petListMetadata, .petListHealthStatus { font-size: 17px; }
+  .petListHealthSummary { font-size: 15px; }
   .petListPreviewButton { min-height: 40px; padding: 8px 14px; font-size: 15px; }
   .petListUpdatedAt { max-width: 145px; font-size: 14px; }
   .petListHeaderLeaf,
@@ -1132,6 +1170,7 @@
   .petListMetadata { gap: 6px 16px; margin-top: 8px; font-size: 16px; }
   .petListMetadata li + li::before { margin-right: 16px; }
   .petListHealthStatus { font-size: 16px; }
+  .petListHealthSummary { font-size: 14px; }
   .petListActions { grid-column: 1 / -1; width: 100%; justify-items: start; }
   .petListUpdatedAt { max-width: none; font-size: 14px; text-align: left; }
   .petListHeaderDecorations,
