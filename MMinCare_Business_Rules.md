@@ -1,8 +1,10 @@
 # MMinCare — Business Rules Document
 
 **Scope:** MVP  
-**Version:** 1.2  
+**Version:** 1.3 — current-scope alignment, 07/10/2026  
 **Source:** 14 User Stories, Acceptance Criteria, Data Dictionary và các quyết định sản phẩm đã chốt
+
+> **Phạm vi hiện tại:** Owner-only. Các rule Caretaker/Sharing mô tả thiết kế tương lai, chưa có quyền/flow production. Health Log và thống kê theo Pet đã triển khai; Google OAuth chưa triển khai. Xem [trạng thái delivery](docs/PROJECT_STATUS.md). Những rule/đặc tả cũ không thay thế contract route và migration đã triển khai.
 
 ## 1. Mục đích
 
@@ -47,11 +49,11 @@ Nguồn: US-01, US-02 và quyết định xác thực đã chốt.
 | BR-AUTH-05 | Khi đăng nhập thất bại, hệ thống chỉ trả thông báo chung “Email hoặc mật khẩu không đúng”, không tiết lộ thông tin nào sai. | Security | US-02 |
 | BR-AUTH-06 | Phiên đăng nhập được duy trì cho đến khi người dùng chủ động đăng xuất hoặc phiên hết hiệu lực theo cơ chế bảo mật của hệ thống. | Process / Security | US-02 |
 | BR-AUTH-07 | `name` là dữ liệu bắt buộc của hồ sơ nhưng không bắt buộc người dùng nhập trên form đăng ký. Với email/password, hệ thống tạo `name` từ phần trước ký tự `@`. Với Google OAuth, hệ thống ưu tiên tên do Google cung cấp; nếu không có thì dùng phần trước `@` của email. | Computation / Default Value | US-01, US-02; Product Decision |
-| BR-AUTH-08 | Hệ thống cho phép đăng nhập bằng Google OAuth. Sau khi Google xác thực thành công, hệ thống tạo hoặc truy xuất hồ sơ theo email đã được provider xác minh và áp dụng BR-AUTH-07 để xác định `name`. | Process / Security | US-02; Product Decision |
+| BR-AUTH-08 | [Dự kiến, chưa triển khai] Hệ thống sẽ cho phép đăng nhập bằng Google OAuth. Sau khi Google xác thực thành công, hệ thống tạo hoặc truy xuất hồ sơ theo email đã được provider xác minh và áp dụng BR-AUTH-07 để xác định `name`. | Process / Security | US-02; Product Decision |
 | BR-AUTH-09 | Supabase Email Confirmation được bật. Sau đăng ký, nếu chưa có session, hệ thống yêu cầu người dùng kiểm tra email; chỉ điều hướng vào khu vực đã xác thực sau khi callback hoàn tất và session hợp lệ. | Process / Security | Product Decision; ADL-002 |
-| BR-AUTH-10 | `/auth/callback` dùng chung cho Email Confirmation và Google OAuth: exchange authorization code lấy session, chỉ chấp nhận `next` là internal path hợp lệ và dùng fallback an toàn nếu `next` không hợp lệ. | Process / Security | Product Decision; ADL-003 |
+| BR-AUTH-10 | Callback hiện tại là `/auth/confirm`: xác nhận email/recovery bằng token hoặc exchange code, chỉ chấp nhận `next` nội bộ an toàn. Google OAuth callback chưa triển khai. | Process / Security | Product Decision; ADL-003 |
 | BR-AUTH-11 | MVP không hỗ trợ hard-delete tài khoản. Không cascade xóa pet hoặc lịch sử chăm sóc; nhu cầu vô hiệu hóa/xóa về sau dùng soft delete hoặc trạng thái inactive. | Data Integrity / Security | Product Decision; ADL-001 |
-| BR-AUTH-12 | Sau đăng nhập email/password thành công, hệ thống điều hướng đến `/dashboard`. Trong MVP đây là landing/pet-list cơ bản; dashboard phân tích nâng cao vẫn thuộc Phase 2. | Process / Display | Product Decision; ADL-004 |
+| BR-AUTH-12 | Sau đăng nhập email/password thành công, hệ thống điều hướng đến `/dashboard`. Đây là landing/pet-list; thống kê tuần/tháng theo Pet đã triển khai, tổng hợp nhiều Pet vẫn là dự kiến. | Process / Display | Product Decision; ADL-004 |
 | BR-AUTH-13 | Lựa chọn onboarding chỉ chấp nhận `species=cat|dog`, phải được bảo toàn qua Email Confirmation và ánh xạ `cat → Cat`, `dog → Dog` khi tạo pet. Giá trị khác bị từ chối và không được ghi database. | Validation / Process | Product Decision; ADL-005 |
 | BR-AUTH-14 | Hồ sơ `public.users` được tạo/đồng bộ từ `auth.users` bằng cơ chế tin cậy phía server hoặc trigger. Client chỉ được sửa `name` và `phone_number`; không được sửa `user_id`, `email`, `created_at`. | Authorization / Data Integrity | Product Decision; ADL-007 |
 
@@ -67,7 +69,7 @@ Nguồn: US-03, US-04, US-05.
 | BR-PET-04 | Nếu không có ảnh đại diện, hệ thống hiển thị avatar mặc định theo loài chó/mèo. | Computation / Default Value | US-03 AC-03 |
 | BR-PET-05 | Owner chỉ thấy pet do mình sở hữu; Caretaker chỉ thấy pet được chia sẻ riêng cho mình và quyền vẫn còn hiệu lực. | Authorization | US-04, US-14 |
 | BR-PET-06 | Chỉ Owner được chỉnh sửa thông tin hồ sơ cơ bản của pet; Caretaker không có quyền chỉnh sửa. | Authorization | US-05 |
-| BR-PET-07 | Ảnh đại diện pet chỉ hỗ trợ định dạng jpg/png và phải nằm trong giới hạn dung lượng hệ thống cho phép. | Constraint | US-03 |
+| BR-PET-07 | Ảnh pet tùy chọn, hỗ trợ JPEG/PNG/WebP tối đa 5 MB, lưu private Storage; ảnh thật phủ khung vuông, bỏ ảnh trở về avatar theo loài. | Constraint | US-03 |
 
 ### 3.3. Tiêm phòng (VAC)
 
@@ -81,7 +83,7 @@ Nguồn: US-06.
 | BR-VAC-04 | Ngày tiêm tiếp theo do hệ thống gợi ý có thể được người dùng chỉnh sửa trước khi xác nhận tạo Reminder. | Process | US-06 |
 | BR-VAC-05 | Vaccine Record không lưu `next_due_date`; ngày nhắc tiêm tiếp theo được quản lý tại Reminder. | Data Integrity | US-06 |
 | BR-VAC-06 | Backend lấy `species` và `date_of_birth` từ Pet, tính độ tuổi tại `vaccine_date`, chọn chu kỳ chuẩn theo `species + vaccine_name + age_at_vaccination`, sau đó tính `suggested_next_due_date = vaccine_date + standard_interval`. `dose_number` là thông tin tùy chọn, không phải tiêu chí chính để chọn chu kỳ. | Computation / Derivation | US-06 |
-| BR-VAC-07 | Ngày tiêm trong tương lai vẫn được phép lưu nhưng hệ thống phải trả cảnh báo mềm “Ngày tiêm chưa đến”. | Validation / Soft Warning | US-06 AC-03 |
+| BR-VAC-07 | Ngày tiêm trong tương lai bị từ chối: Vaccine Record là sự kiện đã diễn ra. Lịch tương lai thuộc Reminder. Quyết định này thay thế soft warning ở đặc tả cũ. | Validation | Production route `/api/pets/{petId}/vaccines`; 07/10/2026 |
 | BR-VAC-08 | Nếu Pet chưa có `date_of_birth` hoặc không tìm thấy chu kỳ phù hợp, backend không tự đoán và trả `suggested_next_due_date = null`; người dùng vẫn có thể tự nhập ngày để tạo Reminder. | Process / Fallback | US-06; Product Decision |
 
 ### 3.4. Hồ sơ khám bệnh (MED)
@@ -210,9 +212,11 @@ Database chỉ cần lưu `Upcoming` hoặc `Completed`. API suy ra `display_sta
 
 - Core MVP: Authentication, Pet Profile, Vaccine Record, Reminder và Medical Record.
 - Core MVP: `/dashboard` làm landing/pet-list cơ bản sau đăng nhập.
-- Should Have / Phase 2: Health Log, Dashboard phân tích nâng cao và Caretaker Sharing.
-- Google OAuth được triển khai trong checkpoint riêng sau email/password Auth; BR-AUTH-08 không bị hủy bỏ.
+- Đã triển khai thêm: Health Log tạo/sửa/xóa Owner-only, thống kê tuần/tháng theo Pet, Notification Center và private Pet photo upload.
+- Dự kiến: Caretaker Sharing và Dashboard tổng hợp nhiều Pet.
+- Google OAuth là thiết kế checkpoint tương lai; BR-AUTH-08 chưa phải capability production.
 - Không hỗ trợ hard-delete tài khoản trong MVP; phương án tương lai là soft delete hoặc trạng thái inactive.
 - Health Log hỗ trợ Owner chỉnh sửa các trường nghiệp vụ được phép và xóa có xác nhận; Caretaker không được sửa/xóa.
 - Không đưa Pet Delete vào MVP khi chưa có User Story và Business Rule riêng.
 - Không tích hợp AI, clinic-side system, booking hoặc payment trong MVP.
+

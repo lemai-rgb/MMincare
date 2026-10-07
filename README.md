@@ -1,103 +1,99 @@
 # MMinCare
 
-**Care more, worry less.**
+**Care more, worry less.** A pet-care record management web application and an independent portfolio project for **Business Analysis, Product/Project Management, and Software Testing**.
 
-MMinCare is a responsive web application that helps dog and cat owners keep pet profiles, vaccination history, medical records, health observations, and care reminders in one place.
+MMinCare helps dog and cat owners keep pet profiles, vaccination history, medical records, health observations, and care reminders in one place. It does not diagnose conditions or replace veterinary advice.
 
-[Open the live application](https://m-mincare.vercel.app/) · [Review the MVP](Product/MVP%20document.md) · [Read the business rules](MMinCare_Business_Rules.md) · [Explore the API](MMinCare_API_Documentation.md)
+[Live application](https://m-mincare.vercel.app/) · [Project status](docs/PROJECT_STATUS.md) · [BA/PM/Tester evidence](docs/PORTFOLIO_EVIDENCE.md) · [Latest code review](docs/CODE_REVIEW_2026-10-07.md)
 
-> MMinCare is a pet-care record management product. It does not diagnose medical conditions or replace professional veterinary advice.
+> **Status — 7 October 2026:** Owner MVP deployed; PRs #18–#21 merged. Automated checks pass on the reviewed code, but known defects and authenticated runtime checks remain open. The live application requires an account; a separate seeded portfolio demo is **not implemented**.
 
-## Product problem
+## Problem and intended users
 
-Pet health information is often scattered across paper vaccination books, prescriptions, clinic messages, photographs, calendar entries, and personal notes. This makes it difficult for owners to reconstruct medical history, observe gradual health changes, and remember upcoming care dates.
+Pet information is often scattered across vaccination books, prescriptions, clinic messages, photos, calendars, and personal notes. Owners need a chronological record to find past care events, track changes, and remember upcoming care dates.
 
-MMinCare provides one owner-controlled record for each pet so that important events remain chronological, accessible, and connected to the relevant pet.
+The initial scope prioritizes an owner managing dogs or cats. Shared Caretaker access is a future extension, not a current production permission.
 
-## Current production scope
+## Portfolio guide
 
-The current runtime supports an authenticated **Owner** and the following end-to-end capabilities:
+| Focus | Evidence available in this repository |
+|---|---|
+| BA | [Problem statement](Product/Problem%20statement.md), [personas](Product/Persona%20Document.md), [MVP and MoSCoW](Product/MVP%20document.md), [business rules](MMinCare_Business_Rules.md), [API design/current route inventory](MMinCare_API_Documentation.md), [data dictionary](Data_Dictionary.md), [Use Case](Use%20Case_MMinCare.drawio), [ERD](ERD%20-%20WEB%20MMin%20Care.drawio) |
+| PM/Product | [Delivery status and prioritized backlog](docs/PROJECT_STATUS.md), [architecture decisions](Architecture_Decision_Log.md), merged feature/fix PRs, scope changes based on user feedback |
+| Tester/QA | [Requirement-to-test mapping and manual scenarios](docs/PORTFOLIO_EVIDENCE.md), automated regression tests, migration/RLS assertions, [defect report and verification limits](docs/CODE_REVIEW_2026-10-07.md) |
 
-- Email/password registration with email confirmation.
-- Login, logout, protected sessions, and password recovery.
-- Creation, viewing, and editing of dog and cat profiles.
-- Vaccination records for completed vaccination events.
-- Suggested next vaccination dates when a matching schedule is available.
-- Medical records with optional private PNG, JPG, or PDF attachments.
-- Manual reminders and reminders linked to vaccination or medical records.
-- Upcoming and overdue reminder views, including reminder completion.
-- Dated health logs for weight, food intake, condition, and notes.
-- Weekly and monthly health dashboards for an individual pet.
-- Private owner data protected through authentication, ownership checks, and Row Level Security.
+This is an independent project with AI-assisted implementation and review. Repository artifacts demonstrate project work; they do not imply professional employment, a production security certification, or a measured business outcome.
 
-## Key business decisions
+## Implemented Owner workflows
 
-MMinCare treats data integrity and clear product boundaries as part of the feature set:
+| Area | Current capability |
+|---|---|
+| Authentication | Email/password signup, email confirmation and resend feedback, login/logout, password recovery, protected sessions |
+| Pet profiles | Create, view, edit; optional private JPEG/PNG/WebP upload up to 5 MB; change/remove photo; species avatar fallback; real photos fill a square frame |
+| Vaccination and medical history | Record completed vaccinations and medical visits; optional private medical attachments; Owner-confirmed deletion of vaccine/medical records; no edit UI for these records |
+| Reminders | Manual or vaccine/medical-linked reminders; Upcoming/Overdue/Completed views; edit eligible Upcoming reminders and mark completed |
+| Notification Center | Current in-app events, unread red dot, read/retry state and navigation to the linked reminder |
+| Health journal | Create, edit, delete dated weight/food/condition/note observations; deletion confirmation; Enter in the three measurement/food inputs does not save |
+| Health summaries | Compact latest-journal summary on pet cards; per-pet weekly/monthly statistics |
+| Data access | Authenticated Owner checks in APIs, database RLS, private Storage and Owner-authorized photo delivery |
 
-- A vaccination record represents an event that already happened; future vaccination dates are rejected.
-- A suggested next due date is guidance only. It is not stored as a completed vaccination and does not silently create a reminder.
-- A reminder can be manual or linked to one business source: either a vaccination record or a medical record.
-- An overdue reminder is derived from its due date while its stored workflow status remains upcoming until completion.
-- Medical record creation is preserved if an attachment upload fails, and the upload can be retried.
-- Health logs distinguish the owner-selected business date from the system-generated entry timestamp.
-- Attachments remain private and are accessed through authorized, time-limited signed URLs.
-- The current product is Owner-only; Caretaker sharing is not presented as a production capability.
+**Typical flow:** register and confirm email → create a pet → record care and health observations → set reminders → review notifications and complete tasks → review history/statistics.
 
-## Product workflow
+## Business decisions
 
-1. Register and confirm an email address, or sign in to an existing account.
-2. Create a profile for a dog or cat.
-3. Record vaccinations, medical visits, attachments, and day-to-day health observations.
-4. Create a reminder manually or from a vaccination/medical record.
-5. Review upcoming and overdue care tasks and mark completed reminders.
-6. Open a pet's dashboard to review weight and health-status patterns by week or month.
+- A vaccination record describes an event that happened; future dates are rejected. Optional next-date suggestions are currently unavailable because of rule access/data setup (CR-08); when available, they must not silently create reminders.
+- A reminder is manual or linked to one vaccine/medical source. Overdue is derived from due date; stored status remains Upcoming until completion.
+- Health logs separate the selected business date (`recorded_on`) from the immutable creation timestamp (`logged_at`).
+- Optional photos can be removed without making a profile invalid. Private pet photos use an authorized API; medical attachments use authorized signed URLs.
+- Medical/vaccine deletion handles linked reminders; medical deletion reports attachment-cleanup warnings. Pet/account hard deletion is not implemented.
+- Caretaker sharing, OAuth, proactive email/push reminders and multi-pet aggregate analytics are not shipped.
 
-## Architecture
+## Delivery and quality
+
+Reviewed application baseline: [`8b91154`](https://github.com/lemai-rgb/MMincare/commit/8b911540ddfb4856d29f414f1e771f0ae22dc989), after [PR #21](https://github.com/lemai-rgb/MMincare/pull/21). This documentation update does not change application code or production data.
+
+Checks performed on 7 October 2026:
+
+- **45 Vitest tests across 11 files passed**, including notifications, photo picker, Health Log UI/API, timeout/retry and validation scenarios.
+- Auth error/resend, Reminder edit, Notification selector/reducer and HTTP-timeout script tests passed.
+- ESLint, TypeScript and a production build passed.
+- Latest relevant [migration replay run #23](https://github.com/lemai-rgb/MMincare/actions/runs/37615187127) passed on the PR #20 feature head. The workflow is path-filtered; not every check runs on every PR.
+- Vercel reports successful deployment for the reviewed main commit. Deployment success does not establish loading speed or authenticated functional correctness.
+
+**Open quality work:** unbounded mutation/notification requests, a reproduced Health Log GET/mutation race, a text-validation edge case, post-delete focus recovery, CI coverage, unavailable optional vaccine-date suggestions and database advisory follow-up. See the [review](docs/CODE_REVIEW_2026-10-07.md).
+
+Authenticated upload/reload, cross-Owner access, real email flows, desktop/mobile visual QA and production timings are not verified in this review. See the [manual scenarios](docs/PORTFOLIO_EVIDENCE.md).
+
+## Architecture and stack
 
 ```mermaid
-flowchart LR
-    U[Owner] --> N[Next.js App Router]
-    N --> A[Server routes and session checks]
-    A --> S[Supabase]
-    S --> AU[Auth]
-    S --> DB[Postgres and RLS]
-    S --> ST[Private Storage]
+flowchart TD
+    O[Owner] --> W[Next.js pages and API routes]
+    W --> A[Supabase Auth]
+    W --> D[Postgres with RLS]
+    W --> S[Private Storage]
 ```
 
-The application uses server-side cookie sessions. Server routes validate the signed-in user and pet ownership before reading or changing private data. Database Row Level Security provides an additional authorization boundary.
+Next.js 16.3.5 · React 19.2.4 · TypeScript · CSS modules/Tailwind CSS 4 · Supabase Auth/Postgres/Storage · Vercel · Vitest/Testing Library.
 
-## Technology stack
+APIs validate authentication and pet ownership; RLS supplies a database authorization boundary. The deployed API uses `/api/...` with SSR cookie sessions. Original API examples are design material; current routes are marked separately in the [API document](MMinCare_API_Documentation.md).
 
-| Layer | Technology |
+## Repository navigation
+
+| Directory/file | Purpose |
 |---|---|
-| Web application | Next.js 16.3.5, React 19.2.4, TypeScript |
-| Styling | Tailwind CSS 4 and component-level CSS modules |
-| Authentication | Supabase Auth with SSR cookie sessions |
-| Database | Supabase Postgres with Row Level Security |
-| File storage | Supabase private Storage and signed URLs |
-| Hosting | Vercel |
+| `Product/` | Problem statement, personas, original MVP prioritization |
+| `docs/` | Current status, portfolio traceability/manual scenarios, dated review |
+| `app/`, `components/`, `styles/` | Pages, route handlers, feature/shared UI and styles |
+| `lib/` | Auth, domain validation, request lifecycle and Supabase helpers |
+| `supabase/migrations/` | Versioned migrations; reconcile with remote history before applying |
+| `supabase/ci-legacy-baseline.sql` | Legacy snapshot used only by local CI replay |
+| `database/` | Schema reference and legacy material; not a second migration source |
+| `.github/workflows/` | Migration replay and database assertions |
 
-## Repository structure
+## Run locally
 
-```text
-app/                 Next.js pages, protected routes, and API route handlers
-components/          Authentication, pet, reminder, and shared UI components
-lib/                 Supabase clients, auth helpers, validation, and domain logic
-database/            Schema reference and tracked migrations
-public/              Static product assets
-styles/              Feature and page styles
-Product/             Problem statement, personas, and MVP definition
-```
-
-## Local development
-
-### Prerequisites
-
-- Node.js 20.9 or newer
-- npm
-- A Supabase project configured with the required schema, policies, grants, and private Storage bucket
-
-### Installation
+Requirements: Node.js 20.9+ (CI uses Node 22), npm, and a configured Supabase development project.
 
 ```bash
 git clone https://github.com/lemai-rgb/MMincare.git
@@ -105,77 +101,43 @@ cd MMinCare
 npm ci
 ```
 
-Create `.env.local`:
+Create `.env.local` using your development project's public settings:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
 ```
 
-Start the development server:
-
 ```bash
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3000`. Do not expose secret/service-role keys in browser code or `NEXT_PUBLIC_` settings. Do not use production user data as test fixtures.
 
-### Available checks
+Available checks:
 
 ```bash
-npm run lint
-npm run build
-npm run test:notifications
-npm run test:reminders
 npm run test:auth
+npm run test:reminders
+npm run test:notifications
+npm run test:pet-images
+npm run test:performance
+npx vitest run lib/petHealthSummary.test.ts
+npm run lint
+npx tsc --noEmit --incremental false
+npm run build
 ```
 
-Production smoke testing should cover authentication, pet ownership isolation, record creation, attachment failure/retry, reminder state, dashboard periods, Notification Center read/navigation behavior, and password recovery.
+The summary test is listed separately because it is not included in an npm test script. See the review for CI gaps.
 
-The shared web header includes the Owner-only Notification Center. It consumes the existing notification GET/read endpoints, shows loading/retry/empty and read/unread states, and links each current event to the existing Reminder screen. Email, browser push and bulk notification management are not part of this UI.
+## Deployment and remaining scope
 
-## Deployment requirements
+Configure Supabase Site URL/auth redirects, reconcile migrations, and verify private `pet-photos` and `medical-record-attachments` buckets/policies before release. Pet-photo and Health Log edit/delete migrations are already recorded in production at this checkpoint; do not apply them again just to run the project.
 
-A deployment requires more than the two public environment variables:
+Optional `MINCARE_PERF_LOG=1` enables server timing logs with request/stage identifiers and durations. Actual production before/after timings have not been captured; no speed improvement percentage is claimed.
 
-- Configure the production Site URL and approved authentication redirect URLs in Supabase.
-- Apply and reconcile the required migrations, constraints, indexes, grants, and RLS policies.
-- Create the private `medical-record-attachments` Storage bucket and its access policies.
-- Verify email confirmation and password recovery callbacks against the production origin.
-- Run `npm ci`, `npm run lint`, and `npm run build` before release.
+Next priorities are defect fixes and manual regression evidence, then a separate seeded demo with synthetic data. Future scope includes controlled sharing, external notifications, OAuth and multi-pet analytics. See [Project Status](docs/PROJECT_STATUS.md) for priorities and acceptance criteria.
 
-Never expose a Supabase secret or `service_role` key in browser code or a `NEXT_PUBLIC_` variable.
+## Portfolio access
 
-## Current limitations
-
-- Reminders are currently displayed inside the application; proactive email, browser, or push delivery is not implemented.
-- Google OAuth is planned but is not enabled in production.
-- Caretaker sharing and the associated authorization flow are Phase 2.
-- Health dashboards are per pet; a multi-pet aggregate dashboard is Phase 2.
-- Vaccine and medical histories remain append-only in the current API. Health Logs allow Owner-only editing of permitted fields and confirmed deletion; Caretaker access remains View + Add.
-- Deleting records requires a separate decision for audit history, attachments, linked reminders, foreign keys, and confirmation UX.
-
-## Roadmap
-
-1. Add an opt-in external reminder-notification channel with delivery preferences, duplicate-send protection, and observable delivery status.
-2. Add Google OAuth after provider, consent-screen, callback, account-linking, and production redirect verification.
-3. Add controlled Caretaker sharing with explicit per-pet permissions.
-4. Add an aggregate dashboard for owners with multiple pets.
-5. Design a safe correction/deletion workflow with audit and dependency rules.
-
-Roadmap items are not considered production features until they are merged, deployed, and verified in the live environment.
-
-## Product and technical documentation
-
-- [Problem Statement](Product/Problem%20statement.md)
-- [Persona Document](Product/Persona%20Document.md)
-- [MVP Document](Product/MVP%20document.md)
-- [Business Rules](MMinCare_Business_Rules.md)
-- [API Documentation](MMinCare_API_Documentation.md)
-- [Data Dictionary](Data_Dictionary.md)
-- [Entity Relationship Diagram](ERD%20-%20WEB%20MMin%20Care.drawio)
-- [Use Case Diagram](Use%20Case_MMinCare.drawio)
-
-## Status
-
-MMinCare is an actively developed portfolio MVP. The live application reflects the current Owner workflow; planned capabilities are documented separately to keep the production scope verifiable.
+The live application uses real authenticated workflows; a future demo would provide safe sample data for recruiters. At this checkpoint, GitHub reports this repository as private. Its URL alone does not grant recruiter access. Decide repository visibility/access explicitly before using the code/documentation link on a CV.

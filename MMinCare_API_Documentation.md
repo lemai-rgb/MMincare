@@ -1,11 +1,42 @@
 # MMinCare — API Documentation
 
 **Scope:** MVP  
-**Version:** 1.2  
-**Prepared for:** BA/SA Portfolio  
-**Business Rule reference:** `MMinCare_Business_Rules_v1.1.md`
+**Version:** 1.3 — current-route inventory, 07/10/2026  
+**Prepared for:** BA/PM/Tester Portfolio  
+**Business Rule reference:** `MMinCare_Business_Rules.md`
 
-## 1. API Overview
+## 0. Contract đã triển khai — checkpoint 07/10/2026
+
+Production dùng Next.js route `/api/...`, SSR cookie session và Owner-only authorization. JSON response theo từng route (không có envelope `data`/`success` thống nhất cho mọi API). API Auth đăng ký/login/recovery chủ yếu dùng Supabase client; callback Next.js là `/auth/confirm`.
+
+**Các mục thiết kế gốc bên dưới** giữ lại cho lịch sử phân tích, có endpoint/envelope/OAuth/Sharing dự kiến chưa được triển khai. Không dùng chúng làm bằng chứng có API production. Bảng dưới và source route là inventory hiện tại; xem [status](docs/PROJECT_STATUS.md) và [review](docs/CODE_REVIEW_2026-10-07.md).
+
+| Method | Route hiện tại | Chức năng |
+|---|---|---|
+| POST | `/api/pets` | Tạo Pet; multipart photo tùy chọn, idempotency |
+| GET | `/api/pets/{petId}` | Stream ảnh private của Pet đã xác thực Owner |
+| PATCH | `/api/pets/{petId}` | Sửa Pet/đổi hoặc bỏ ảnh |
+| POST | `/api/pets/{petId}/vaccines` | Tạo Vaccine Record đã diễn ra |
+| DELETE | `/api/pets/{petId}/vaccines/{vaccineRecordId}` | Owner xóa có xác nhận |
+| GET | `/api/pets/{petId}/medical-history` | Lịch sử vaccine/medical và attachments |
+| POST | `/api/pets/{petId}/medical-records` | Tạo Medical Record |
+| DELETE | `/api/pets/{petId}/medical-records/{medicalRecordId}` | Xóa Medical Record; trả trạng thái cleanup |
+| GET, POST | `/api/medical-records/{recordId}/attachments` | Truy cập signed URL / upload attachment private |
+| GET, POST | `/api/pets/{petId}/reminders` | Danh sách/tạo Reminder của Pet |
+| GET | `/api/reminders` | Danh sách Reminder của Owner |
+| PATCH | `/api/reminders/{reminderId}` | Sửa Reminder eligible Upcoming |
+| PATCH | `/api/reminders/{reminderId}/complete` | Complete Reminder |
+| GET | `/api/notifications` | Notification hiện hành |
+| PATCH | `/api/notifications/{notificationId}/read` | Đánh dấu đã đọc |
+| GET, POST | `/api/pets/{petId}/health-logs` | Xem/tạo Health Log |
+| PATCH, DELETE | `/api/pets/{petId}/health-logs/{healthLogId}` | Owner sửa/xóa Health Log |
+| GET | `/api/pets/{petId}/dashboard` | Thống kê tuần/tháng của Pet |
+
+**Giới hạn hiện tại:** gợi ý ngày tiêm tiếp theo chưa hoạt động do rule access/data (CR-08 trong review); tạo Vaccine Record vẫn độc lập và có thể lưu thành công.
+
+Không có `/api/v1` prefix hay Caretaker Sharing route production. Không có PATCH Vaccine/Medical hoặc DELETE Pet/account trong inventory hiện tại. Với Health Log, success trả `{ health_logs: [...] }`, `{ health_log: ... }` hoặc `{ deleted_health_log_id: ... }` tùy thao tác; lỗi thường `{ error: "..." }`.
+
+## 1. API Overview — thiết kế gốc
 
 | Item | Decision |
 |---|---|
@@ -458,7 +489,7 @@ Success `200` data: Reminder với `status = Completed` và `display_status = Co
 
 ## 9. Health Log APIs
 
-Các endpoint trong mục này thuộc Should Have / Phase 2.
+Health Log đã triển khai Owner-only; route hiện tại ở mục 0. Các mô tả Caretaker là thiết kế tương lai.
 
 ### 9.1. GET `/pets/{pet_id}/health-logs`
 
@@ -501,7 +532,7 @@ Xóa vĩnh viễn một Health Log sau khi UI xác nhận. Success `200` trả `
 
 ## 10. Dashboard APIs
 
-Route UI `/dashboard` là landing/pet-list cơ bản thuộc Core MVP và là đích sau login. Các API tổng hợp/phân tích trong mục này vẫn thuộc Should Have / Phase 2.
+Route UI `/dashboard` là pet-list sau login. Thống kê tuần/tháng theo Pet đã triển khai tại `/api/pets/{petId}/dashboard`; tổng hợp nhiều Pet trong thiết kế vẫn là dự kiến.
 
 ### 10.1. GET `/dashboard`
 
@@ -600,8 +631,9 @@ Success data: danh sách pet được chia sẻ và quyền còn hiệu lực.
 - Reminder chỉ được tạo sau khi Owner xác nhận ngày.
 - Database lưu Reminder status là Upcoming/Completed; API suy ra Overdue.
 - Không đưa Pet Delete vào MVP.
-- Health Log có PATCH/DELETE Owner-only theo mục 9.3–9.4; Vaccine Record và Medical Record vẫn chưa có API sửa/xóa trong MVP.
-- `/dashboard` landing/pet-list cơ bản thuộc MVP; Dashboard phân tích nâng cao, Health Log và Pet Access là Should Have / Phase 2.
+- Health Log có PATCH/DELETE Owner-only theo mục 9.3–9.4; Vaccine Record và Medical Record có DELETE Owner-only (mục 0), chưa có PATCH sửa.
+- `/dashboard` landing/pet-list cơ bản thuộc MVP; Health Log và thống kê theo Pet đã triển khai; Pet Access và tổng hợp nhiều Pet vẫn là dự kiến.
 - MVP không hỗ trợ hard-delete tài khoản; không cascade xóa pet hoặc lịch sử chăm sóc.
-- Hạ tầng Auth dự kiến dùng `@supabase/ssr`, browser/server client tách riêng, cookie/session refresh và route protection.
+- Hạ tầng Auth hiện tại dùng `@supabase/ssr`, browser/server client tách riêng, cookie/session refresh và route protection.
 - Không dùng service-role key ở client.
+

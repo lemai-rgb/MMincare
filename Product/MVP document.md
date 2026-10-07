@@ -1,3 +1,5 @@
+> **Cập nhật phạm vi — 07/10/2026:** Đây là tài liệu ưu tiên MVP ban đầu. Owner MVP đã triển khai Notification Center, private Pet photo upload, Health Log tạo/sửa/xóa và thống kê theo thú cưng. Caretaker Sharing, OAuth và email/push vẫn là dự kiến. MoSCoW bên dưới giữ vai trò lịch sử quyết định, không phải danh sách trạng thái release. Xem [tiến độ hiện tại](../docs/PROJECT_STATUS.md) và [bằng chứng BA/PM/Tester](../docs/PORTFOLIO_EVIDENCE.md).
+
 ## 1\. Mục tiêu MVP
 
 MVP của MminCare hướng đến việc giải quyết hai vấn đề cốt lõi của người nuôi thú cưng đó là thiếu công cụ lưu trữ thông tin sức khỏe tập trung và không có cơ chế nhắc lịch chăm sóc sức khỏe cho thú cưng. Khi giải quyết được các vấn đề này, người nuôi chủ động hơn trong việc theo dõi tình hình sức khỏe thú cưng
@@ -39,7 +41,7 @@ CT-04: MVP không xử lý đặt lịch khám, thanh toán hoặc kết nối m
 
 CT-05: Reminder trong MVP tập trung vào việc hiển thị nhắc hẹn trong hệ thống; push notification/email notification có thể được mô phỏng hoặc để ở phiên bản sau.
 
-Notification Phase 1 chỉ chuẩn bị event trong hệ thống: Owner có thể sửa Reminder `Upcoming`; event D-2/D+2 được lưu để truy vấn sau này. Chưa có Notification Center, email hoặc browser push.
+Notification Phase 1 chỉ chuẩn bị event trong hệ thống: Owner có thể sửa Reminder `Upcoming`; event D-2/D+2 được lưu để truy vấn sau này. Notification Center đã triển khai ở checkpoint sau; email và browser push chưa triển khai.
 
 Trong dữ liệu truy vấn, mỗi Reminder chỉ có tối đa một notification hiện hành; `overdue` thay thế `due_soon` từ D+2.
 
@@ -101,3 +103,4 @@ CT-06: Caretaker Portal chưa phải trọng tâm kiểm chứng giá trị cố
 - Hệ thống quản lý phía phòng khám (Clinic-side): Domain riêng biệt, đã loại trừ trong WHO   
 - Tính năng cộng đồng / mạng xã hội: Nằm ngoài core value của MminCare   
 - Tích hợp đặt lịch phòng khám trực tuyến: Phụ thuộc third-party, tăng complexity không cần thiết ở MVP
+

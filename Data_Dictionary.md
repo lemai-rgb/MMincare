@@ -1,18 +1,20 @@
 # MMinCare Data Dictionary
 
-**Phiên bản:** 2.1  
+**Phiên bản:** 2.2 — đồng bộ phạm vi 07/10/2026  
 **Nền tảng dữ liệu:** Supabase Auth, PostgreSQL, Storage và Row Level Security (RLS)  
 **Phạm vi:** MVP hiện tại và các bảng Phase 2 đã được xác định  
 **Ngôn ngữ dữ liệu:** tên bảng/cột bằng tiếng Anh; mô tả nghiệp vụ bằng tiếng Việt
 
 ---
 
+> **Trạng thái:** Health Log và thống kê theo Pet đã triển khai cho Owner. `pet_access`/Caretaker và Google OAuth là mô hình tương lai, không phải chức năng production. Xem [tiến độ](docs/PROJECT_STATUS.md); migrations trong `supabase/migrations/` và route hiện tại là bằng chứng triển khai.
+
 ## 1. Mục đích và nguồn đối chiếu
 
 Tài liệu này là bản Data Dictionary chuẩn hóa cho MMinCare, được cập nhật để thống nhất với:
 
-- `MMinCare_Business_Rules(1).md` — phiên bản 1.1.
-- `MMinCare_API_Documentation.md` — phiên bản 1.1.
+- `MMinCare_Business_Rules.md` — phần phạm vi hiện tại.
+- `MMinCare_API_Documentation.md` — bảng route đã triển khai và phần thiết kế gốc.
 - User Story, MVP, ERD và các quyết định sản phẩm đã chốt.
 - Mô hình xác thực và phân quyền của Supabase.
 
@@ -95,7 +97,7 @@ Có thể triển khai bằng PostgreSQL enum hoặc cột `text` kèm `CHECK`. 
 | `public.reminders` | Core MVP | Nhắc lịch đã được người dùng xác nhận |
 | `public.medical_records` | Core MVP | Hồ sơ khám/chữa bệnh |
 | `public.medical_attachments` | Core MVP | Tệp đính kèm hồ sơ y tế |
-| `public.health_logs` | Phase 2 | Nhật ký cân nặng, ăn uống và tình trạng |
+| `public.health_logs` | Đã triển khai, Owner-only | Nhật ký cân nặng, ăn uống và tình trạng |
 | `public.pet_access` | Phase 2 | Chia sẻ quyền chăm sóc thú cưng |
 
 ---
@@ -218,7 +220,7 @@ Bảng nội bộ để backend tính gợi ý lịch tiếp theo. Client thông
 | `pet_id` | `uuid` | Không | FK → `public.pets.pet_id` | Thú cưng được tiêm |
 | `created_by` | `uuid` | Không | FK → `public.users.user_id` | Owner hoặc caretaker đã tạo bản ghi |
 | `vaccine_name` | `text` | Không | Không rỗng | Tên vaccine |
-| `vaccine_date` | `date` | Không | Cho phép ngày tương lai kèm cảnh báo mềm | Ngày tiêm/được lên kế hoạch |
+| `vaccine_date` | `date` | Không | Không ở tương lai khi tạo qua API | Ngày tiêm đã diễn ra |
 | `dose_number` | `integer` | Có | `> 0` nếu nhập | Số mũi tùy chọn, phục vụ mô tả |
 | `clinic_name` | `text` | Có | — | Cơ sở tiêm |
 | `note` | `text` | Có | — | Ghi chú |
@@ -304,13 +306,13 @@ Storage policy phải đồng bộ với RLS của Medical Record: owner và car
 
 ---
 
-### 5.9 `public.health_logs` — Nhật ký sức khỏe (Phase 2)
+### 5.9 `public.health_logs` — Nhật ký sức khỏe (đã triển khai)
 
 | Cột | Kiểu | Null | Khóa/Ràng buộc | Mô tả |
 |---|---|---:|---|---|
 | `health_log_id` | `uuid` | Không | PK, default `gen_random_uuid()` | ID nhật ký |
 | `pet_id` | `uuid` | Không | FK → `public.pets.pet_id` | Thú cưng liên quan |
-| `created_by` | `uuid` | Không | FK → `public.users.user_id` | Owner hoặc caretaker tạo |
+| `created_by` | `uuid` | Không | FK → `public.users.user_id` | Owner tạo trong production; Caretaker là dự kiến |
 | `weight` | `numeric(6,2)` | Có | `> 0` nếu nhập | Cân nặng, đơn vị kg |
 | `food_amount` | `text` | Có | — | Lượng thức ăn, giữ cả số và đơn vị người dùng nhập |
 | `food_type` | `text` | Có | — | Loại thức ăn |
@@ -496,3 +498,4 @@ Notification query dùng `overdue` thay `due_soon` sau D+2; event tương lai, �
 ---
 
 **Kết luận:** Schema này phân tách rõ dữ liệu xác thực, dữ liệu nghiệp vụ được lưu, dữ liệu suy ra và dữ liệu chỉ dùng trong luồng giao diện. Đây là bản Data Dictionary nên được dùng làm nguồn chuẩn khi tạo migration Supabase, TypeScript types và triển khai API MMinCare.
+
