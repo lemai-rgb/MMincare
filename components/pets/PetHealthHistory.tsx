@@ -122,6 +122,8 @@ function HealthLogCard({
 
       <div className={styles.healthLogDetails}>{fields}</div>
 
+      <div className={styles.healthLogFooter}>
+
       {log.created_by === currentUserId && (
         <p className={styles.healthLogCreator}>Thêm bởi bạn</p>
       )}
@@ -140,6 +142,7 @@ function HealthLogCard({
           </button>
         </div>
       )}
+      </div>
     </article>
   );
 }
