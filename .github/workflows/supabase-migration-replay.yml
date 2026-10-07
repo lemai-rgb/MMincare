@@ -156,12 +156,42 @@ jobs:
             end if;
 
             if has_table_privilege('authenticated', 'public.health_logs', 'UPDATE')
-               or has_table_privilege('authenticated', 'public.health_logs', 'DELETE')
+               or not has_table_privilege('authenticated', 'public.health_logs', 'DELETE')
                or has_table_privilege('authenticated', 'public.health_logs', 'TRUNCATE')
                or has_table_privilege('authenticated', 'public.health_logs', 'REFERENCES')
                or has_table_privilege('authenticated', 'public.health_logs', 'TRIGGER')
                or has_table_privilege('authenticated', 'public.health_logs', 'MAINTAIN') then
-              raise exception 'authenticated has an unexpected health_logs privilege';
+              raise exception 'authenticated has unexpected health_logs table privileges';
+            end if;
+
+            if exists (
+              select 1
+              from (values
+                ('health_log_id'::text), ('created_by'), ('pet_id'), ('logged_at')
+              ) immutable_column(column_name)
+              where has_column_privilege(
+                'authenticated',
+                'public.health_logs',
+                immutable_column.column_name,
+                'UPDATE'
+              )
+            ) then
+              raise exception 'authenticated can UPDATE immutable health_logs columns';
+            end if;
+
+            if exists (
+              select 1
+              from (values
+                ('recorded_on'::text), ('weight'), ('food_amount'), ('food_type'), ('status'), ('note')
+              ) editable_column(column_name)
+              where not has_column_privilege(
+                'authenticated',
+                'public.health_logs',
+                editable_column.column_name,
+                'UPDATE'
+              )
+            ) then
+              raise exception 'authenticated is missing an editable health_logs column privilege';
             end if;
 
             if has_table_privilege('anon', 'public.health_logs', 'SELECT')
@@ -288,6 +318,8 @@ jobs:
                 ('medical_records'::text, 'medical_records_owner_delete'::text, 'd'::"char"),
                 ('health_logs', 'health_logs_owner_select', 'r'::"char"),
                 ('health_logs', 'health_logs_owner_insert', 'a'::"char"),
+                ('health_logs', 'health_logs_owner_update', 'w'::"char"),
+                ('health_logs', 'health_logs_owner_delete', 'd'::"char"),
                 ('vaccine_records', 'vaccine_records_owner_delete', 'd'::"char"),
                 ('reminders', 'reminders_owner_select', 'r'::"char"),
                 ('reminders', 'reminders_owner_insert', 'a'::"char"),

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ReminderCreateForm } from "@/components/reminders/ReminderCreateForm";
 import {
@@ -9,6 +8,7 @@ import {
   type ReminderStoredStatus,
   type ReminderType,
 } from "@/lib/reminders";
+import { fetchJsonWithTimeout } from "@/lib/http/fetchJsonWithTimeout";
 import styles from "@/styles/petDetail.module.css";
 
 type PetReminder = {
@@ -22,6 +22,18 @@ type PetReminder = {
   source_medical_record_id: string | null;
   completed_at: string | null;
 };
+
+function isPetReminder(value: unknown): value is PetReminder {
+  if (!value || typeof value !== "object") return false;
+  const reminder = value as Partial<PetReminder>;
+  return typeof reminder.reminder_id === "string"
+    && typeof reminder.pet_id === "string"
+    && typeof reminder.due_date === "string"
+    && typeof reminder.type === "string"
+    && typeof reminder.status === "string"
+    && (reminder.note === null || typeof reminder.note === "string")
+    && (reminder.completed_at === null || typeof reminder.completed_at === "string");
+}
 
 function getTodayInVietnam() {
   const parts = new Intl.DateTimeFormat("en", {
@@ -52,13 +64,15 @@ function getOverdueLabel(dueDate: string, today: string) {
   return `Quá hạn ${Math.max(1, days)} ngày`;
 }
 
-async function fetchPetReminders(petId: string) {
-  const result = await fetch(`/api/pets/${encodeURIComponent(petId)}/reminders`, {
+async function fetchPetReminders(petId: string, signal: AbortSignal) {
+  const { response: result, payload: rawPayload } = await fetchJsonWithTimeout(`/api/pets/${encodeURIComponent(petId)}/reminders`, {
     cache: "no-store",
+    signal,
   });
-  const payload = await result.json() as { reminders?: PetReminder[]; error?: string };
+  const payload = (rawPayload && typeof rawPayload === "object" ? rawPayload : {}) as { reminders?: unknown };
   if (!result.ok || !Array.isArray(payload.reminders)) throw new Error("Reminder request failed");
-  return payload.reminders;
+  if (!payload.reminders.every(isPetReminder)) throw new Error("Reminder response invalid");
+  return payload.reminders as PetReminder[];
 }
 
 function ReminderSummaryCard({
@@ -105,33 +119,44 @@ export function PetReminders({
   petId: string;
   petName: string;
 }) {
-  const router = useRouter();
   const [reminders, setReminders] = useState<PetReminder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [notice, setNotice] = useState<string>();
+  const [reloadToken, setReloadToken] = useState(0);
+  const requestId = useRef(0);
   const today = getTodayInVietnam();
 
   useEffect(() => {
+    const activeRequestId = ++requestId.current;
+    const controller = new AbortController();
     let active = true;
+    queueMicrotask(() => {
+      if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
+      setIsLoading(true);
+      setLoadError(undefined);
+      setReminders([]);
+    });
 
-    void fetchPetReminders(petId)
+    void fetchPetReminders(petId, controller.signal)
       .then((nextReminders) => {
-        if (!active) return;
+        if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
         setReminders(nextReminders);
         setLoadError(undefined);
       })
       .catch(() => {
+        if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
         if (active) setLoadError("Không thể tải nhắc hẹn lúc này.");
       })
       .finally(() => {
-        if (active) setIsLoading(false);
+        if (active && activeRequestId === requestId.current) setIsLoading(false);
       });
 
     return () => {
       active = false;
+      controller.abort();
     };
-  }, [petId]);
+  }, [petId, reloadToken]);
 
   useEffect(() => {
     if (!notice) return;
@@ -155,13 +180,7 @@ export function PetReminders({
 
   function handleReminderCreated() {
     setNotice("Đã tạo nhắc hẹn.");
-    router.refresh();
-    void fetchPetReminders(petId)
-      .then((nextReminders) => {
-        setReminders(nextReminders);
-        setLoadError(undefined);
-      })
-      .catch(() => setLoadError("Không thể tải nhắc hẹn lúc này."));
+    setReloadToken((token) => token + 1);
   }
 
   return (
@@ -170,7 +189,10 @@ export function PetReminders({
         {isLoading ? (
           <p className={styles.petReminderLoadState}>Đang tải nhắc hẹn…</p>
         ) : loadError ? (
-          <p className={styles.petReminderLoadError}>{loadError}</p>
+          <div className={styles.petReminderLoadError} role="alert">
+            <p>{loadError}</p>
+            <button onClick={() => setReloadToken((token) => token + 1)} type="button">Thử lại</button>
+          </div>
         ) : (
           <>
             <ReminderSummaryCard

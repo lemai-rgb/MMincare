@@ -152,7 +152,7 @@ Never expose a Supabase secret or `service_role` key in browser code or a `NEXT_
 - Google OAuth is planned but is not enabled in production.
 - Caretaker sharing and the associated authorization flow are Phase 2.
 - Health dashboards are per pet; a multi-pet aggregate dashboard is Phase 2.
-- Vaccine, medical, and health-log histories are append-only in the current API.
+- Vaccine and medical histories remain append-only in the current API. Health Logs allow Owner-only editing of permitted fields and confirmed deletion; Caretaker access remains View + Add.
 - Deleting records requires a separate decision for audit history, attachments, linked reminders, foreign keys, and confirmation UX.
 
 ## Roadmap

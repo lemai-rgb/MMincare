@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createServerTiming } from "@/lib/performance/serverTiming";
 
 type RouteContext = { params: Promise<{ petId: string }> };
 
@@ -49,27 +50,40 @@ function normalizeOptionalField(body: Record<string, unknown>, field: OptionalFi
 }
 
 export async function GET(_request: Request, { params }: RouteContext) {
+  const timing = createServerTiming("api.pet.medical-records");
   const supabase = await createClient();
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const { data: claimsData, error: claimsError } = await timing.measure("auth", () => supabase.auth.getClaims());
   const userId = claimsData?.claims?.sub;
-  if (claimsError || !userId) return jsonError("Bạn cần đăng nhập để xem các lần khám.", 401);
+  if (claimsError || !userId) {
+    timing.finish("error");
+    return jsonError("Bạn cần đăng nhập để xem các lần khám.", 401);
+  }
 
   const { petId } = await params;
-  const { data: pet, error: petError } = await supabase
+  const { data: pet, error: petError } = await timing.measure("pet_ownership", () => supabase
     .from("pets")
     .select("pet_id")
     .eq("pet_id", petId)
     .eq("owner_id", userId)
-    .maybeSingle();
-  if (petError) return jsonError("Không thể kiểm tra thú cưng lúc này.", 500);
-  if (!pet) return jsonError("Không tìm thấy thú cưng.", 404);
+    .maybeSingle());
+  if (petError) {
+    timing.finish("error");
+    return jsonError("Không thể kiểm tra thú cưng lúc này.", 500);
+  }
+  if (!pet) {
+    timing.finish("error");
+    return jsonError("Không tìm thấy thú cưng.", 404);
+  }
 
-  const { data, error } = await supabase
+  const { data, error } = await timing.measure("medical_records", () => supabase
     .from("medical_records")
     .select("record_id, created_by, visit_date, symptoms, diagnosis, clinic_name, medication, note")
     .eq("pet_id", petId)
-    .order("visit_date", { ascending: false });
-  if (error) return jsonError("Không thể tải lịch sử khám bệnh lúc này.", 500);
+    .order("visit_date", { ascending: false }));
+  if (error) {
+    timing.finish("error");
+    return jsonError("Không thể tải lịch sử khám bệnh lúc này.", 500);
+  }
 
   const recordIds = (data ?? []).map((record) => record.record_id);
   const attachmentsByRecord = new Map<string, Array<{
@@ -86,6 +100,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
       .order("uploaded_at", { ascending: true });
 
     if (attachmentsError) {
+      timing.finish("error");
       return jsonError("Không thể tải lịch sử khám bệnh lúc này.", 500);
     }
 
@@ -111,6 +126,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     addedByCurrentUser: record.created_by === userId,
     attachments: attachmentsByRecord.get(record.record_id) ?? [],
   }));
+  timing.finish("ok");
   return NextResponse.json({ records });
 }
 

@@ -11,10 +11,10 @@ import {
   type StatusCount,
   type WeightTrendPoint,
 } from "@/lib/healthLogs/dashboard";
+import { parseHealthDashboardData } from "@/lib/healthLogs/dashboardValidation";
+import { fetchJsonWithTimeout } from "@/lib/http/fetchJsonWithTimeout";
 import { getReminderTypeLabel, type ReminderType } from "@/lib/reminders";
 import styles from "@/styles/petDetail.module.css";
-
-type DashboardPayload = HealthDashboardData & { error?: string };
 
 // Reserve separate rows for the unit, date ticks, and horizontal-axis title.
 const WEIGHT_CHART_DIMENSIONS = { width: 600, height: 288, left: 72, right: 40, top: 40, bottom: 72 };
@@ -70,12 +70,12 @@ function formatReminderDays(dueDate: string) {
 }
 
 async function getDashboard(petId: string, period: HealthDashboardPeriod, signal: AbortSignal) {
-  const response = await fetch(
+  const { response, payload: rawPayload } = await fetchJsonWithTimeout(
     `/api/pets/${encodeURIComponent(petId)}/dashboard?period=${encodeURIComponent(period)}`,
     { cache: "no-store", signal },
   );
-  const payload = await response.json() as DashboardPayload;
-  if (!response.ok || !payload.summary || !Array.isArray(payload.weight_trend) || !Array.isArray(payload.status_counts)) {
+  const payload = parseHealthDashboardData(rawPayload, period);
+  if (!response.ok || !payload) {
     throw new Error("Health dashboard request failed");
   }
 
@@ -563,23 +563,31 @@ export function PetHealthStatistics({
   useEffect(() => {
     const activeRequestId = ++requestId.current;
     const controller = new AbortController();
+    let active = true;
+    queueMicrotask(() => {
+      if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
+      setIsRetrying(true);
+    });
 
     void getDashboard(petId, period, controller.signal)
       .then((nextData) => {
-        if (activeRequestId !== requestId.current || controller.signal.aborted) return;
+        if (!active || activeRequestId !== requestId.current || controller.signal.aborted) return;
         setData(nextData);
         setFailedPeriod(null);
       })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError") return;
-        if (activeRequestId !== requestId.current || controller.signal.aborted) return;
+        if (!active || activeRequestId !== requestId.current || controller.signal.aborted) return;
         setFailedPeriod(period);
       })
       .finally(() => {
-        if (activeRequestId === requestId.current && !controller.signal.aborted) setIsRetrying(false);
+        if (active && activeRequestId === requestId.current && !controller.signal.aborted) setIsRetrying(false);
       });
 
-    return () => controller.abort();
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [period, petId, retryToken]);
 
   function retry() {

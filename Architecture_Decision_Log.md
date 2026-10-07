@@ -26,3 +26,10 @@
 - Decision: new Pet photos use the private `pet-photos` bucket, with Owner-scoped Storage SELECT/INSERT/DELETE policies. `pets.picture_url` stores a stable object path; authenticated server rendering streams the object through the Pet route, while existing external/legacy URLs remain readable.
 - Cleanup: only objects owned by the current Owner and managed by the application are eligible for removal, after the new database reference is committed. Cleanup failures are reported as pending and never roll back a successful Pet update.
 - Creation retries: nullable `creation_key` and `creation_payload_hash` plus a unique `(owner_id, creation_key)` index make concurrent retries converge on one Pet; a reused key with a different payload returns `409`.
+
+## ADR-004 — Owner-managed Health Log corrections
+
+- Status: Proposed for PR #20; migration and production deployment remain subject to the normal review gates.
+- Decision: Pet Owners may edit `recorded_on`, `weight`, `food_amount`, `food_type`, `status`, and `note`, or hard-delete a Health Log after confirmation. `health_log_id`, `pet_id`, `created_by`, and `logged_at` remain immutable.
+- Authorization: the API validates the authenticated Owner and the database enforces Owner-only `UPDATE`/`DELETE` policies using Pet ownership. Caretakers and anonymous users retain no mutation privilege.
+- Integrity: edits are allowlisted, preserve the at-least-one-business-field constraint, and return the canonical row. Deletion removes only the selected row; list ordering remains `recorded_on DESC`, `logged_at DESC`, `health_log_id DESC`.

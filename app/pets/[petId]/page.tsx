@@ -11,6 +11,7 @@ import { PetHealthHistory } from "@/components/pets/PetHealthHistory";
 import { isHealthDashboardPeriod, type HealthDashboardPeriod } from "@/lib/healthLogs/dashboard";
 import { getPetGenderLabel, getPetSpeciesLabel, type Pet } from "@/lib/pets";
 import { createClient } from "@/lib/supabase/server";
+import { createServerTiming } from "@/lib/performance/serverTiming";
 import styles from "@/styles/petDetail.module.css";
 
 export const dynamic = "force-dynamic";
@@ -134,10 +135,14 @@ function logUpcomingReminderError(error: HealthSummaryQueryError) {
 }
 
 export default async function PetDetailPage({ params, searchParams }: PetDetailPageProps) {
+  const timing = createServerTiming("pet-detail");
   const supabase = await createClient();
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const { data: claimsData, error: claimsError } = await timing.measure("auth", () => supabase.auth.getClaims());
 
-  if (claimsError || !claimsData?.claims?.sub) redirect("/login");
+  if (claimsError || !claimsData?.claims?.sub) {
+    timing.finish("error");
+    redirect("/login");
+  }
 
   const { petId } = await params;
   const query = await searchParams;
@@ -147,6 +152,8 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
   const healthPeriod = getHealthDashboardPeriod(query.period);
   const isHealthForm = activeTab === "health" && form === "health-log";
   const isHealthSubpage = isHealthForm;
+  const needsHealthSummary = activeTab === "health";
+  const needsUpcomingReminder = activeTab === "overview";
   const healthHistoryParams = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
     if (key === "form" || key === "view" || key === "period" || value === undefined) continue;
@@ -155,31 +162,34 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
   }
   healthHistoryParams.set("tab", "health");
   const healthHistoryHref = `/pets/${encodeURIComponent(petId)}?${healthHistoryParams.toString()}`;
-  const { data: petRow, error: petError } = await supabase
+  const { data: petRow, error: petError } = await timing.measure("pet_ownership", () => supabase
     .from("pets")
     .select("pet_id, owner_id, name, species, gender, breed, date_of_birth, picture_url, created_at, updated_at")
     .eq("pet_id", petId)
     .eq("owner_id", claimsData.claims.sub)
-    .maybeSingle();
+    .maybeSingle());
 
   // Do not disclose whether a missing row belongs to another owner.
-  if (petError || !petRow) redirect("/dashboard");
+  if (petError || !petRow) {
+    timing.finish("error");
+    redirect("/dashboard");
+  }
 
   const pet = petRow as Pet;
-  const [vaccineSummary, medicalSummary, upcomingReminderResult, healthLogSummary] = await Promise.all([
-    supabase
+  const [vaccineSummary, medicalSummary, upcomingReminderResult, healthLogSummary] = await timing.measure("summary.parallel", () => Promise.all([
+    !needsHealthSummary ? supabase
       .from("vaccine_records")
       .select("created_at", { count: "exact" })
       .eq("pet_id", pet.pet_id)
       .order("created_at", { ascending: false })
-      .limit(1),
-    supabase
+      .limit(1) : Promise.resolve({ data: null, error: null, count: null }),
+    !needsHealthSummary ? supabase
       .from("medical_records")
       .select("created_at", { count: "exact" })
       .eq("pet_id", pet.pet_id)
       .order("created_at", { ascending: false })
-      .limit(1),
-    supabase
+      .limit(1) : Promise.resolve({ data: null, error: null, count: null }),
+    needsUpcomingReminder ? supabase
       .from("reminders")
       .select("due_date, type, note")
       .eq("user_id", claimsData.claims.sub)
@@ -188,16 +198,16 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
       .gte("due_date", getTodayInVietnam())
       .order("due_date", { ascending: true })
       .limit(1)
-      .maybeSingle(),
-    supabase
+      .maybeSingle() : Promise.resolve({ data: null, error: null }),
+    needsHealthSummary ? supabase
       .from("health_logs")
       .select("health_log_id, recorded_on, logged_at", { count: "exact" })
       .eq("pet_id", pet.pet_id)
       .order("recorded_on", { ascending: false })
       .order("logged_at", { ascending: false })
       .order("health_log_id", { ascending: false })
-      .limit(1),
-  ]);
+      .limit(1) : Promise.resolve({ data: null, error: null, count: null }),
+  ]));
 
   if (vaccineSummary.error) logHealthSummaryError("vaccine_records", vaccineSummary.error);
   if (medicalSummary.error) logHealthSummaryError("medical_records", medicalSummary.error);
@@ -230,6 +240,8 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
     getPetGenderLabel(pet.gender),
     age,
   ].filter(Boolean);
+
+  timing.finish("ok");
 
   return (
     <main className={styles.page}>
@@ -304,6 +316,7 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
               currentUserId={claimsData.claims.sub}
               formOpen={form === "health-log"}
               initialPeriod={healthPeriod}
+              isOwner={pet.owner_id === claimsData.claims.sub}
               petId={pet.pet_id}
               petName={pet.name}
             />

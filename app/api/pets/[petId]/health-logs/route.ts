@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createServerTiming } from "@/lib/performance/serverTiming";
 
 type RouteContext = { params: Promise<{ petId: string }> };
 
@@ -80,31 +81,46 @@ async function getOwnedPet(
 }
 
 export async function GET(_request: Request, { params }: RouteContext) {
+  const timing = createServerTiming("api.pet.health-logs");
   const supabase = await createClient();
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const { data: claimsData, error: claimsError } = await timing.measure("auth", () => supabase.auth.getClaims());
   const userId = claimsData?.claims?.sub;
 
   if (claimsError || !userId) {
+    timing.finish("error");
     return jsonError("Bạn cần đăng nhập để xem nhật ký sức khỏe.", 401);
   }
 
   const { petId } = await params;
-  if (!validUuid(petId)) return jsonError("Mã thú cưng không hợp lệ.", 400);
+  if (!validUuid(petId)) {
+    timing.finish("error");
+    return jsonError("Mã thú cưng không hợp lệ.", 400);
+  }
 
-  const { data: pet, error: petError } = await getOwnedPet(supabase, petId, userId);
-  if (petError) return jsonError("Không thể kiểm tra thú cưng lúc này.", 500);
-  if (!pet) return jsonError("Không tìm thấy thú cưng.", 404);
+  const { data: pet, error: petError } = await timing.measure("pet_ownership", () => getOwnedPet(supabase, petId, userId));
+  if (petError) {
+    timing.finish("error");
+    return jsonError("Không thể kiểm tra thú cưng lúc này.", 500);
+  }
+  if (!pet) {
+    timing.finish("error");
+    return jsonError("Không tìm thấy thú cưng.", 404);
+  }
 
-  const { data: healthLogs, error: healthLogsError } = await supabase
+  const { data: healthLogs, error: healthLogsError } = await timing.measure("health_logs", () => supabase
     .from("health_logs")
     .select("health_log_id, pet_id, created_by, recorded_on, weight, food_amount, food_type, status, note, logged_at")
     .eq("pet_id", petId)
     .order("recorded_on", { ascending: false })
     .order("logged_at", { ascending: false })
-    .order("health_log_id", { ascending: false });
+    .order("health_log_id", { ascending: false }));
 
-  if (healthLogsError) return jsonError("Không thể tải nhật ký sức khỏe lúc này.", 500);
+  if (healthLogsError) {
+    timing.finish("error");
+    return jsonError("Không thể tải nhật ký sức khỏe lúc này.", 500);
+  }
 
+  timing.finish("ok");
   return NextResponse.json({ health_logs: healthLogs ?? [] });
 }
 

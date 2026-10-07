@@ -8,8 +8,10 @@ import { useRouter } from "next/navigation";
 import { MedicalRecordCreateForm } from "@/components/pets/MedicalRecordCreateForm";
 import { VaccineCreateForm, type VaccineSavedResult } from "@/components/pets/VaccineCreateForm";
 import type { MedicalHistoryAttachment, MedicalHistoryEntry } from "@/lib/medicalHistory";
+import { parseMedicalHistoryRecords } from "@/lib/medicalHistoryValidation";
 import type { PetSpecies } from "@/lib/pets";
 import { invalidateNotificationCenter } from "@/lib/notifications/events";
+import { fetchJsonWithTimeout } from "@/lib/http/fetchJsonWithTimeout";
 import styles from "@/styles/petDetail.module.css";
 
 type MedicalHistoryFilter = "all" | "vaccines" | "visits";
@@ -21,7 +23,6 @@ type MedicalView =
   | { kind: "saved-no-suggestion"; entry: MedicalHistoryEntry; warning: string | null }
   | { kind: "medical-reminder"; entry: MedicalHistoryEntry };
 
-type ApiHistoryResponse = { records?: MedicalHistoryEntry[]; error?: string };
 type SignedUrlResponse = { signed_url?: string; error?: string };
 type DeleteTarget = { entry: MedicalHistoryEntry; trigger: HTMLButtonElement | null };
 type DeleteResponse = {
@@ -62,6 +63,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
       : form === "medical-record" ? { kind: "add-medical-record" } : { kind: "history" },
   );
   const [entries, setEntries] = useState<MedicalHistoryEntry[]>([]);
+  const [loadedHistoryKey, setLoadedHistoryKey] = useState(`${petId}:${form ?? ""}`);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -73,7 +75,9 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const requestController = useRef<AbortController | null>(null);
+  const historyRequestController = useRef<AbortController | null>(null);
+  const reminderMutationController = useRef<AbortController | null>(null);
+  const requestId = useRef(0);
   const reminderSubmissionGuard = useRef(false);
   const deleteSubmissionGuard = useRef(false);
   const deleteDialogRef = useRef<HTMLDivElement | null>(null);
@@ -87,26 +91,66 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
     trigger?.focus();
   }, [deleteTarget, isDeleting]);
 
-  useEffect(() => {
+  const loadHistory = useCallback(() => {
+    const activeRequestId = ++requestId.current;
+    historyRequestController.current?.abort();
     const controller = new AbortController();
+    historyRequestController.current = controller;
+    const historyKey = `${petId}:${form ?? ""}`;
     const endpoint = form === "medical-record" ? "medical-records" : "medical-history";
-    fetch(`/api/pets/${encodeURIComponent(petId)}/${endpoint}`, { signal: controller.signal })
-      .then(async (response) => {
-        const payload = (await response.json()) as ApiHistoryResponse;
-        if (!response.ok) throw new Error(payload.error || "Không thể tải hồ sơ y tế.");
-        if (!controller.signal.aborted) {
-          setError(null);
-          setEntries(Array.isArray(payload.records) ? payload.records : []);
-        }
+    setEntries([]);
+    setLoadedHistoryKey("");
+    setError(null);
+    setIsLoading(true);
+
+    const isCurrent = () => historyRequestController.current === controller
+      && activeRequestId === requestId.current
+      && !controller.signal.aborted;
+
+    void fetchJsonWithTimeout(`/api/pets/${encodeURIComponent(petId)}/${endpoint}`, { signal: controller.signal })
+      .then(({ response, payload }) => {
+        if (!response.ok) throw new Error("Medical history request failed");
+        const records = parseMedicalHistoryRecords(payload);
+        if (!records) throw new Error("Medical history response invalid");
+        if (!isCurrent()) return;
+        setEntries(records);
+        setLoadedHistoryKey(historyKey);
       })
-      .catch((requestError: unknown) => {
-        if (!controller.signal.aborted) setError(requestError instanceof Error ? requestError.message : "Không thể tải hồ sơ y tế.");
+      .catch(() => {
+        if (!isCurrent()) return;
+        setLoadedHistoryKey(historyKey);
+        setError("Không thể tải hồ sơ y tế lúc này. Vui lòng thử lại.");
       })
       .finally(() => {
-        if (!controller.signal.aborted) setIsLoading(false);
+        if (!isCurrent()) return;
+        setIsLoading(false);
+        historyRequestController.current = null;
       });
-    return () => controller.abort();
+
+    return controller;
   }, [form, petId]);
+
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (active) loadHistory();
+    });
+    return () => {
+      active = false;
+      requestId.current += 1;
+      historyRequestController.current?.abort();
+      historyRequestController.current = null;
+    };
+  }, [loadHistory]);
+
+  function retryHistory() {
+    loadHistory();
+  }
+
+  useEffect(() => () => {
+    reminderMutationController.current?.abort();
+    reminderMutationController.current = null;
+  }, []);
 
   useEffect(() => {
     if (!deleteTarget) return;
@@ -137,8 +181,9 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
   }, [closeDeleteDialog, deleteTarget, isDeleting]);
 
   const visibleEntries = useMemo(
-    () => entries.filter((entry) => filter === "all" || (filter === "vaccines" ? entry.type === "vaccine" : entry.type === "medical")),
-    [entries, filter],
+    () => (loadedHistoryKey === `${petId}:${form ?? ""}` ? entries : [])
+      .filter((entry) => filter === "all" || (filter === "vaccines" ? entry.type === "vaccine" : entry.type === "medical")),
+    [entries, filter, form, loadedHistoryKey, petId],
   );
 
   const groupedEntries = useMemo(() => {
@@ -156,6 +201,10 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
       .sort((a, b) => a.eventDate.localeCompare(b.eventDate) || a.id.localeCompare(b.id))
       .map((entry, index) => [entry.id, index + 1]),
   ), [entries]);
+  const currentHistoryKey = `${petId}:${form ?? ""}`;
+  const historyReady = loadedHistoryKey === currentHistoryKey;
+  const historyLoading = isLoading || !historyReady;
+  const historyError = historyReady ? error : null;
 
   function openAddVaccine() {
     setIsAddMenuOpen(false);
@@ -279,8 +328,8 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
     setError(null);
     setIsSaving(true);
     const controller = new AbortController();
-    requestController.current?.abort();
-    requestController.current = controller;
+    reminderMutationController.current?.abort();
+    reminderMutationController.current = controller;
     try {
       const requestBody = isMedicalSource
         ? {
@@ -312,7 +361,10 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
       }
     } finally {
       reminderSubmissionGuard.current = false;
-      if (!controller.signal.aborted) setIsSaving(false);
+      if (reminderMutationController.current === controller) {
+        reminderMutationController.current = null;
+        if (!controller.signal.aborted) setIsSaving(false);
+      }
     }
   }
 
@@ -352,16 +404,21 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
               {createdReminderId && <Link className={styles.medicalNoticeLink} href={`/reminders?highlight=${encodeURIComponent(createdReminderId)}`}>Xem nhắc hẹn</Link>}
             </p>
           )}
-          {error && <p className={styles.medicalError} role="alert">{error}</p>}
-          {isLoading && <p className={styles.medicalLoading}>Đang tải hồ sơ y tế…</p>}
-          {!isLoading && !error && groupedEntries.length === 0 && (
+          {historyError && (
+            <div className={styles.medicalError} role="alert">
+              <p>{historyError}</p>
+              <button className={styles.medicalRetryButton} disabled={historyLoading} onClick={retryHistory} type="button">Thử lại</button>
+            </div>
+          )}
+          {historyLoading && <p className={styles.medicalLoading}>Đang tải hồ sơ y tế…</p>}
+          {!historyLoading && !historyError && groupedEntries.length === 0 && (
             <section className={styles.medicalEmptyState}>
               <span className={styles.medicalEmptyMark} aria-hidden="true" />
               <h2 id="medical-history-title">Chưa có hồ sơ y tế</h2>
               <p>Thông tin tiêm phòng và các lần khám của bé sẽ xuất hiện tại đây.</p>
             </section>
           )}
-          {!isLoading && !error && groupedEntries.length > 0 && (
+          {!historyLoading && !historyError && groupedEntries.length > 0 && (
             <div className={styles.medicalTimeline} aria-labelledby="medical-history-title">
               {groupedEntries.map(([month, monthEntries]) => (
                 <section className={styles.medicalMonth} key={month}>

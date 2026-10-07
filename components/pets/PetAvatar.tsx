@@ -16,7 +16,7 @@ export function PetAvatar({ petId, species, pictureUrl, className }: PetAvatarPr
       : pictureUrl;
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img className={className} src={source} alt="" />
+      <img className={className} src={source} alt="" data-pet-photo="true" />
     );
   }
 
@@ -25,6 +25,7 @@ export function PetAvatar({ petId, species, pictureUrl, className }: PetAvatarPr
       className={className}
       src={getPetAvatarSource(species)}
       alt=""
+      data-pet-photo="false"
       width={species === "Cat" ? 666 : 474}
       height={species === "Cat" ? 375 : 421}
     />

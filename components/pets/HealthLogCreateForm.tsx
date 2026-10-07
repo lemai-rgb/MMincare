@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 
 import type { HealthLog } from "@/components/pets/PetHealthHistory";
 import {
@@ -10,9 +10,11 @@ import {
 import styles from "@/styles/petDetail.module.css";
 
 type HealthLogCreateFormProps = {
+  healthLog?: HealthLog;
   petId: string;
   onCancel: () => void;
   onCreated: (healthLog: HealthLog) => void;
+  onUpdated?: (healthLog: HealthLog) => void;
 };
 
 type HealthLogFormErrors = {
@@ -68,28 +70,45 @@ function isValidRecordedOn(value: string) {
     && value <= getVietnamToday();
 }
 
-export function HealthLogCreateForm({ petId, onCancel, onCreated }: HealthLogCreateFormProps) {
-  const [recordedOn, setRecordedOn] = useState(() => getVietnamToday());
-  const [weight, setWeight] = useState("");
-  const [foodType, setFoodType] = useState("");
-  const [foodAmount, setFoodAmount] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<HealthStatusOption | "">("");
-  const [customStatus, setCustomStatus] = useState("");
-  const [note, setNote] = useState("");
+export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onUpdated }: HealthLogCreateFormProps) {
+  const isEditing = Boolean(healthLog);
+  const [recordedOn, setRecordedOn] = useState(() => healthLog?.recorded_on ?? getVietnamToday());
+  const [weight, setWeight] = useState(() => healthLog?.weight === null || healthLog?.weight === undefined ? "" : String(healthLog.weight));
+  const [foodType, setFoodType] = useState(() => healthLog?.food_type ?? "");
+  const [foodAmount, setFoodAmount] = useState(() => healthLog?.food_amount ?? "");
+  const [selectedStatus, setSelectedStatus] = useState<HealthStatusOption | "">(() => {
+    const value = healthLog?.status ?? "";
+    return HEALTH_STATUS_OPTIONS.includes(value as HealthStatusOption) ? value as HealthStatusOption : value ? "Khác" : "";
+  });
+  const [customStatus, setCustomStatus] = useState(() => {
+    const value = healthLog?.status ?? "";
+    return HEALTH_STATUS_OPTIONS.includes(value as HealthStatusOption) ? "" : value;
+  });
+  const [note, setNote] = useState(() => healthLog?.note ?? "");
   const [errors, setErrors] = useState<HealthLogFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const firstFieldRef = useRef<HTMLInputElement>(null);
   const submissionGuard = useRef(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
     const frame = window.requestAnimationFrame(() => firstFieldRef.current?.focus());
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
+    return () => {
+      mountedRef.current = false;
+      window.cancelAnimationFrame(frame);
+    };
+  }, [healthLog?.health_log_id]);
 
   function clearError(field?: keyof HealthLogFormErrors) {
     setErrors((current) => field
       ? { ...current, [field]: undefined, form: undefined }
       : { ...current, form: undefined });
+  }
+
+  function preventImplicitSubmit(event: KeyboardEvent<HTMLInputElement>) {
+    const composing = event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229;
+    if (event.key === "Enter" && !composing) event.preventDefault();
   }
 
   function resetForm() {
@@ -154,11 +173,16 @@ export function HealthLogCreateForm({ petId, onCancel, onCreated }: HealthLogCre
     setErrors({});
 
     try {
-      const response = await fetch(`/api/pets/${encodeURIComponent(petId)}/health-logs`, {
-        method: "POST",
+      const response = await fetch(
+        isEditing
+          ? `/api/pets/${encodeURIComponent(petId)}/health-logs/${encodeURIComponent(healthLog?.health_log_id ?? "")}`
+          : `/api/pets/${encodeURIComponent(petId)}/health-logs`,
+        {
+        method: isEditing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(normalized),
-      });
+        },
+      );
 
       let payload: HealthLogCreatePayload = {};
       try {
@@ -173,9 +197,14 @@ export function HealthLogCreateForm({ petId, onCancel, onCreated }: HealthLogCre
           : "Không thể lưu chỉ số sức khỏe lúc này. Vui lòng thử lại.");
       }
 
-      resetForm();
-      onCreated(payload.health_log);
+      if (!mountedRef.current) return;
+      if (isEditing) onUpdated?.(payload.health_log);
+      else {
+        resetForm();
+        onCreated(payload.health_log);
+      }
     } catch (requestError: unknown) {
+      if (!mountedRef.current) return;
       setErrors({
         form: requestError instanceof TypeError
           ? "Không thể kết nối máy chủ. Vui lòng thử lại."
@@ -185,13 +214,13 @@ export function HealthLogCreateForm({ petId, onCancel, onCreated }: HealthLogCre
       });
     } finally {
       submissionGuard.current = false;
-      setIsSubmitting(false);
+      if (mountedRef.current) setIsSubmitting(false);
     }
   }
 
   return (
     <form aria-busy={isSubmitting} className={styles.healthCreateForm} noValidate onSubmit={submit}>
-      <h3>CẬP NHẬT CHỈ SỐ SỨC KHỎE</h3>
+      <h3>{isEditing ? "CHỈNH SỬA CHỈ SỐ SỨC KHỎE" : "CẬP NHẬT CHỈ SỐ SỨC KHỎE"}</h3>
 
       <div className={styles.healthCreateGrid}>
         <label className={`${styles.healthCreateField} ${styles.healthRecordedOnField}`}>
@@ -222,6 +251,7 @@ export function HealthLogCreateForm({ petId, onCancel, onCreated }: HealthLogCre
                 setWeight(event.target.value);
                 clearError("weight");
               }}
+              onKeyDown={preventImplicitSubmit}
               placeholder="VD: 2.00"
               ref={firstFieldRef}
               type="text"
@@ -240,6 +270,7 @@ export function HealthLogCreateForm({ petId, onCancel, onCreated }: HealthLogCre
               setFoodType(event.target.value);
               clearError();
             }}
+            onKeyDown={preventImplicitSubmit}
             placeholder="VD: Hạt Royal Canin, pate"
             type="text"
             value={foodType}
@@ -254,6 +285,7 @@ export function HealthLogCreateForm({ petId, onCancel, onCreated }: HealthLogCre
               setFoodAmount(event.target.value);
               clearError();
             }}
+            onKeyDown={preventImplicitSubmit}
             placeholder="VD: 80g/ngày"
             type="text"
             value={foodAmount}
@@ -317,7 +349,7 @@ export function HealthLogCreateForm({ petId, onCancel, onCreated }: HealthLogCre
       <div className={styles.healthCreateActions}>
         <button disabled={isSubmitting} onClick={cancel} type="button">Hủy</button>
         <button disabled={isSubmitting} type="submit">
-          {isSubmitting ? "Đang lưu…" : "Lưu chỉ số"}
+          {isSubmitting ? "Đang lưu…" : isEditing ? "Lưu thay đổi" : "Lưu chỉ số"}
         </button>
       </div>
     </form>

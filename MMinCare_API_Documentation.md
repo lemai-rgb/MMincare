@@ -104,6 +104,8 @@
 Web Notification Center dùng hai endpoint này trong shared header. Chuông hiển thị số event chưa đọc; panel có loading, retry, empty state và danh sách theo `event_type`. Chọn event chưa đọc gọi `PATCH /notifications/{notification_id}/read` một lần rồi điều hướng đến `/reminders?highlight={reminder_id}`; event đã đọc điều hướng trực tiếp. Không có thao tác đánh dấu tất cả, xóa notification hoặc push/email trong phạm vi web UI.
 | HealthLog | GET | `/pets/{pet_id}/health-logs` | Xem Health Log |
 | HealthLog | POST | `/pets/{pet_id}/health-logs` | Thêm Health Log |
+| HealthLog | PATCH | `/pets/{pet_id}/health-logs/{health_log_id}` | Owner sửa trường nghiệp vụ Health Log |
+| HealthLog | DELETE | `/pets/{pet_id}/health-logs/{health_log_id}` | Owner xóa Health Log sau xác nhận |
 | Dashboard | GET | `/dashboard` | Tổng quan nhiều pet |
 | Dashboard | GET | `/pets/{pet_id}/dashboard` | Tổng quan một pet |
 | Access | POST | `/pets/{pet_id}/access` | Chia sẻ pet |
@@ -474,6 +476,7 @@ Request:
 
 | Field | Type | Required | Description |
 |---|---|:---:|---|
+| recorded_on | date | Yes | Ngày nhật ký, không ở tương lai theo `Asia/Ho_Chi_Minh` |
 | weight | decimal | No | Cân nặng kg |
 | food_amount | string | No | Lượng thức ăn |
 | food_type | string | No | Loại thức ăn |
@@ -482,7 +485,19 @@ Request:
 
 Ít nhất một trường phải có giá trị. Success `201` trả Health Log vừa tạo. API không tự cảnh báo cân nặng bất thường vì chưa có rule xác định ngưỡng.
 
-Không cung cấp API sửa/xóa Health Log trong MVP.
+### 9.3. PATCH `/pets/{pet_id}/health-logs/{health_log_id}`
+
+**Actor:** Owner của Pet
+
+Chỉ nhận các trường `recorded_on`, `weight`, `food_amount`, `food_type`, `status` và `note`. Các trường định danh `health_log_id`, `pet_id`, `created_by` và `logged_at` không được sửa. Có thể gửi `null` để xóa giá trị của trường tùy chọn, nhưng bản ghi sau cập nhật vẫn phải có ít nhất một trường nghiệp vụ. `recorded_on` không được ở tương lai theo múi giờ `Asia/Ho_Chi_Minh`.
+
+Success `200` trả `{ "health_log": ... }` là bản ghi chuẩn sau khi cập nhật. Owner khác, Caretaker và Anonymous không được truy cập; resource ngoài phạm vi trả `404` theo nguyên tắc bảo vệ riêng tư.
+
+### 9.4. DELETE `/pets/{pet_id}/health-logs/{health_log_id}`
+
+**Actor:** Owner của Pet
+
+Xóa vĩnh viễn một Health Log sau khi UI xác nhận. Success `200` trả `{ "deleted_health_log_id": "..." }`. Request lặp hoặc resource ngoài phạm vi trả `404`; không thay đổi các bảng liên quan.
 
 ## 10. Dashboard APIs
 
@@ -585,7 +600,7 @@ Success data: danh sách pet được chia sẻ và quyền còn hiệu lực.
 - Reminder chỉ được tạo sau khi Owner xác nhận ngày.
 - Database lưu Reminder status là Upcoming/Completed; API suy ra Overdue.
 - Không đưa Pet Delete vào MVP.
-- Không đưa API sửa/xóa Vaccine Record, Medical Record hoặc Health Log vào MVP.
+- Health Log có PATCH/DELETE Owner-only theo mục 9.3–9.4; Vaccine Record và Medical Record vẫn chưa có API sửa/xóa trong MVP.
 - `/dashboard` landing/pet-list cơ bản thuộc MVP; Dashboard phân tích nâng cao, Health Log và Pet Access là Should Have / Phase 2.
 - MVP không hỗ trợ hard-delete tài khoản; không cascade xóa pet hoặc lịch sử chăm sóc.
 - Hạ tầng Auth dự kiến dùng `@supabase/ssr`, browser/server client tách riêng, cookie/session refresh và route protection.

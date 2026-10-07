@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { HealthLogCreateForm } from "@/components/pets/HealthLogCreateForm";
 import { PetHealthStatistics } from "@/components/pets/PetHealthStatistics";
 import type { HealthDashboardPeriod } from "@/lib/healthLogs/dashboard";
+import { fetchJsonWithTimeout } from "@/lib/http/fetchJsonWithTimeout";
 import styles from "@/styles/petDetail.module.css";
 
 export type HealthLog = {
@@ -69,20 +70,40 @@ function sortHealthLogs(logs: HealthLog[]) {
 }
 
 async function getHealthLogs(petId: string, signal: AbortSignal) {
-  const response = await fetch(`/api/pets/${encodeURIComponent(petId)}/health-logs`, {
+  const { response, payload: rawPayload } = await fetchJsonWithTimeout(`/api/pets/${encodeURIComponent(petId)}/health-logs`, {
     cache: "no-store",
     signal,
   });
-  const payload = await response.json() as HealthLogsPayload;
+  const payload = (rawPayload && typeof rawPayload === "object" ? rawPayload : {}) as HealthLogsPayload;
 
-  if (!response.ok || !Array.isArray(payload.health_logs)) {
+  if (!response.ok || !Array.isArray(payload.health_logs) || !payload.health_logs.every((log) => {
+    if (!log || typeof log !== "object") return false;
+    const row = log as Partial<HealthLog>;
+    return typeof row.health_log_id === "string" && typeof row.pet_id === "string"
+      && typeof row.created_by === "string" && typeof row.recorded_on === "string"
+      && typeof row.logged_at === "string" && Number.isFinite(Date.parse(row.logged_at))
+      && (row.weight === null || (typeof row.weight === "number" && Number.isFinite(row.weight)))
+      && [row.food_amount, row.food_type, row.status, row.note].every((value) => value === null || typeof value === "string");
+  })) {
     throw new Error("Health log request failed");
   }
 
   return payload.health_logs;
 }
 
-function HealthLogCard({ log, currentUserId }: { log: HealthLog; currentUserId: string }) {
+function HealthLogCard({
+  isOwner,
+  log,
+  currentUserId,
+  onDelete,
+  onEdit,
+}: {
+  isOwner: boolean;
+  log: HealthLog;
+  currentUserId: string;
+  onDelete: (log: HealthLog, trigger: HTMLButtonElement) => void;
+  onEdit: (log: HealthLog) => void;
+}) {
   const fields = useMemo(() => [
     log.weight !== null ? <span className={styles.healthLogMetric} key="weight">{formatWeight(log.weight)}</span> : null,
     log.food_amount ? <span className={styles.healthLogMetric} key="food-amount">{log.food_amount}</span> : null,
@@ -104,7 +125,90 @@ function HealthLogCard({ log, currentUserId }: { log: HealthLog; currentUserId: 
       {log.created_by === currentUserId && (
         <p className={styles.healthLogCreator}>Thêm bởi bạn</p>
       )}
+
+      {isOwner && (
+        <div className={styles.healthLogActions}>
+          <button aria-label={`Chỉnh sửa nhật ký ngày ${formatRecordedOn(log.recorded_on)}`} onClick={() => onEdit(log)} type="button">
+            Chỉnh sửa
+          </button>
+          <button
+            aria-label={`Xóa nhật ký ngày ${formatRecordedOn(log.recorded_on)}`}
+            onClick={(event) => onDelete(log, event.currentTarget)}
+            type="button"
+          >
+            Xóa
+          </button>
+        </div>
+      )}
     </article>
+  );
+}
+
+function HealthLogDeleteDialog({
+  error,
+  isDeleting,
+  log,
+  onCancel,
+  onConfirm,
+}: {
+  error: string;
+  isDeleting: boolean;
+  log: HealthLog;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => cancelRef.current?.focus());
+    function handleKeyDown(event: globalThis.KeyboardEvent) {
+      if (event.key === "Escape" && !isDeleting) {
+        event.preventDefault();
+        onCancel();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>("button:not([disabled])");
+      if (!focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isDeleting, onCancel]);
+
+  return (
+    <div className={styles.healthDialogBackdrop} role="presentation">
+      <div
+        aria-labelledby="health-log-delete-title"
+        aria-modal="true"
+        className={styles.healthDeleteDialog}
+        ref={dialogRef}
+        role="dialog"
+      >
+        <h3 id="health-log-delete-title">Xóa nhật ký sức khỏe?</h3>
+        <p>Bạn sắp xóa vĩnh viễn nhật ký ngày {formatRecordedOn(log.recorded_on)}.</p>
+        <p>Thao tác này không thể hoàn tác.</p>
+        {error ? <p className={styles.healthDeleteError} role="alert">{error}</p> : null}
+        <div className={styles.healthCreateActions}>
+          <button disabled={isDeleting} onClick={onCancel} ref={cancelRef} type="button">Hủy</button>
+          <button disabled={isDeleting} onClick={onConfirm} type="button">
+            {isDeleting ? "Đang xóa…" : "Xóa nhật ký"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -148,6 +252,7 @@ export function PetHealthHistory({
   currentUserId,
   formOpen,
   initialPeriod,
+  isOwner,
   petId,
   petName,
 }: {
@@ -155,6 +260,7 @@ export function PetHealthHistory({
   currentUserId: string;
   formOpen: boolean;
   initialPeriod: HealthDashboardPeriod;
+  isOwner: boolean;
   petId: string;
   petName: string;
 }) {
@@ -166,7 +272,35 @@ export function PetHealthHistory({
   const [loadError, setLoadError] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
   const [notice, setNotice] = useState("");
+  const [editingLog, setEditingLog] = useState<HealthLog | null>(null);
+  const [deletingLog, setDeletingLog] = useState<HealthLog | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
   const requestId = useRef(0);
+  const mountedRef = useRef(true);
+  const deleteControllerRef = useRef<AbortController | null>(null);
+  const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const dialogWasOpenRef = useRef(false);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      deleteControllerRef.current?.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (deletingLog) {
+      dialogWasOpenRef.current = true;
+      return;
+    }
+    if (!dialogWasOpenRef.current) return;
+    dialogWasOpenRef.current = false;
+    const trigger = deleteTriggerRef.current;
+    deleteTriggerRef.current = null;
+    window.requestAnimationFrame(() => trigger?.focus());
+  }, [deletingLog]);
 
   const retry = useCallback(() => {
     setLoadError(false);
@@ -179,8 +313,9 @@ export function PetHealthHistory({
     if (activeView !== "history") return undefined;
 
     const controller = new AbortController();
+    let active = true;
     queueMicrotask(() => {
-      if (controller.signal.aborted || activeRequestId !== requestId.current) return;
+      if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
       setIsLoading(true);
       setLoadError(false);
       setHealthLogs([]);
@@ -188,19 +323,22 @@ export function PetHealthHistory({
 
     void getHealthLogs(petId, controller.signal)
       .then((nextLogs) => {
-        if (controller.signal.aborted || activeRequestId !== requestId.current) return;
+        if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
         setHealthLogs(nextLogs);
         setLoadError(false);
       })
       .catch(() => {
-        if (controller.signal.aborted || activeRequestId !== requestId.current) return;
+        if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
         setLoadError(true);
       })
       .finally(() => {
-        if (activeRequestId === requestId.current) setIsLoading(false);
+        if (active && !controller.signal.aborted && activeRequestId === requestId.current) setIsLoading(false);
       });
 
-    return () => controller.abort();
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [activeView, petId, reloadToken]);
 
   const upperPetName = petName.toLocaleUpperCase("vi-VN");
@@ -222,6 +360,7 @@ export function PetHealthHistory({
   }
 
   function closeForm() {
+    setEditingLog(null);
     setFormState(false);
   }
 
@@ -232,6 +371,69 @@ export function PetHealthHistory({
     ]));
     setNotice("Đã lưu chỉ số sức khỏe.");
     setFormState(false);
+    router.refresh();
+  }
+
+  function openEdit(log: HealthLog) {
+    setNotice("");
+    setEditingLog(log);
+    setFormState(true);
+  }
+
+  function handleUpdated(healthLog: HealthLog) {
+    setHealthLogs((current) => sortHealthLogs([
+      ...current.filter((item) => item.health_log_id !== healthLog.health_log_id),
+      healthLog,
+    ]));
+    setEditingLog(null);
+    setNotice("Đã cập nhật chỉ số sức khỏe.");
+    setFormState(false);
+    router.refresh();
+  }
+
+  function openDelete(log: HealthLog, trigger: HTMLButtonElement) {
+    setNotice("");
+    setDeleteError("");
+    deleteTriggerRef.current = trigger;
+    setDeletingLog(log);
+  }
+
+  async function confirmDelete() {
+    if (!deletingLog || isDeleting || !mountedRef.current) return;
+    deleteControllerRef.current?.abort();
+    const controller = new AbortController();
+    deleteControllerRef.current = controller;
+    setIsDeleting(true);
+    setDeleteError("");
+    try {
+      const response = await fetch(
+        `/api/pets/${encodeURIComponent(petId)}/health-logs/${encodeURIComponent(deletingLog.health_log_id)}`,
+        { method: "DELETE", signal: controller.signal },
+      );
+      let payload: { deleted_health_log_id?: string; error?: string } = {};
+      try {
+        payload = await response.json() as typeof payload;
+      } catch {
+        // Keep the browser-facing error generic when the response is not JSON.
+      }
+      if (!response.ok || payload.deleted_health_log_id !== deletingLog.health_log_id) {
+        throw new Error("Không thể xóa nhật ký sức khỏe lúc này. Vui lòng thử lại.");
+      }
+      if (!mountedRef.current || controller.signal.aborted) return;
+      setHealthLogs((current) => current.filter((item) => item.health_log_id !== deletingLog.health_log_id));
+      setDeletingLog(null);
+      setNotice("Đã xóa nhật ký sức khỏe.");
+      router.refresh();
+    } catch (error: unknown) {
+      if (!mountedRef.current || controller.signal.aborted) return;
+      setDeleteError(error instanceof Error && error.message.startsWith("Không thể")
+        ? error.message
+        : "Không thể kết nối máy chủ. Vui lòng thử lại.");
+    } finally {
+      if (deleteControllerRef.current === controller) deleteControllerRef.current = null;
+      if (mountedRef.current && deleteControllerRef.current !== controller) setIsDeleting(false);
+      else if (mountedRef.current) setIsDeleting(false);
+    }
   }
 
   function handleHealthTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, currentView: "history" | "statistics") {
@@ -334,11 +536,17 @@ export function PetHealthHistory({
         <div aria-labelledby="health-statistics-tab" className={styles.healthTabPanel} id="health-statistics-panel" role="tabpanel" tabIndex={0}>
           <PetHealthStatistics period={initialPeriod} petId={petId} />
         </div>
-      ) : formOpen ? (
+      ) : formOpen || editingLog ? (
         <div aria-labelledby="health-history-tab" className={styles.healthTabPanel} id="health-history-panel" role="tabpanel" tabIndex={0}>
           <div className={styles.healthCreateWorkspace}>
             <LatestHealthSummary healthLogs={healthLogs} isLoading={isLoading} loadError={loadError} />
-            <HealthLogCreateForm onCancel={closeForm} onCreated={handleCreated} petId={petId} />
+            <HealthLogCreateForm
+              healthLog={editingLog ?? undefined}
+              onCancel={closeForm}
+              onCreated={handleCreated}
+              onUpdated={handleUpdated}
+              petId={petId}
+            />
           </div>
         </div>
       ) : (
@@ -374,11 +582,30 @@ export function PetHealthHistory({
           {!isLoading && !loadError && healthLogs.length > 0 && (
             <div className={styles.healthLogList}>
               {healthLogs.map((log) => (
-                <HealthLogCard currentUserId={currentUserId} key={log.health_log_id} log={log} />
+                <HealthLogCard
+                  currentUserId={currentUserId}
+                  isOwner={isOwner}
+                  key={log.health_log_id}
+                  log={log}
+                  onDelete={openDelete}
+                  onEdit={openEdit}
+                />
               ))}
             </div>
           )}
         </div>
+      )}
+
+      {deletingLog && (
+        <HealthLogDeleteDialog
+          error={deleteError}
+          isDeleting={isDeleting}
+          log={deletingLog}
+          onCancel={() => {
+            if (!isDeleting) setDeletingLog(null);
+          }}
+          onConfirm={confirmDelete}
+        />
       )}
     </section>
   );
