@@ -104,4 +104,44 @@ describe("PetHealthHistory Owner edit/delete", () => {
     expect(screen.getByText(/Theo dõi thêm/)).toBeTruthy();
     expect(screen.queryByText("server detail must stay private")).toBeNull();
   });
+
+  it("does not let a pre-mutation GET erase a canonical created log", async () => {
+    const oldGet = Promise.withResolvers<Response>();
+    const created = { ...firstLog, health_log_id: "health-created", note: "Đã tạo" };
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === "POST") return Promise.resolve(response({ health_log: created }, 201));
+      if (String(input).endsWith("/health-logs")) return oldGet.promise;
+      return Promise.resolve(response({}, 404));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const view = render(
+      <PetHealthHistory
+        activeView="history"
+        currentUserId="owner-1"
+        formOpen
+        initialPeriod="week"
+        isOwner
+        petId="pet-1"
+        petName="Meo"
+      />,
+    );
+    fireEvent.change(screen.getByPlaceholderText("VD: 2.00"), { target: { value: "2.2" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu chỉ số" }));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([, options]) => options?.method === "POST")).toBe(true));
+    view.rerender(
+      <PetHealthHistory
+        activeView="history"
+        currentUserId="owner-1"
+        formOpen={false}
+        initialPeriod="week"
+        isOwner
+        petId="pet-1"
+        petName="Meo"
+      />,
+    );
+    expect(screen.getByRole("article").textContent).toContain(created.note);
+    oldGet.resolve(response({ health_logs: [] }));
+    await flush();
+    expect(screen.getByRole("article").textContent).toContain(created.note);
+  });
 });

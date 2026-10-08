@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { HealthLogCreateForm } from "@/components/pets/HealthLogCreateForm";
 import { PetHealthStatistics } from "@/components/pets/PetHealthStatistics";
 import type { HealthDashboardPeriod } from "@/lib/healthLogs/dashboard";
-import { fetchJsonWithTimeout } from "@/lib/http/fetchJsonWithTimeout";
+import { fetchJsonWithTimeout, RequestTimeoutError } from "@/lib/http/fetchJsonWithTimeout";
 import styles from "@/styles/petDetail.module.css";
 
 export type HealthLog = {
@@ -29,6 +29,12 @@ type HealthLogsPayload = {
 function formatRecordedOn(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   return match ? `${match[3]}/${match[2]}/${match[1]}` : "--/--/----";
+}
+
+function isValidRecordedOn(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
 
 function formatTime(value: string) {
@@ -80,7 +86,7 @@ async function getHealthLogs(petId: string, signal: AbortSignal) {
     if (!log || typeof log !== "object") return false;
     const row = log as Partial<HealthLog>;
     return typeof row.health_log_id === "string" && typeof row.pet_id === "string"
-      && typeof row.created_by === "string" && typeof row.recorded_on === "string"
+      && typeof row.created_by === "string" && typeof row.recorded_on === "string" && isValidRecordedOn(row.recorded_on)
       && typeof row.logged_at === "string" && Number.isFinite(Date.parse(row.logged_at))
       && (row.weight === null || (typeof row.weight === "number" && Number.isFinite(row.weight)))
       && [row.food_amount, row.food_type, row.status, row.note].every((value) => value === null || typeof value === "string");
@@ -281,14 +287,24 @@ export function PetHealthHistory({
   const [isDeleting, setIsDeleting] = useState(false);
   const requestId = useRef(0);
   const mountedRef = useRef(true);
+  const historyRequestControllerRef = useRef<AbortController | null>(null);
   const deleteControllerRef = useRef<AbortController | null>(null);
   const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
   const dialogWasOpenRef = useRef(false);
+
+  const invalidateHistoryRequest = useCallback(() => {
+    requestId.current += 1;
+    historyRequestControllerRef.current?.abort();
+    historyRequestControllerRef.current = null;
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      requestId.current += 1;
+      historyRequestControllerRef.current?.abort();
+      historyRequestControllerRef.current = null;
       deleteControllerRef.current?.abort();
     };
   }, []);
@@ -316,6 +332,7 @@ export function PetHealthHistory({
     if (activeView !== "history") return undefined;
 
     const controller = new AbortController();
+    historyRequestControllerRef.current = controller;
     let active = true;
     queueMicrotask(() => {
       if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
@@ -341,6 +358,7 @@ export function PetHealthHistory({
     return () => {
       active = false;
       controller.abort();
+      if (historyRequestControllerRef.current === controller) historyRequestControllerRef.current = null;
     };
   }, [activeView, petId, reloadToken]);
 
@@ -368,6 +386,8 @@ export function PetHealthHistory({
   }
 
   function handleCreated(healthLog: HealthLog) {
+    setIsLoading(false);
+    setLoadError(false);
     setHealthLogs((current) => sortHealthLogs([
       ...current.filter((item) => item.health_log_id !== healthLog.health_log_id),
       healthLog,
@@ -384,6 +404,8 @@ export function PetHealthHistory({
   }
 
   function handleUpdated(healthLog: HealthLog) {
+    setIsLoading(false);
+    setLoadError(false);
     setHealthLogs((current) => sortHealthLogs([
       ...current.filter((item) => item.health_log_id !== healthLog.health_log_id),
       healthLog,
@@ -406,19 +428,17 @@ export function PetHealthHistory({
     deleteControllerRef.current?.abort();
     const controller = new AbortController();
     deleteControllerRef.current = controller;
+    invalidateHistoryRequest();
     setIsDeleting(true);
     setDeleteError("");
     try {
-      const response = await fetch(
+      const { response, payload: rawPayload } = await fetchJsonWithTimeout(
         `/api/pets/${encodeURIComponent(petId)}/health-logs/${encodeURIComponent(deletingLog.health_log_id)}`,
         { method: "DELETE", signal: controller.signal },
       );
-      let payload: { deleted_health_log_id?: string; error?: string } = {};
-      try {
-        payload = await response.json() as typeof payload;
-      } catch {
-        // Keep the browser-facing error generic when the response is not JSON.
-      }
+      const payload = rawPayload && typeof rawPayload === "object"
+        ? rawPayload as { deleted_health_log_id?: string; error?: string }
+        : {};
       if (!response.ok || payload.deleted_health_log_id !== deletingLog.health_log_id) {
         throw new Error("Không thể xóa nhật ký sức khỏe lúc này. Vui lòng thử lại.");
       }
@@ -429,6 +449,10 @@ export function PetHealthHistory({
       router.refresh();
     } catch (error: unknown) {
       if (!mountedRef.current || controller.signal.aborted) return;
+      if (error instanceof RequestTimeoutError) {
+        setDeleteError("Xóa nhật ký quá lâu. Hãy kiểm tra kết nối và thử lại.");
+        return;
+      }
       setDeleteError(error instanceof Error && error.message.startsWith("Không thể")
         ? error.message
         : "Không thể kết nối máy chủ. Vui lòng thử lại.");
@@ -547,6 +571,7 @@ export function PetHealthHistory({
               healthLog={editingLog ?? undefined}
               onCancel={closeForm}
               onCreated={handleCreated}
+              onMutationStart={invalidateHistoryRequest}
               onUpdated={handleUpdated}
               petId={petId}
             />

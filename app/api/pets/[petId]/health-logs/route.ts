@@ -21,10 +21,12 @@ function validUuid(value: string) {
   return UUID_PATTERN.test(value);
 }
 
-function normalizeText(value: unknown): string | null | "invalid" {
-  if (value === undefined || value === null) return null;
-  if (typeof value !== "string") return "invalid";
-  return value.trim() || null;
+type NormalizedText = { ok: true; value: string | null } | { ok: false };
+
+function normalizeText(value: unknown): NormalizedText {
+  if (value === undefined || value === null) return { ok: true, value: null };
+  if (typeof value !== "string") return { ok: false };
+  return { ok: true, value: value.trim() || null };
 }
 
 function hasAtMostTwoDecimalPlaces(value: number) {
@@ -159,7 +161,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
   for (const field of TEXT_FIELDS as readonly TextField[]) {
     const normalized = normalizeText(body[field]);
-    if (normalized === "invalid") return jsonError("Thông tin nhật ký sức khỏe không hợp lệ.", 400);
+    if (!normalized.ok) return jsonError("Thông tin nhật ký sức khỏe không hợp lệ.", 400);
   }
 
   const weight = body.weight;
@@ -168,7 +170,10 @@ export async function POST(request: Request, { params }: RouteContext) {
   }
 
   const normalizedText = Object.fromEntries(
-    TEXT_FIELDS.map((field) => [field, normalizeText(body[field]) as string | null]),
+    TEXT_FIELDS.map((field) => {
+      const normalized = normalizeText(body[field]);
+      return [field, normalized.ok ? normalized.value : null];
+    }),
   ) as Record<TextField, string | null>;
   const normalizedWeight = weight === undefined || weight === null ? null : weight;
   const hasBusinessValue = normalizedWeight !== null

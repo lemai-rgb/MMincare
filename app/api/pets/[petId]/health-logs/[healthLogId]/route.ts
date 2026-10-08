@@ -59,10 +59,12 @@ function validWeight(value: unknown) {
     && hasAtMostTwoDecimalPlaces(value);
 }
 
-function normalizeText(value: unknown) {
-  if (value === null) return null;
-  if (typeof value !== "string") return "invalid" as const;
-  return value.trim() || null;
+type NormalizedText = { ok: true; value: string | null } | { ok: false };
+
+function normalizeText(value: unknown): NormalizedText {
+  if (value === null) return { ok: true, value: null };
+  if (typeof value !== "string") return { ok: false };
+  return { ok: true, value: value.trim() || null };
 }
 
 async function getOwnedPet(
@@ -134,11 +136,11 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   for (const field of TEXT_FIELDS) {
     if (!Object.prototype.hasOwnProperty.call(body, field)) continue;
     const normalized = normalizeText(body[field]);
-    if (normalized === "invalid") {
+    if (!normalized.ok) {
       timing.finish("error");
       return jsonError("Thông tin nhật ký sức khỏe không hợp lệ.", 400);
     }
-    normalizedText[field] = normalized;
+    normalizedText[field] = normalized.value;
   }
   if (Object.prototype.hasOwnProperty.call(body, "weight")
     && body.weight !== null

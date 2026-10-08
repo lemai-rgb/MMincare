@@ -80,4 +80,15 @@ describe("Health Log mutation API", () => {
     expect(healthQuery.update).toHaveBeenCalledWith({ weight: null, note: null });
     expect((await response.json()).health_log.health_log_id).toBe(healthLogId);
   });
+
+  it("accepts the literal invalid as ordinary text and rejects non-string text", async () => {
+    const { healthQuery } = setupOwner();
+    const accepted = await PATCH(request({ note: "invalid" }), { params: Promise.resolve({ petId, healthLogId }) });
+    expect(accepted.status).toBe(200);
+    expect(healthQuery.update).toHaveBeenCalledWith({ note: "invalid" });
+
+    setupOwner();
+    const rejected = await PATCH(request({ note: 123 }), { params: Promise.resolve({ petId, healthLogId }) });
+    expect(rejected.status).toBe(400);
+  });
 });

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 
 import type { HealthLog } from "@/components/pets/PetHealthHistory";
+import { fetchJsonWithTimeout, RequestTimeoutError } from "@/lib/http/fetchJsonWithTimeout";
 import {
   HEALTH_STATUS_OPTIONS,
   type HealthStatusOption,
@@ -15,6 +16,7 @@ type HealthLogCreateFormProps = {
   onCancel: () => void;
   onCreated: (healthLog: HealthLog) => void;
   onUpdated?: (healthLog: HealthLog) => void;
+  onMutationStart?: () => void;
 };
 
 type HealthLogFormErrors = {
@@ -31,6 +33,19 @@ type HealthLogCreatePayload = {
 
 function normalizeText(value: string) {
   return value.trim() || null;
+}
+
+function isHealthLog(value: unknown): value is HealthLog {
+  if (!value || typeof value !== "object") return false;
+  const row = value as Partial<HealthLog>;
+  return typeof row.health_log_id === "string"
+    && typeof row.pet_id === "string"
+    && typeof row.created_by === "string"
+    && typeof row.recorded_on === "string"
+    && typeof row.logged_at === "string"
+    && Number.isFinite(Date.parse(row.logged_at))
+    && (row.weight === null || (typeof row.weight === "number" && Number.isFinite(row.weight)))
+    && [row.food_amount, row.food_type, row.status, row.note].every((field) => field === null || typeof field === "string");
 }
 
 function parseWeight(value: string) {
@@ -70,7 +85,7 @@ function isValidRecordedOn(value: string) {
     && value <= getVietnamToday();
 }
 
-export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onUpdated }: HealthLogCreateFormProps) {
+export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onUpdated, onMutationStart }: HealthLogCreateFormProps) {
   const isEditing = Boolean(healthLog);
   const [recordedOn, setRecordedOn] = useState(() => healthLog?.recorded_on ?? getVietnamToday());
   const [weight, setWeight] = useState(() => healthLog?.weight === null || healthLog?.weight === undefined ? "" : String(healthLog.weight));
@@ -90,6 +105,8 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
   const firstFieldRef = useRef<HTMLInputElement>(null);
   const submissionGuard = useRef(false);
   const mountedRef = useRef(true);
+  const mutationControllerRef = useRef<AbortController | null>(null);
+  const mutationSequenceRef = useRef(0);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -99,6 +116,12 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
       window.cancelAnimationFrame(frame);
     };
   }, [healthLog?.health_log_id]);
+
+  useEffect(() => () => {
+    mutationSequenceRef.current += 1;
+    mutationControllerRef.current?.abort();
+    mutationControllerRef.current = null;
+  }, []);
 
   function clearError(field?: keyof HealthLogFormErrors) {
     setErrors((current) => field
@@ -171,9 +194,14 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
     submissionGuard.current = true;
     setIsSubmitting(true);
     setErrors({});
+    onMutationStart?.();
+    const operation = ++mutationSequenceRef.current;
+    mutationControllerRef.current?.abort();
+    const controller = new AbortController();
+    mutationControllerRef.current = controller;
 
     try {
-      const response = await fetch(
+      const { response, payload: rawPayload } = await fetchJsonWithTimeout(
         isEditing
           ? `/api/pets/${encodeURIComponent(petId)}/health-logs/${encodeURIComponent(healthLog?.health_log_id ?? "")}`
           : `/api/pets/${encodeURIComponent(petId)}/health-logs`,
@@ -181,39 +209,41 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
         method: isEditing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(normalized),
+        signal: controller.signal,
         },
       );
 
-      let payload: HealthLogCreatePayload = {};
-      try {
-        payload = await response.json() as HealthLogCreatePayload;
-      } catch {
-        // Keep the browser-facing error generic when the response is not JSON.
-      }
+      const payload = rawPayload && typeof rawPayload === "object"
+        ? rawPayload as HealthLogCreatePayload
+        : {};
 
-      if (!response.ok || !payload.health_log) {
+      if (!response.ok || !isHealthLog(payload.health_log)) {
         throw new Error(response.status === 400 && payload.error
           ? payload.error
           : "Không thể lưu chỉ số sức khỏe lúc này. Vui lòng thử lại.");
       }
 
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || operation !== mutationSequenceRef.current || controller.signal.aborted) return;
       if (isEditing) onUpdated?.(payload.health_log);
       else {
         resetForm();
         onCreated(payload.health_log);
       }
     } catch (requestError: unknown) {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || operation !== mutationSequenceRef.current || controller.signal.aborted) return;
       setErrors({
-        form: requestError instanceof TypeError
+        form: requestError instanceof RequestTimeoutError
+          ? "Lưu nhật ký quá lâu. Hãy kiểm tra kết nối và thử lại; không tự động gửi lại."
+          : requestError instanceof TypeError
           ? "Không thể kết nối máy chủ. Vui lòng thử lại."
           : requestError instanceof Error
             ? requestError.message
             : "Không thể lưu chỉ số sức khỏe lúc này. Vui lòng thử lại.",
       });
     } finally {
+      if (operation !== mutationSequenceRef.current) return;
       submissionGuard.current = false;
+      if (mutationControllerRef.current === controller) mutationControllerRef.current = null;
       if (mountedRef.current) setIsSubmitting(false);
     }
   }

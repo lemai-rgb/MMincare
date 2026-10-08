@@ -14,6 +14,7 @@ import {
 } from "@/lib/notifications/center";
 import { parseNotificationReadAt, parseNotificationRows, type NotificationRow } from "@/lib/notifications/current";
 import { NOTIFICATION_CENTER_INVALIDATED_EVENT } from "@/lib/notifications/events";
+import { fetchJsonWithTimeout, InvalidJsonResponseError, RequestTimeoutError } from "@/lib/http/fetchJsonWithTimeout";
 import styles from "@/styles/dashboard.module.css";
 
 const PANEL_ID = "notification-center-panel";
@@ -26,14 +27,6 @@ type NotificationCenterProps = {
 };
 
 class NotificationApiError extends Error {}
-
-async function parseResponse<T>(response: Response, fallback: string) {
-  try {
-    return await response.json() as T;
-  } catch {
-    throw new Error(fallback);
-  }
-}
 
 function serverError(_payload: { error?: string }, fallback: string) {
   return new NotificationApiError(fallback);
@@ -68,8 +61,8 @@ export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: Not
     dispatch({ type: "load-start" });
 
     try {
-      const response = await fetch("/api/notifications", { cache: "no-store", signal: controller.signal });
-      const payload = await parseResponse<NotificationResponse>(response, "Không thể tải thông báo lúc này.");
+      const { response, payload: rawPayload } = await fetchJsonWithTimeout("/api/notifications", { cache: "no-store", signal: controller.signal });
+      const payload = rawPayload && typeof rawPayload === "object" ? rawPayload as NotificationResponse : {};
       if (!response.ok) throw serverError(payload, "Không thể tải thông báo lúc này.");
       const rows = parseNotificationRows(payload.notifications);
       if (!rows) throw new NotificationApiError("Không thể tải thông báo lúc này.");
@@ -83,7 +76,11 @@ export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: Not
       dispatch({ type: "load-success", items });
     } catch (error: unknown) {
       if (!mountedRef.current || controller.signal.aborted || sequence !== loadSequence.current) return;
-      dispatch({ type: "load-error", message: error instanceof NotificationApiError ? error.message : "Không thể tải thông báo lúc này." });
+      dispatch({ type: "load-error", message: error instanceof NotificationApiError
+        ? error.message
+        : error instanceof RequestTimeoutError
+          ? "Tải thông báo quá lâu. Hãy thử lại."
+          : "Không thể tải thông báo lúc này." });
     }
   }, []);
 
@@ -163,7 +160,19 @@ export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: Not
       && readRequestsRef.current.get(item.notification_event_id) === controller
       && !controller.signal.aborted;
     try {
-      const response = await fetch(`/api/notifications/${encodeURIComponent(item.notification_event_id)}/read`, { method: "PATCH", signal: controller.signal });
+      let response: Response;
+      let rawPayload: unknown = null;
+      try {
+        const result = await fetchJsonWithTimeout(`/api/notifications/${encodeURIComponent(item.notification_event_id)}/read`, { method: "PATCH", signal: controller.signal });
+        response = result.response;
+        rawPayload = result.payload;
+      } catch (error) {
+        if (error instanceof InvalidJsonResponseError && error.response?.status === 404) {
+          response = error.response;
+        } else {
+          throw error;
+        }
+      }
       if (!isCurrent()) return;
       if (response.status === 404) {
         const staleMessage = "Thông báo này không còn hiệu lực. Danh sách đã được cập nhật.";
@@ -172,7 +181,9 @@ export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: Not
         dispatch({ type: "read-failure", notificationId: item.notification_event_id, message: staleMessage });
         return;
       }
-      const payload = await parseResponse<{ notification?: { read_at?: string | null }; error?: string }>(response, "Không thể cập nhật thông báo lúc này.");
+      const payload = rawPayload && typeof rawPayload === "object"
+        ? rawPayload as { notification?: { read_at?: string | null }; error?: string }
+        : {};
       if (!isCurrent()) return;
       if (!response.ok) throw serverError(payload, "Không thể cập nhật thông báo lúc này.");
       const readAt = parseNotificationReadAt(payload);
