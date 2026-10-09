@@ -4,9 +4,9 @@
 
 MMinCare helps dog and cat owners keep pet profiles, vaccination history, medical records, health observations, and care reminders in one place. It does not diagnose conditions or replace veterinary advice.
 
-[Live application](https://m-mincare.vercel.app/) · [Project status](docs/PROJECT_STATUS.md) · [BA/PM/Tester evidence](docs/PORTFOLIO_EVIDENCE.md) · [Latest code review](docs/CODE_REVIEW_2026-10-07.md)
+[Live application](https://m-mincare.vercel.app/) · [Portfolio Demo guide](docs/PORTFOLIO_DEMO.md) · [Sample dataset](demo/README.md) · [Project status](docs/PROJECT_STATUS.md) · [BA/PM/Tester evidence](docs/PORTFOLIO_EVIDENCE.md)
 
-> **Status — 7 October 2026:** Owner MVP deployed; PRs #18–#21 merged. Automated checks pass on the reviewed code, but known defects and authenticated runtime checks remain open. The live application requires an account; a separate seeded portfolio demo is **not implemented**.
+> **Status — 10 October 2026:** Owner MVP; PRs #18–#23 merged. This branch adds a public `/demo` sandbox with three synthetic Pets, tab-local persistence/reset and dataset exports. Demo publication is pending PR merge/deployment; it does not use real Auth/API/Storage or establish production QA. [PR #24](https://github.com/lemai-rgb/MMincare/pull/24) separately fixes the statistics timestamp-validation defect and is not included as a deployed change here.
 
 ## Problem and intended users
 
@@ -50,7 +50,7 @@ This is an independent project with AI-assisted implementation and review. Repos
 
 ## Delivery and quality
 
-Reviewed application baseline: [`8b91154`](https://github.com/lemai-rgb/MMincare/commit/8b911540ddfb4856d29f414f1e771f0ae22dc989), after [PR #21](https://github.com/lemai-rgb/MMincare/pull/21). This documentation update does not change application code or production data.
+Current demo base: [`fd7145e`](https://github.com/lemai-rgb/MMincare/commit/fd7145ef7ad72f3bda7fe36613f88e5f22a795cd), after [PR #23](https://github.com/lemai-rgb/MMincare/pull/23). PR #22 fixed Health Log/Notification request lifecycle and idempotency; PR #23 updated mobile layout. Authenticated manual QA and production timings remain unverified. The following results are historical evidence from the earlier `8b91154` review, not new results for this demo branch.
 
 Checks performed on 7 October 2026:
 
@@ -60,7 +60,7 @@ Checks performed on 7 October 2026:
 - Latest relevant [migration replay run #23](https://github.com/lemai-rgb/MMincare/actions/runs/37615187127) passed on the PR #20 feature head. The workflow is path-filtered; not every check runs on every PR.
 - Vercel reports successful deployment for the reviewed main commit. Deployment success does not establish loading speed or authenticated functional correctness.
 
-**Open quality work:** unbounded mutation/notification requests, a reproduced Health Log GET/mutation race, a text-validation edge case, post-delete focus recovery, CI coverage, unavailable optional vaccine-date suggestions and database advisory follow-up. See the [review](docs/CODE_REVIEW_2026-10-07.md).
+**Quality follow-up:** request lifecycle/race/text-validation fixes were delivered by PR #22; optional vaccine rule access/dataset remains incomplete (CR-08). Timestamp range validation in statistics is addressed by the separate, pending PR #24. Focus recovery, CI coverage, database advisory follow-up and manual evidence should retain their verified status rather than infer completion from deployment. See the [dated review](docs/CODE_REVIEW_2026-10-07.md) and [current status](docs/PROJECT_STATUS.md).
 
 Authenticated upload/reload, cross-Owner access, real email flows, desktop/mobile visual QA and production timings are not verified in this review. See the [manual scenarios](docs/PORTFOLIO_EVIDENCE.md).
 
@@ -122,6 +122,8 @@ npm run test:reminders
 npm run test:notifications
 npm run test:pet-images
 npm run test:performance
+npm run test:demo
+npm run demo:export -- --date 2026-10-10
 npx vitest run lib/petHealthSummary.test.ts
 npm run lint
 npx tsc --noEmit --incremental false
@@ -136,8 +138,8 @@ Configure Supabase Site URL/auth redirects, reconcile migrations, and verify pri
 
 Optional `MINCARE_PERF_LOG=1` enables server timing logs with request/stage identifiers and durations. Actual production before/after timings have not been captured; no speed improvement percentage is claimed.
 
-Next priorities are defect fixes and manual regression evidence, then a separate seeded demo with synthetic data. Future scope includes controlled sharing, external notifications, OAuth and multi-pet analytics. See [Project Status](docs/PROJECT_STATUS.md) for priorities and acceptance criteria.
+This branch's `/demo` uses only synthetic client data, no backend credentials, and exposes selected Health Log/Reminder/Notification interactions. The real application still needs its configured Supabase environment. See [demo scope and acceptance](docs/PORTFOLIO_DEMO.md) before using a demo URL on a CV. Future scope includes controlled sharing, external notifications, OAuth and multi-pet analytics.
 
 ## Portfolio access
 
-The live application uses real authenticated workflows; a future demo would provide safe sample data for recruiters. At this checkpoint, GitHub reports this repository as private. Its URL alone does not grant recruiter access. Decide repository visibility/access explicitly before using the code/documentation link on a CV.
+The live application uses real authenticated workflows; `/demo` in this branch provides synthetic data for recruiters without account registration. Use its public URL on a CV only after deployment is verified. The repository was private at the earlier audit; its URL alone does not grant recruiter access. Decide visibility/access explicitly before sharing code/documentation. Demo fixtures and tests do not establish real Owner isolation or production performance.

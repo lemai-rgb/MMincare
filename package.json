@@ -11,7 +11,9 @@
     "test:notifications": "tsx lib/notifications/current.test.ts && tsx lib/notifications/center.test.ts && vitest run lib/notifications/center.ui.test.tsx",
     "test:reminders": "tsx lib/reminders/edit.test.ts",
     "test:pet-images": "vitest run --no-cache --no-file-parallelism lib/petImage.test.ts components/pets/PetImagePicker.test.tsx",
-    "test:performance": "tsx lib/http/fetchJsonWithTimeout.test.ts && vitest run --no-file-parallelism components/pets/PetReminders.ui.test.tsx components/pets/PetMedicalHistory.test.tsx components/pets/HealthLogCreateForm.test.tsx components/pets/PetHealthHistory.ui.test.tsx app/api/pets/[petId]/health-logs/[healthLogId]/route.test.ts lib/medicalHistoryValidation.test.ts lib/healthLogs/dashboardValidation.test.ts"
+    "test:performance": "tsx lib/http/fetchJsonWithTimeout.test.ts && vitest run --no-file-parallelism components/pets/PetReminders.ui.test.tsx components/pets/PetMedicalHistory.test.tsx components/pets/HealthLogCreateForm.test.tsx components/pets/PetHealthHistory.ui.test.tsx app/api/pets/[petId]/health-logs/[healthLogId]/route.test.ts lib/medicalHistoryValidation.test.ts lib/healthLogs/dashboardValidation.test.ts",
+    "test:demo": "vitest run --no-file-parallelism lib/demo/demo.test.ts lib/demo/proxy.test.ts components/demo/PortfolioDemo.test.tsx",
+    "demo:export": "tsx scripts/export-demo.ts"
   },
   "overrides": {
     "baseline-browser-mapping": "2.11.25"

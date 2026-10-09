@@ -1,0 +1,16 @@
+{
+  "format_version": 1,
+  "anchor_day": "2026-10-10",
+  "synthetic": true,
+  "target": "browser-only portfolio demo",
+  "production_import_allowed": false,
+  "counts": {
+    "pets": 3,
+    "vaccine_records": 3,
+    "medical_records": 2,
+    "health_logs": 24,
+    "reminders": 6,
+    "notification_events": 3
+  },
+  "note": "No Auth users, passwords, storage objects or vaccine schedule rules. Notification IDs are demo snapshot keys, not database UUIDs."
+}

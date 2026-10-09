@@ -1,8 +1,20 @@
 # MMinCare — delivery status
 
-**Updated:** 7 October 2026  
+**Updated:** 10 October 2026 — portfolio-demo branch update
 **Reviewed application baseline:** `8b911540ddfb4856d29f414f1e771f0ae22dc989`  
 **Stage:** deployed Owner MVP; quality follow-up and manual validation pending.
+
+## Current delivery update
+
+- `main` at `fd7145ef7ad72f3bda7fe36613f88e5f22a795cd` contains merged PR #22 (request lifecycle/idempotency) and #23 (mobile responsive UI). The snapshot below is the preserved 7 October review; its open defects are historical unless explicitly carried forward.
+- The reproduced dashboard date/timestamp mismatch has a separate fix in [PR #24](https://github.com/lemai-rgb/MMincare/pull/24), not yet merged at this update.
+- This branch adds a [synthetic dataset](../demo/README.md) and [portfolio sandbox](PORTFOLIO_DEMO.md): three Pets, 24 Health Logs, three vaccine records, two medical records, six Reminders and three initial current notifications.
+- `/demo` uses tab-local state, safe reset and JSON export. No migration, real Auth user, Storage object or production data is written. Demo is implemented in the branch; publication and real browser/visual validation remain pending.
+- CR-08: code distinguishes rule lookup failure/no-match; production rule read access and approved dataset are not completed by this demo. No clinical intervals are seeded.
+- Two dog/cat photos are expected from the user; current fixture uses default avatars. Do not mark these assets as received.
+- Production Auth/Owner A/B/Storage tests, live retry behavior and measured loading performance remain pending. Demo results are not substitutes for them.
+
+## Historical 7 October checkpoint
 
 ## Status definitions
 
