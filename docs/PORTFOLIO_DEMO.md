@@ -4,6 +4,10 @@
 
 Baseline: `main` `fd7145ef7ad72f3bda7fe36613f88e5f22a795cd` (PR #23 đã merge). Nhánh demo bổ sung route công khai `/demo`, bộ mẫu và sandbox tương tác. Chưa được gọi là production-deployed cho tới khi PR merge và deployment được xác minh.
 
+Đã push [Draft PR #25](https://github.com/lemai-rgb/MMincare/pull/25). Trên commit code `cffae9c9c332022a12629193934905903bf488a9`, [Portfolio Demo Checks](https://github.com/lemai-rgb/MMincare/actions/runs/37980089248) đã PASS (demo tests, export deterministic, TypeScript và lint); Vercel Preview status là success. Local có 75 test/14 file đạt, các script Auth/Reminder đạt, full lint/TypeScript/diff check đạt. Build production bằng Webpack đạt và `/demo` là static page; build mặc định Turbopack bị chặn bởi symlink `node_modules` bên ngoài project trong môi trường local.
+
+Browser local không kết nối được; lần mở Preview bị browser URL policy chặn. Chưa có browser smoke, screenshot hoặc visual QA mobile/desktop; trạng thái deployment thành công không chứng minh những mục này.
+
 Website thật giữ Supabase Auth, API, Owner RLS và private Storage. Demo dùng dataset hư cấu và state client, tách khỏi backend. Chỉ route chính xác `/demo` hoặc `/demo/` bỏ qua session refresh; không mở bypass cho các API hoặc protected page. Không có mock API, service-role key, Auth account chung, migration hoặc seed production.
 
 `sessionStorage` giữ dữ liệu theo tab và qua reload. Hai trình duyệt/tab mới có bộ mẫu độc lập; tab được nhân bản có thể nhận bản sao khởi đầu theo hành vi trình duyệt, nhưng thao tác sau đó độc lập. Đây không phải chứng minh phân quyền Owner A/B của hệ thống thật. Nếu trình duyệt chặn storage, demo vẫn chạy trong bộ nhớ và báo rằng reload sẽ mất thay đổi.
