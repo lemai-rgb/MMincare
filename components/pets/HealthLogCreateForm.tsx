@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 
 import type { HealthLog } from "@/components/pets/PetHealthHistory";
+import { fetchJsonWithTimeout, InvalidJsonResponseError, RequestTimeoutError } from "@/lib/http/fetchJsonWithTimeout";
 import {
   HEALTH_STATUS_OPTIONS,
   type HealthStatusOption,
@@ -15,6 +16,8 @@ type HealthLogCreateFormProps = {
   onCancel: () => void;
   onCreated: (healthLog: HealthLog) => void;
   onUpdated?: (healthLog: HealthLog) => void;
+  onMutationStart?: () => void;
+  onMutationCancel?: () => void;
 };
 
 type HealthLogFormErrors = {
@@ -29,8 +32,44 @@ type HealthLogCreatePayload = {
   error?: string;
 };
 
+type HealthLogCreateSnapshot = {
+  idempotency_key: string;
+  payload: {
+    recorded_on: string;
+    weight: number | null;
+    food_amount: string | null;
+    food_type: string | null;
+    status: string | null;
+    note: string | null;
+  };
+};
+
+class HealthLogResponseError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+    readonly resultUncertain: boolean,
+  ) {
+    super(message);
+    this.name = "HealthLogResponseError";
+  }
+}
+
 function normalizeText(value: string) {
   return value.trim() || null;
+}
+
+function isHealthLog(value: unknown): value is HealthLog {
+  if (!value || typeof value !== "object") return false;
+  const row = value as Partial<HealthLog>;
+  return typeof row.health_log_id === "string"
+    && typeof row.pet_id === "string"
+    && typeof row.created_by === "string"
+    && typeof row.recorded_on === "string"
+    && typeof row.logged_at === "string"
+    && Number.isFinite(Date.parse(row.logged_at))
+    && (row.weight === null || (typeof row.weight === "number" && Number.isFinite(row.weight)))
+    && [row.food_amount, row.food_type, row.status, row.note].every((field) => field === null || typeof field === "string");
 }
 
 function parseWeight(value: string) {
@@ -70,7 +109,7 @@ function isValidRecordedOn(value: string) {
     && value <= getVietnamToday();
 }
 
-export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onUpdated }: HealthLogCreateFormProps) {
+export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onUpdated, onMutationStart, onMutationCancel }: HealthLogCreateFormProps) {
   const isEditing = Boolean(healthLog);
   const [recordedOn, setRecordedOn] = useState(() => healthLog?.recorded_on ?? getVietnamToday());
   const [weight, setWeight] = useState(() => healthLog?.weight === null || healthLog?.weight === undefined ? "" : String(healthLog.weight));
@@ -87,9 +126,15 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
   const [note, setNote] = useState(() => healthLog?.note ?? "");
   const [errors, setErrors] = useState<HealthLogFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resultUncertain, setResultUncertain] = useState(false);
   const firstFieldRef = useRef<HTMLInputElement>(null);
   const submissionGuard = useRef(false);
   const mountedRef = useRef(true);
+  const mutationControllerRef = useRef<AbortController | null>(null);
+  const mutationSequenceRef = useRef(0);
+  const creationKeyRef = useRef<string | null>(null);
+  const createSnapshotRef = useRef<HealthLogCreateSnapshot | null>(null);
+  const mutationAttemptedRef = useRef(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -99,6 +144,12 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
       window.cancelAnimationFrame(frame);
     };
   }, [healthLog?.health_log_id]);
+
+  useEffect(() => () => {
+    mutationSequenceRef.current += 1;
+    mutationControllerRef.current?.abort();
+    mutationControllerRef.current = null;
+  }, []);
 
   function clearError(field?: keyof HealthLogFormErrors) {
     setErrors((current) => field
@@ -124,7 +175,12 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
 
   function cancel() {
     if (submissionGuard.current) return;
+    if (mutationAttemptedRef.current) {
+      mutationAttemptedRef.current = false;
+      onMutationCancel?.();
+    }
     resetForm();
+    setResultUncertain(false);
     onCancel();
   }
 
@@ -132,88 +188,154 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
     event.preventDefault();
     if (submissionGuard.current) return;
 
-    const parsedWeight = parseWeight(weight);
-    if (parsedWeight.error) {
-      setErrors({ weight: parsedWeight.error });
-      return;
-    }
+    const retrySnapshot = !isEditing && resultUncertain ? createSnapshotRef.current : null;
+    let normalized: HealthLogCreateSnapshot["payload"];
+    if (retrySnapshot) {
+      normalized = retrySnapshot.payload;
+    } else {
+      const parsedWeight = parseWeight(weight);
+      if (parsedWeight.error) {
+        setErrors({ weight: parsedWeight.error });
+        return;
+      }
 
-    if (!isValidRecordedOn(recordedOn)) {
-      setErrors({ recorded_on: "Ngày ghi nhận phải hợp lệ và không ở tương lai." });
-      return;
-    }
+      if (!isValidRecordedOn(recordedOn)) {
+        setErrors({ recorded_on: "Ngày ghi nhận phải hợp lệ và không ở tương lai." });
+        return;
+      }
 
-    const normalizedStatus = normalizeText(selectedStatus === "Khác" ? customStatus : selectedStatus);
-    if (selectedStatus === "Khác" && !normalizedStatus) {
-      setErrors({ status: "Vui lòng nhập tình trạng khác." });
-      return;
-    }
+      const normalizedStatus = normalizeText(selectedStatus === "Khác" ? customStatus : selectedStatus);
+      if (selectedStatus === "Khác" && !normalizedStatus) {
+        setErrors({ status: "Vui lòng nhập tình trạng khác." });
+        return;
+      }
 
-    const normalized = {
-      recorded_on: recordedOn,
-      weight: parsedWeight.value ?? null,
-      food_amount: normalizeText(foodAmount),
-      food_type: normalizeText(foodType),
-      status: normalizedStatus,
-      note: normalizeText(note),
-    };
+      normalized = {
+        recorded_on: recordedOn,
+        weight: parsedWeight.value ?? null,
+        food_amount: normalizeText(foodAmount),
+        food_type: normalizeText(foodType),
+        status: normalizedStatus,
+        note: normalizeText(note),
+      };
 
-    const hasBusinessValue = normalized.weight !== null
-      || normalized.food_amount !== null
-      || normalized.food_type !== null
-      || normalized.status !== null
-      || normalized.note !== null;
-    if (!hasBusinessValue) {
-      setErrors({ form: "Vui lòng nhập ít nhất một thông tin sức khỏe." });
-      return;
+      const hasBusinessValue = normalized.weight !== null
+        || normalized.food_amount !== null
+        || normalized.food_type !== null
+        || normalized.status !== null
+        || normalized.note !== null;
+      if (!hasBusinessValue) {
+        setErrors({ form: "Vui lòng nhập ít nhất một thông tin sức khỏe." });
+        return;
+      }
     }
 
     submissionGuard.current = true;
+    mutationAttemptedRef.current = true;
     setIsSubmitting(true);
     setErrors({});
+    onMutationStart?.();
+    const operation = ++mutationSequenceRef.current;
+    mutationControllerRef.current?.abort();
+    const controller = new AbortController();
+    mutationControllerRef.current = controller;
+    if (!isEditing && !createSnapshotRef.current) {
+      const idempotencyKey = creationKeyRef.current ?? crypto.randomUUID();
+      createSnapshotRef.current = { idempotency_key: idempotencyKey, payload: normalized };
+      creationKeyRef.current = idempotencyKey;
+    }
+    const requestBody = isEditing
+      ? normalized
+      : {
+        ...createSnapshotRef.current?.payload,
+        idempotency_key: createSnapshotRef.current?.idempotency_key,
+      };
 
     try {
-      const response = await fetch(
+      const { response, payload: rawPayload } = await fetchJsonWithTimeout(
         isEditing
           ? `/api/pets/${encodeURIComponent(petId)}/health-logs/${encodeURIComponent(healthLog?.health_log_id ?? "")}`
           : `/api/pets/${encodeURIComponent(petId)}/health-logs`,
         {
         method: isEditing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(normalized),
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
         },
       );
 
-      let payload: HealthLogCreatePayload = {};
-      try {
-        payload = await response.json() as HealthLogCreatePayload;
-      } catch {
-        // Keep the browser-facing error generic when the response is not JSON.
+      const payload = rawPayload && typeof rawPayload === "object"
+        ? rawPayload as HealthLogCreatePayload
+        : {};
+
+      if (!response.ok) {
+        if (!isEditing && response.status === 409 && isHealthLog(payload.health_log)) {
+          if (!mountedRef.current || operation !== mutationSequenceRef.current || controller.signal.aborted) return;
+          createSnapshotRef.current = null;
+          creationKeyRef.current = null;
+          mutationAttemptedRef.current = false;
+          setResultUncertain(false);
+          resetForm();
+          onCreated(payload.health_log);
+          return;
+        }
+        throw new HealthLogResponseError(
+          response.status,
+          response.status === 400 && payload.error
+            ? payload.error
+            : response.status === 409
+            ? "Yêu cầu tạo nhật ký không thể khôi phục. Hãy kiểm tra nhật ký trước khi thử lại."
+            : "Không thể lưu chỉ số sức khỏe lúc này. Vui lòng thử lại.",
+          response.status >= 500,
+        );
       }
 
-      if (!response.ok || !payload.health_log) {
-        throw new Error(response.status === 400 && payload.error
-          ? payload.error
-          : "Không thể lưu chỉ số sức khỏe lúc này. Vui lòng thử lại.");
+      if (!isHealthLog(payload.health_log)) {
+        throw new HealthLogResponseError(
+          response.status,
+          "Chưa đọc được kết quả lưu. Hãy kiểm tra nhật ký trước khi thử lại.",
+          true,
+        );
       }
 
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || operation !== mutationSequenceRef.current || controller.signal.aborted) return;
+      createSnapshotRef.current = null;
+      creationKeyRef.current = null;
+      mutationAttemptedRef.current = false;
+      setResultUncertain(false);
       if (isEditing) onUpdated?.(payload.health_log);
       else {
         resetForm();
         onCreated(payload.health_log);
       }
     } catch (requestError: unknown) {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || operation !== mutationSequenceRef.current || controller.signal.aborted) return;
+      const uncertain = requestError instanceof RequestTimeoutError
+        || requestError instanceof InvalidJsonResponseError
+        || requestError instanceof TypeError
+        || requestError instanceof HealthLogResponseError && requestError.resultUncertain;
+      if (!uncertain) {
+        createSnapshotRef.current = null;
+        creationKeyRef.current = null;
+      }
+      setResultUncertain(uncertain);
       setErrors({
-        form: requestError instanceof TypeError
-          ? "Không thể kết nối máy chủ. Vui lòng thử lại."
+        form: requestError instanceof RequestTimeoutError
+          ? "Chưa xác nhận được kết quả lưu. Hãy kiểm tra nhật ký trước khi thử lại."
+          : requestError instanceof InvalidJsonResponseError
+          ? "Chưa đọc được kết quả lưu. Hãy kiểm tra nhật ký trước khi thử lại."
+          : requestError instanceof TypeError
+          ? "Mất kết nối khi lưu. Hãy kiểm tra nhật ký trước khi thử lại."
+          : requestError instanceof HealthLogResponseError && requestError.resultUncertain
+          ? requestError.message
           : requestError instanceof Error
             ? requestError.message
             : "Không thể lưu chỉ số sức khỏe lúc này. Vui lòng thử lại.",
       });
     } finally {
+      if (operation !== mutationSequenceRef.current) return;
       submissionGuard.current = false;
+      if (mutationControllerRef.current === controller) mutationControllerRef.current = null;
       if (mountedRef.current) setIsSubmitting(false);
     }
   }
@@ -227,7 +349,7 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
           <span>Ngày ghi nhận</span>
           <input
             aria-invalid={Boolean(errors.recorded_on)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || resultUncertain}
             max={getVietnamToday()}
             onChange={(event) => {
               setRecordedOn(event.target.value);
@@ -245,7 +367,7 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
           <span className={styles.healthWeightControl}>
             <input
               aria-invalid={Boolean(errors.weight)}
-              disabled={isSubmitting}
+              disabled={isSubmitting || resultUncertain}
               inputMode="decimal"
               onChange={(event) => {
                 setWeight(event.target.value);
@@ -265,7 +387,7 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
         <label className={`${styles.healthCreateField} ${styles.healthFoodTypeField}`}>
           <span>Loại thức ăn</span>
           <input
-            disabled={isSubmitting}
+            disabled={isSubmitting || resultUncertain}
             onChange={(event) => {
               setFoodType(event.target.value);
               clearError();
@@ -280,7 +402,7 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
         <label className={`${styles.healthCreateField} ${styles.healthFoodAmountField}`}>
           <span>Lượng thức ăn</span>
           <input
-            disabled={isSubmitting}
+            disabled={isSubmitting || resultUncertain}
             onChange={(event) => {
               setFoodAmount(event.target.value);
               clearError();
@@ -297,7 +419,7 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
           <select
             aria-label="Tình trạng"
             className={selectedStatus ? undefined : styles.healthSelectPlaceholder}
-            disabled={isSubmitting}
+            disabled={isSubmitting || resultUncertain}
             onChange={(event) => {
               const nextStatus = event.target.value as HealthStatusOption | "";
               setSelectedStatus(nextStatus);
@@ -316,7 +438,7 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
               <span>Tình trạng khác</span>
               <input
                 aria-invalid={Boolean(errors.status)}
-                disabled={isSubmitting}
+                disabled={isSubmitting || resultUncertain}
                 onChange={(event) => {
                   setCustomStatus(event.target.value);
                   clearError("status");
@@ -333,7 +455,7 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
         <label className={`${styles.healthCreateField} ${styles.healthCreateNote}`}>
           <span>Ghi chú</span>
           <textarea
-            disabled={isSubmitting}
+            disabled={isSubmitting || resultUncertain}
             onChange={(event) => {
               setNote(event.target.value);
               clearError();
@@ -349,7 +471,7 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
       <div className={styles.healthCreateActions}>
         <button disabled={isSubmitting} onClick={cancel} type="button">Hủy</button>
         <button disabled={isSubmitting} type="submit">
-          {isSubmitting ? "Đang lưu…" : isEditing ? "Lưu thay đổi" : "Lưu chỉ số"}
+          {isSubmitting ? "Đang lưu…" : resultUncertain ? "Thử lại an toàn" : isEditing ? "Lưu thay đổi" : "Lưu chỉ số"}
         </button>
       </div>
     </form>

@@ -6,9 +6,12 @@ export class RequestTimeoutError extends Error {
 }
 
 export class InvalidJsonResponseError extends Error {
-  constructor() {
+  response?: Response;
+
+  constructor(response?: Response) {
     super("Response was not valid JSON");
     this.name = "InvalidJsonResponseError";
+    this.response = response;
   }
 }
 
@@ -78,7 +81,7 @@ export async function fetchJsonWithTimeout(
       } catch {
         if (timedOut) throw new RequestTimeoutError();
         if (parentSignal?.aborted) throw createAbortError();
-        throw new InvalidJsonResponseError();
+        throw new InvalidJsonResponseError(response);
       }
     }
     if (timedOut) throw new RequestTimeoutError();

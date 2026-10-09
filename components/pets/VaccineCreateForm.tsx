@@ -24,6 +24,7 @@ type SavedVaccine = {
 type ApiResponse = {
   vaccine_record?: SavedVaccine;
   suggested_next_due_date?: string | null;
+  suggestion_status?: "not_checked" | "no_match" | "matched" | "unavailable";
   warning?: string | null;
   error?: string;
 };
@@ -93,7 +94,13 @@ export function VaccineCreateForm({ petId, species, onCancel, onSaved }: Vaccine
       });
       const payload = (await response.json()) as ApiResponse;
       if (!response.ok || !payload.vaccine_record) throw new Error(payload.error || "Không thể lưu mũi tiêm.");
-      onSaved({ entry: toEntry(payload.vaccine_record), suggestedNextDueDate: payload.suggested_next_due_date ?? null, warning: payload.warning ?? null });
+      onSaved({
+        entry: toEntry(payload.vaccine_record),
+        suggestedNextDueDate: payload.suggested_next_due_date ?? null,
+        warning: payload.warning ?? (payload.suggestion_status === "unavailable"
+          ? "Chưa thể tải quy tắc gợi ý. Bạn có thể tự nhập ngày nhắc."
+          : null),
+      });
     } catch (requestError: unknown) {
       if (!controller.signal.aborted) {
         setError(requestError instanceof TypeError ? "Không thể kết nối máy chủ. Vui lòng thử lại." : requestError instanceof Error ? requestError.message : "Không thể lưu mũi tiêm.");

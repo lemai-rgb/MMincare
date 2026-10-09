@@ -109,6 +109,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   if (!vaccineRecord) return errorResponse("Không thể lưu mũi tiêm lúc này.", 500);
 
   let suggestedNextDueDate: string | null = null;
+  let suggestionStatus: "not_checked" | "no_match" | "matched" | "unavailable" = "not_checked";
   if (pet.date_of_birth) {
     const birth = new Date(`${pet.date_of_birth}T00:00:00Z`);
     const vaccination = new Date(`${vaccineDate}T00:00:00Z`);
@@ -120,13 +121,20 @@ export async function POST(request: Request, { params }: RouteContext) {
         .eq("species", pet.species)
         .eq("is_active", true);
 
-      if (!rulesError) {
+      if (rulesError) {
+        suggestionStatus = "unavailable";
+      } else {
         const matchingRule = (rules ?? [])
           .filter((rule) => rule.vaccine_name.trim().toLowerCase() === vaccineName.toLowerCase())
           .filter((rule) => ageAtVaccination >= rule.min_age_days)
           .filter((rule) => rule.max_age_days === null || ageAtVaccination <= rule.max_age_days)
           .sort((a, b) => b.min_age_days - a.min_age_days)[0];
-        if (matchingRule) suggestedNextDueDate = addDays(vaccineDate, matchingRule.standard_interval_days);
+        if (matchingRule) {
+          suggestionStatus = "matched";
+          suggestedNextDueDate = addDays(vaccineDate, matchingRule.standard_interval_days);
+        } else {
+          suggestionStatus = "no_match";
+        }
       }
     }
   }
@@ -134,6 +142,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   return NextResponse.json({
     vaccine_record: vaccineRecord,
     suggested_next_due_date: suggestedNextDueDate,
+    suggestion_status: suggestionStatus,
     warning: vaccineDate > new Date().toISOString().slice(0, 10) ? "Ngày tiêm chưa đến." : null,
   }, { status: 201 });
 }
