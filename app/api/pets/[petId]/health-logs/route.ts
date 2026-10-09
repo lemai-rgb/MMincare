@@ -244,7 +244,13 @@ export async function POST(request: Request, { params }: RouteContext) {
   if (existingError) return jsonError("Không thể kiểm tra trạng thái nhật ký lúc này.", 500);
   if (existing) {
     if (existing.creation_payload_hash !== payloadHash) {
-      return jsonError("Mã tạo đã được dùng cho dữ liệu khác.", 409);
+      const canonical = { ...existing };
+      delete canonical.creation_payload_hash;
+      return NextResponse.json({
+        error: "Mã tạo đã được dùng cho dữ liệu khác.",
+        recovery: "canonical",
+        health_log: canonical,
+      }, { status: 409 });
     }
     const healthLog = { ...existing };
     delete healthLog.creation_payload_hash;
@@ -276,7 +282,13 @@ export async function POST(request: Request, { params }: RouteContext) {
       const concurrentError = concurrentResult.error;
       if (!concurrentError && concurrent) {
         if (concurrent.creation_payload_hash !== payloadHash) {
-          return jsonError("Mã tạo đã được dùng cho dữ liệu khác.", 409);
+          const canonical = { ...concurrent };
+          delete canonical.creation_payload_hash;
+          return NextResponse.json({
+            error: "Mã tạo đã được dùng cho dữ liệu khác.",
+            recovery: "canonical",
+            health_log: canonical,
+          }, { status: 409 });
         }
         const canonical = { ...concurrent };
         delete canonical.creation_payload_hash;

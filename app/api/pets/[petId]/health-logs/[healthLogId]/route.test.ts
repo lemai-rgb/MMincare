@@ -172,4 +172,35 @@ describe("Health Log mutation API", () => {
     }));
     expect((await second.json()).health_log.health_log_id).toBe(healthLogId);
   });
+
+  it("returns the canonical row when an idempotency key conflicts with another payload", async () => {
+    getClaims.mockResolvedValue({ data: { claims: { sub: "owner-1" } }, error: null });
+    const petQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: { pet_id: petId }, error: null }),
+    };
+    const existingQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { ...currentLog, created_by: "owner-1", creation_payload_hash: "different-payload" },
+        error: null,
+      }),
+    };
+    from.mockImplementation((table: string) => table === "pets" ? petQuery : existingQuery);
+
+    const response = await POST(postRequest({
+      recorded_on: "2026-09-16",
+      weight: 2.1,
+      note: "new payload",
+      idempotency_key: "health-create-conflict",
+    }), { params: Promise.resolve({ petId }) });
+
+    expect(response.status).toBe(409);
+    const body = await response.json();
+    expect(body.recovery).toBe("canonical");
+    expect(body.health_log.health_log_id).toBe(healthLogId);
+    expect(body.health_log.creation_payload_hash).toBeUndefined();
+  });
 });

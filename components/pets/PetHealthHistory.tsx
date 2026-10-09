@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { HealthLogCreateForm } from "@/components/pets/HealthLogCreateForm";
 import { PetHealthStatistics } from "@/components/pets/PetHealthStatistics";
 import type { HealthDashboardPeriod } from "@/lib/healthLogs/dashboard";
-import { fetchJsonWithTimeout, RequestTimeoutError } from "@/lib/http/fetchJsonWithTimeout";
+import { fetchJsonWithTimeout, InvalidJsonResponseError, RequestTimeoutError } from "@/lib/http/fetchJsonWithTimeout";
 import styles from "@/styles/petDetail.module.css";
 
 export type HealthLog = {
@@ -290,6 +290,7 @@ export function PetHealthHistory({
   const historyRequestControllerRef = useRef<AbortController | null>(null);
   const loadedPetIdRef = useRef(petId);
   const deleteControllerRef = useRef<AbortController | null>(null);
+  const deleteNeedsRevalidateRef = useRef(false);
   const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
   const dialogWasOpenRef = useRef(false);
 
@@ -436,6 +437,7 @@ export function PetHealthHistory({
     deleteControllerRef.current?.abort();
     const controller = new AbortController();
     deleteControllerRef.current = controller;
+    deleteNeedsRevalidateRef.current = false;
     invalidateHistoryRequest();
     setIsDeleting(true);
     setDeleteError("");
@@ -451,6 +453,7 @@ export function PetHealthHistory({
         throw new Error("Không thể xóa nhật ký sức khỏe lúc này. Vui lòng thử lại.");
       }
       if (!mountedRef.current || controller.signal.aborted) return;
+      deleteNeedsRevalidateRef.current = false;
       setHealthLogs((current) => current.filter((item) => item.health_log_id !== deletingLog.health_log_id));
       setDeletingLog(null);
       setNotice("Đã xóa nhật ký sức khỏe.");
@@ -458,8 +461,12 @@ export function PetHealthHistory({
     } catch (error: unknown) {
       if (!mountedRef.current || controller.signal.aborted) return;
       if (error instanceof RequestTimeoutError) {
+        deleteNeedsRevalidateRef.current = true;
         setDeleteError("Xóa nhật ký quá lâu. Hãy kiểm tra kết nối và thử lại.");
         return;
+      }
+      if (error instanceof TypeError || error instanceof InvalidJsonResponseError) {
+        deleteNeedsRevalidateRef.current = true;
       }
       setDeleteError(error instanceof Error && error.message.startsWith("Không thể")
         ? error.message
@@ -468,6 +475,18 @@ export function PetHealthHistory({
       if (deleteControllerRef.current === controller) deleteControllerRef.current = null;
       if (mountedRef.current && deleteControllerRef.current !== controller) setIsDeleting(false);
       else if (mountedRef.current) setIsDeleting(false);
+    }
+  }
+
+  function cancelDeleteDialog() {
+    if (isDeleting) return;
+    const shouldRevalidate = deleteNeedsRevalidateRef.current;
+    deleteNeedsRevalidateRef.current = false;
+    setDeletingLog(null);
+    setDeleteError("");
+    if (shouldRevalidate) {
+      invalidateHistoryRequest();
+      retry();
     }
   }
 
@@ -638,9 +657,7 @@ export function PetHealthHistory({
           error={deleteError}
           isDeleting={isDeleting}
           log={deletingLog}
-          onCancel={() => {
-            if (!isDeleting) setDeletingLog(null);
-          }}
+          onCancel={cancelDeleteDialog}
           onConfirm={confirmDelete}
         />
       )}
