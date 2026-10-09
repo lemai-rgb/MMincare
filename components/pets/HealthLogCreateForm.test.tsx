@@ -80,4 +80,24 @@ describe("HealthLogCreateForm keyboard behavior", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ method: "POST" });
   });
+
+  it("reuses the same idempotency key after an uncertain POST result", async () => {
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new TypeError("network lost"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ health_log: createdHealthLog }), { status: 201 }));
+    const onCreated = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    render(<HealthLogCreateForm petId="pet-1" onCancel={vi.fn()} onCreated={onCreated} />);
+
+    fireEvent.change(screen.getByPlaceholderText("VD: 2.00"), { target: { value: "2.1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu chỉ số" }));
+    expect(await screen.findByRole("button", { name: "Thử lại an toàn" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại an toàn" }));
+    await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
+
+    const firstBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    const secondBody = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body));
+    expect(firstBody.idempotency_key).toBeTruthy();
+    expect(secondBody.idempotency_key).toBe(firstBody.idempotency_key);
+  });
 });

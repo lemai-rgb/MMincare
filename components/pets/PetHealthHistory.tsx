@@ -288,6 +288,7 @@ export function PetHealthHistory({
   const requestId = useRef(0);
   const mountedRef = useRef(true);
   const historyRequestControllerRef = useRef<AbortController | null>(null);
+  const loadedPetIdRef = useRef(petId);
   const deleteControllerRef = useRef<AbortController | null>(null);
   const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
   const dialogWasOpenRef = useRef(false);
@@ -327,6 +328,11 @@ export function PetHealthHistory({
     setReloadToken((token) => token + 1);
   }, []);
 
+  const handleMutationCancel = useCallback(() => {
+    invalidateHistoryRequest();
+    retry();
+  }, [invalidateHistoryRequest, retry]);
+
   useEffect(() => {
     const activeRequestId = ++requestId.current;
     if (activeView !== "history") return undefined;
@@ -334,11 +340,13 @@ export function PetHealthHistory({
     const controller = new AbortController();
     historyRequestControllerRef.current = controller;
     let active = true;
+    const petChanged = loadedPetIdRef.current !== petId;
+    loadedPetIdRef.current = petId;
+    if (petChanged) setHealthLogs([]);
     queueMicrotask(() => {
       if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
       setIsLoading(true);
       setLoadError(false);
-      setHealthLogs([]);
     });
 
     void getHealthLogs(petId, controller.signal)
@@ -571,6 +579,7 @@ export function PetHealthHistory({
               healthLog={editingLog ?? undefined}
               onCancel={closeForm}
               onCreated={handleCreated}
+              onMutationCancel={handleMutationCancel}
               onMutationStart={invalidateHistoryRequest}
               onUpdated={handleUpdated}
               petId={petId}

@@ -144,4 +144,47 @@ describe("PetHealthHistory Owner edit/delete", () => {
     await flush();
     expect(screen.getByRole("article").textContent).toContain(created.note);
   });
+
+  it("reloads history after a failed create is cancelled instead of leaving loading stuck", async () => {
+    const pendingGet = Promise.withResolvers<Response>();
+    let getCount = 0;
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === "POST") return Promise.resolve(response({ error: "temporary failure" }, 500));
+      getCount += 1;
+      return getCount === 1 ? pendingGet.promise : Promise.resolve(response({ health_logs: [firstLog] }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const view = render(
+      <PetHealthHistory
+        activeView="history"
+        currentUserId="owner-1"
+        formOpen
+        initialPeriod="week"
+        isOwner
+        petId="pet-1"
+        petName="Meo"
+      />,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText("VD: 2.00"), { target: { value: "2.2" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu chỉ số" }));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([, options]) => options?.method === "POST")).toBe(true));
+    await waitFor(() => expect((screen.getByRole("button", { name: "Lưu chỉ số" }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(screen.getByRole("button", { name: "Hủy" }));
+    view.rerender(
+      <PetHealthHistory
+        activeView="history"
+        currentUserId="owner-1"
+        formOpen={false}
+        initialPeriod="week"
+        isOwner
+        petId="pet-1"
+        petName="Meo"
+      />,
+    );
+
+    await waitFor(() => expect(getCount).toBe(2));
+    expect(await screen.findByText(/Theo dõi thêm/)).toBeTruthy();
+    expect(screen.queryByText("Đang tải nhật ký sức khỏe…")).toBeNull();
+  });
 });

@@ -399,6 +399,28 @@ jobs:
             ) then
               raise exception 'Pet idempotency columns are missing';
             end if;
+            if not exists (
+              select 1 from information_schema.columns
+              where table_schema = 'public'
+                and table_name = 'health_logs'
+                and column_name = 'creation_key'
+            ) or not exists (
+              select 1 from information_schema.columns
+              where table_schema = 'public'
+                and table_name = 'health_logs'
+                and column_name = 'creation_payload_hash'
+            ) then
+              raise exception 'Health Log idempotency columns are missing';
+            end if;
+            if not exists (
+              select 1
+              from pg_catalog.pg_indexes
+              where schemaname = 'public'
+                and tablename = 'health_logs'
+                and indexname = 'health_logs_owner_pet_creation_key_uidx'
+            ) then
+              raise exception 'Health Log idempotency index is missing';
+            end if;
           end
           $$;
           SQL

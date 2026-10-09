@@ -98,7 +98,7 @@ export function VaccineCreateForm({ petId, species, onCancel, onSaved }: Vaccine
         entry: toEntry(payload.vaccine_record),
         suggestedNextDueDate: payload.suggested_next_due_date ?? null,
         warning: payload.warning ?? (payload.suggestion_status === "unavailable"
-          ? "ChÆ°a thá»ƒ táº£i quy táº¯c gá»£i Ã½. Báº¡n cÃ³ thá»ƒ tá»± nháº­p ngÃ y nháº¯c."
+          ? "Chưa thể tải quy tắc gợi ý. Bạn có thể tự nhập ngày nhắc."
           : null),
       });
     } catch (requestError: unknown) {

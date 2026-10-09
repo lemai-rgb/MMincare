@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 
 import type { HealthLog } from "@/components/pets/PetHealthHistory";
-import { fetchJsonWithTimeout, RequestTimeoutError } from "@/lib/http/fetchJsonWithTimeout";
+import { fetchJsonWithTimeout, InvalidJsonResponseError, RequestTimeoutError } from "@/lib/http/fetchJsonWithTimeout";
 import {
   HEALTH_STATUS_OPTIONS,
   type HealthStatusOption,
@@ -17,6 +17,7 @@ type HealthLogCreateFormProps = {
   onCreated: (healthLog: HealthLog) => void;
   onUpdated?: (healthLog: HealthLog) => void;
   onMutationStart?: () => void;
+  onMutationCancel?: () => void;
 };
 
 type HealthLogFormErrors = {
@@ -85,7 +86,7 @@ function isValidRecordedOn(value: string) {
     && value <= getVietnamToday();
 }
 
-export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onUpdated, onMutationStart }: HealthLogCreateFormProps) {
+export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onUpdated, onMutationStart, onMutationCancel }: HealthLogCreateFormProps) {
   const isEditing = Boolean(healthLog);
   const [recordedOn, setRecordedOn] = useState(() => healthLog?.recorded_on ?? getVietnamToday());
   const [weight, setWeight] = useState(() => healthLog?.weight === null || healthLog?.weight === undefined ? "" : String(healthLog.weight));
@@ -102,11 +103,14 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
   const [note, setNote] = useState(() => healthLog?.note ?? "");
   const [errors, setErrors] = useState<HealthLogFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resultUncertain, setResultUncertain] = useState(false);
   const firstFieldRef = useRef<HTMLInputElement>(null);
   const submissionGuard = useRef(false);
   const mountedRef = useRef(true);
   const mutationControllerRef = useRef<AbortController | null>(null);
   const mutationSequenceRef = useRef(0);
+  const creationKeyRef = useRef<string | null>(null);
+  const mutationAttemptedRef = useRef(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -147,7 +151,12 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
 
   function cancel() {
     if (submissionGuard.current) return;
+    if (mutationAttemptedRef.current) {
+      mutationAttemptedRef.current = false;
+      onMutationCancel?.();
+    }
     resetForm();
+    setResultUncertain(false);
     onCancel();
   }
 
@@ -192,6 +201,7 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
     }
 
     submissionGuard.current = true;
+    mutationAttemptedRef.current = true;
     setIsSubmitting(true);
     setErrors({});
     onMutationStart?.();
@@ -199,6 +209,11 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
     mutationControllerRef.current?.abort();
     const controller = new AbortController();
     mutationControllerRef.current = controller;
+    if (!isEditing && !creationKeyRef.current) creationKeyRef.current = crypto.randomUUID();
+    const requestBody = {
+      ...normalized,
+      ...(!isEditing && creationKeyRef.current ? { idempotency_key: creationKeyRef.current } : {}),
+    };
 
     try {
       const { response, payload: rawPayload } = await fetchJsonWithTimeout(
@@ -208,7 +223,7 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
         {
         method: isEditing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(normalized),
+        body: JSON.stringify(requestBody),
         signal: controller.signal,
         },
       );
@@ -224,6 +239,9 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
       }
 
       if (!mountedRef.current || operation !== mutationSequenceRef.current || controller.signal.aborted) return;
+      creationKeyRef.current = null;
+      mutationAttemptedRef.current = false;
+      setResultUncertain(false);
       if (isEditing) onUpdated?.(payload.health_log);
       else {
         resetForm();
@@ -231,11 +249,17 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
       }
     } catch (requestError: unknown) {
       if (!mountedRef.current || operation !== mutationSequenceRef.current || controller.signal.aborted) return;
+      const uncertain = requestError instanceof RequestTimeoutError
+        || requestError instanceof InvalidJsonResponseError
+        || requestError instanceof TypeError;
+      setResultUncertain(uncertain);
       setErrors({
         form: requestError instanceof RequestTimeoutError
-          ? "Lưu nhật ký quá lâu. Hãy kiểm tra kết nối và thử lại; không tự động gửi lại."
+          ? "Chưa xác nhận được kết quả lưu. Hãy kiểm tra nhật ký trước khi thử lại."
+          : requestError instanceof InvalidJsonResponseError
+          ? "Chưa đọc được kết quả lưu. Hãy kiểm tra nhật ký trước khi thử lại."
           : requestError instanceof TypeError
-          ? "Không thể kết nối máy chủ. Vui lòng thử lại."
+          ? "Mất kết nối khi lưu. Hãy kiểm tra nhật ký trước khi thử lại."
           : requestError instanceof Error
             ? requestError.message
             : "Không thể lưu chỉ số sức khỏe lúc này. Vui lòng thử lại.",
@@ -379,7 +403,7 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
       <div className={styles.healthCreateActions}>
         <button disabled={isSubmitting} onClick={cancel} type="button">Hủy</button>
         <button disabled={isSubmitting} type="submit">
-          {isSubmitting ? "Đang lưu…" : isEditing ? "Lưu thay đổi" : "Lưu chỉ số"}
+          {isSubmitting ? "Đang lưu…" : resultUncertain ? "Thử lại an toàn" : isEditing ? "Lưu thay đổi" : "Lưu chỉ số"}
         </button>
       </div>
     </form>

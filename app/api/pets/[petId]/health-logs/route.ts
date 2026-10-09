@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
@@ -8,10 +9,28 @@ type RouteContext = { params: Promise<{ petId: string }> };
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const BUSINESS_FIELDS = ["weight", "food_amount", "food_type", "status", "note"] as const;
 const ALLOWED_FIELDS = ["recorded_on", ...BUSINESS_FIELDS] as const;
+const POST_ALLOWED_FIELDS = [...ALLOWED_FIELDS, "idempotency_key"] as const;
 const TEXT_FIELDS = ["food_amount", "food_type", "status", "note"] as const;
+const IDEMPOTENCY_KEY_MAX_LENGTH = 128;
 
-type AllowedField = (typeof ALLOWED_FIELDS)[number];
 type TextField = (typeof TEXT_FIELDS)[number];
+
+type HealthLogRecord = {
+  health_log_id: string;
+  pet_id: string;
+  created_by: string;
+  recorded_on: string;
+  weight: number | null;
+  food_amount: string | null;
+  food_type: string | null;
+  status: string | null;
+  note: string | null;
+  logged_at: string;
+};
+
+type IdempotentHealthLog = HealthLogRecord & {
+  creation_payload_hash?: string | null;
+};
 
 function jsonError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -19,6 +38,18 @@ function jsonError(message: string, status: number) {
 
 function validUuid(value: string) {
   return UUID_PATTERN.test(value);
+}
+
+function hashHealthLogPayload(payload: {
+  recorded_on: string;
+  weight: number | null;
+  food_amount: string | null;
+  food_type: string | null;
+  status: string | null;
+  note: string | null;
+}) {
+  const canonical = JSON.stringify(payload);
+  return createHash("sha256").update(canonical).digest("hex");
 }
 
 type NormalizedText = { ok: true; value: string | null } | { ok: false };
@@ -151,9 +182,17 @@ export async function POST(request: Request, { params }: RouteContext) {
 
   const body = payload as Record<string, unknown>;
   const bodyKeys = Object.keys(body);
-  if (bodyKeys.some((key) => !ALLOWED_FIELDS.includes(key as AllowedField))) {
+  if (bodyKeys.some((key) => !POST_ALLOWED_FIELDS.includes(key as (typeof POST_ALLOWED_FIELDS)[number]))) {
     return jsonError("Dữ liệu nhật ký sức khỏe không hợp lệ.", 400);
   }
+
+  const rawIdempotencyKey = body.idempotency_key;
+  if (typeof rawIdempotencyKey !== "string"
+    || !rawIdempotencyKey.trim()
+    || rawIdempotencyKey.length > IDEMPOTENCY_KEY_MAX_LENGTH) {
+    return jsonError("Yêu cầu tạo nhật ký không hợp lệ. Vui lòng thử lại.", 400);
+  }
+  const idempotencyKey = rawIdempotencyKey.trim();
 
   if (!validRecordedOn(body.recorded_on)) {
     return jsonError("Ngày ghi nhận phải có định dạng YYYY-MM-DD, là ngày hợp lệ và không ở tương lai.", 400);
@@ -175,7 +214,7 @@ export async function POST(request: Request, { params }: RouteContext) {
       return [field, normalized.ok ? normalized.value : null];
     }),
   ) as Record<TextField, string | null>;
-  const normalizedWeight = weight === undefined || weight === null ? null : weight;
+  const normalizedWeight: number | null = weight === undefined || weight === null ? null : weight as number;
   const hasBusinessValue = normalizedWeight !== null
     || TEXT_FIELDS.some((field) => normalizedText[field] !== null);
   if (!hasBusinessValue) {
@@ -186,19 +225,64 @@ export async function POST(request: Request, { params }: RouteContext) {
   if (petError) return jsonError("Không thể kiểm tra thú cưng lúc này.", 500);
   if (!pet) return jsonError("Không tìm thấy thú cưng.", 404);
 
+  const canonicalPayload = {
+    recorded_on: body.recorded_on as string,
+    weight: normalizedWeight,
+    ...normalizedText,
+  };
+  const payloadHash = hashHealthLogPayload(canonicalPayload);
+  const selectFields = "health_log_id, pet_id, created_by, recorded_on, weight, food_amount, food_type, status, note, logged_at";
+  const existingResult = await supabase
+    .from("health_logs")
+    .select(`${selectFields}, creation_payload_hash`)
+    .eq("created_by", userId)
+    .eq("pet_id", petId)
+    .eq("creation_key", idempotencyKey)
+    .maybeSingle();
+  const existing = existingResult.data as IdempotentHealthLog | null;
+  const existingError = existingResult.error;
+  if (existingError) return jsonError("Không thể kiểm tra trạng thái nhật ký lúc này.", 500);
+  if (existing) {
+    if (existing.creation_payload_hash !== payloadHash) {
+      return jsonError("Mã tạo đã được dùng cho dữ liệu khác.", 409);
+    }
+    const healthLog = { ...existing };
+    delete healthLog.creation_payload_hash;
+    return NextResponse.json({ health_log: healthLog }, { status: 200 });
+  }
+
   const { data: healthLog, error: insertError } = await supabase
     .from("health_logs")
     .insert({
       pet_id: petId,
       created_by: userId,
-      recorded_on: body.recorded_on,
-      weight: normalizedWeight,
-      ...normalizedText,
+      ...canonicalPayload,
+      creation_key: idempotencyKey,
+      creation_payload_hash: payloadHash,
     })
-    .select("health_log_id, pet_id, created_by, recorded_on, weight, food_amount, food_type, status, note, logged_at")
+    .select(selectFields)
     .single();
 
   if (insertError || !healthLog) {
+    if (insertError?.code === "23505") {
+      const concurrentResult = await supabase
+        .from("health_logs")
+        .select(`${selectFields}, creation_payload_hash`)
+        .eq("created_by", userId)
+        .eq("pet_id", petId)
+        .eq("creation_key", idempotencyKey)
+        .maybeSingle();
+      const concurrent = concurrentResult.data as IdempotentHealthLog | null;
+      const concurrentError = concurrentResult.error;
+      if (!concurrentError && concurrent) {
+        if (concurrent.creation_payload_hash !== payloadHash) {
+          return jsonError("Mã tạo đã được dùng cho dữ liệu khác.", 409);
+        }
+        const canonical = { ...concurrent };
+        delete canonical.creation_payload_hash;
+        return NextResponse.json({ health_log: canonical }, { status: 200 });
+      }
+    }
     return jsonError("Không thể lưu nhật ký sức khỏe lúc này.", 500);
   }
 
