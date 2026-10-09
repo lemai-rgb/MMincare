@@ -29,6 +29,15 @@ function nullableString(value: unknown): value is string | null {
   return value === null || typeof value === "string";
 }
 
+// The route's getPeriodRange() returns offset timestamps, while recorded_on
+// remains date-only. Keep legacy date-only fixtures compatible without
+// weakening validation of business dates or accepting arbitrary date strings.
+function validPeriodBoundary(value: unknown): value is string {
+  return validDate(value) || (typeof value === "string"
+    && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(value)
+    && validDate(value.slice(0, 10)) && validTimestamp(value));
+}
+
 function isWeightTrendPoint(value: unknown): value is WeightTrendPoint {
   if (!value || typeof value !== "object") return false;
   const point = value as Record<string, unknown>;
@@ -92,8 +101,8 @@ function isSummary(value: unknown): value is HealthDashboardData["summary"] {
 export function parseHealthDashboardData(payload: unknown, expectedPeriod: HealthDashboardPeriod): HealthDashboardData | null {
   if (!payload || typeof payload !== "object") return null;
   const data = payload as Record<string, unknown>;
-  if (data.period !== expectedPeriod || !validDate(data.period_start) || !validDate(data.period_end)) return null;
-  if (data.period_start > data.period_end || !isSummary(data.summary)) return null;
+  if (data.period !== expectedPeriod || !validPeriodBoundary(data.period_start) || !validPeriodBoundary(data.period_end)) return null;
+  if (Date.parse(data.period_start) > Date.parse(data.period_end) || !isSummary(data.summary)) return null;
   if (!Array.isArray(data.weight_trend) || !data.weight_trend.every(isWeightTrendPoint)) return null;
   if (!Array.isArray(data.status_counts) || data.status_counts.length !== HEALTH_STATUS_GROUPS.length || !data.status_counts.every(isStatusCount)) return null;
   const statuses = new Set(data.status_counts.map((item) => (item as StatusCount).status));
