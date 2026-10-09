@@ -272,7 +272,7 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
               <h1>{pet.name}</h1>
               <p className={styles.metadata}>
                 {metadata.map((item, index) => (
-                  <span className={styles.metadataItem} key={`${item}-${index}`}>
+                  <span className={`${styles.metadataItem} ${index === metadata.length - 1 && age ? styles.metadataAge : ""}`} key={`${item}-${index}`}>
                     {index > 0 && <span aria-hidden="true" className={styles.metadataSeparator}>•</span>}
                     {item}
                   </span>

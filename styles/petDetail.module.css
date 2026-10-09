@@ -220,6 +220,10 @@
   min-width: 0;
   align-items: baseline;
   gap: 10px;
+  overflow-wrap: anywhere;
+}
+
+.metadataAge {
   white-space: nowrap;
 }
 
