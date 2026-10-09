@@ -355,6 +355,7 @@ export function PetHealthHistory({
         if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
         setHealthLogs(nextLogs);
         setLoadError(false);
+        if (deleteNeedsRevalidateRef.current) deleteNeedsRevalidateRef.current = false;
       })
       .catch(() => {
         if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
@@ -437,7 +438,6 @@ export function PetHealthHistory({
     deleteControllerRef.current?.abort();
     const controller = new AbortController();
     deleteControllerRef.current = controller;
-    deleteNeedsRevalidateRef.current = false;
     invalidateHistoryRequest();
     setIsDeleting(true);
     setDeleteError("");

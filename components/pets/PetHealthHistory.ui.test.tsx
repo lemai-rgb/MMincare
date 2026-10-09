@@ -136,6 +136,47 @@ describe("PetHealthHistory Owner edit/delete", () => {
     await waitFor(() => expect(screen.getByRole("article").textContent).toContain("Canonical after delete retry"));
   });
 
+  it("keeps an uncertain delete through a retry 404 and revalidates only after cancel", async () => {
+    let getCount = 0;
+    let deleteCount = 0;
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === "DELETE") {
+        deleteCount += 1;
+        return deleteCount === 1
+          ? Promise.reject(new TypeError("response lost"))
+          : Promise.resolve(response({ error: "not found" }, 404));
+      }
+      getCount += 1;
+      return Promise.resolve(response({ health_logs: getCount === 1 ? [firstLog] : [] }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(
+      <PetHealthHistory
+        activeView="history"
+        currentUserId="owner-1"
+        formOpen={false}
+        initialPeriod="week"
+        isOwner
+        petId="pet-1"
+        petName="Meo"
+      />,
+    );
+
+    expect(await screen.findByText(/Theo dõi thêm/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Xóa nhật ký ngày 16/09/2026" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xóa nhật ký" }));
+    expect(await screen.findByRole("alert")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Xóa nhật ký" }));
+    await waitFor(() => expect(deleteCount).toBe(2));
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(screen.getByText(/Theo dõi thêm/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Hủy" }));
+    await waitFor(() => expect(getCount).toBe(2));
+    expect(screen.queryByText(/Theo dõi thêm/)).toBeNull();
+  });
+
   it("does not let a pre-mutation GET erase a canonical created log", async () => {
     const oldGet = Promise.withResolvers<Response>();
     const created = { ...firstLog, health_log_id: "health-created", note: "Đã tạo" };
