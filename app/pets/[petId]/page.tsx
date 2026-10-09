@@ -270,7 +270,14 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
 
             <div className={styles.profileDetails}>
               <h1>{pet.name}</h1>
-              <p className={styles.metadata}>{metadata.join(" • ")}</p>
+              <p className={styles.metadata}>
+                {metadata.map((item, index) => (
+                  <span className={styles.metadataItem} key={`${item}-${index}`}>
+                    {index > 0 && <span aria-hidden="true" className={styles.metadataSeparator}>•</span>}
+                    {item}
+                  </span>
+                ))}
+              </p>
               <span className={styles.vaccineStatus}>
                 {profileSummaryError
                   ? "Chưa thể tải bản ghi sức khỏe"
