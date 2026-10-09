@@ -372,8 +372,6 @@ export function PetHealthHistory({
     };
   }, [activeView, petId, reloadToken]);
 
-  const upperPetName = petName.toLocaleUpperCase("vi-VN");
-
   function setFormState(nextOpen: boolean) {
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.set("tab", "health");
@@ -522,12 +520,13 @@ export function PetHealthHistory({
   }
 
   return (
-    <section aria-labelledby={activeView === "history" ? "health-history-title" : undefined} className={styles.healthHistory}>
-      {activeView === "history" && (
-        <h2 className={styles.healthHeading} id="health-history-title">
-          SỨC KHỎE CỦA {upperPetName}: Theo dõi cân nặng, chế độ ăn và tình trạng sức khỏe theo thời gian.
-        </h2>
-      )}
+    <section aria-labelledby="health-section-title" className={styles.healthHistory}>
+      <h2 className={styles.healthHeading} id="health-section-title">
+        Sức khỏe của {petName}
+      </h2>
+      <p className={styles.healthDescription}>
+        Theo dõi cân nặng, chế độ ăn và tình trạng sức khỏe theo thời gian.
+      </p>
 
       <div className={styles.healthToolbar}>
         <div className={styles.healthSubnav} role="tablist" aria-label="Nội dung sức khỏe">
