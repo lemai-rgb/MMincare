@@ -2858,6 +2858,7 @@
 @media (max-width: 900px) {
   .healthHistory {
     width: 100%;
+    margin: 24px auto 0;
   }
 
   .healthCreateWorkspace {
@@ -2890,22 +2891,6 @@
     grid-template-columns: 1fr;
     gap: 46px;
     margin-top: 58px;
-  }
-}
-
-@media (max-width: 800px) {
-  .petHealthShell .profileCard {
-    grid-template-columns: 130px minmax(0, 1fr);
-    min-height: 0;
-    padding: 24px 20px;
-  }
-
-  .petHealthShell .profileAside {
-    grid-column: 1 / -1;
-    width: 100%;
-    flex-direction: row;
-    align-items: center;
-    padding-top: 0;
   }
 }
 
@@ -2968,78 +2953,6 @@
 
   .healthDeleteDialog {
     padding: 22px;
-  }
-
-  .petHealthShell .profileCard {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    padding: 16px;
-    border-radius: 22px;
-  }
-
-  .petHealthShell .profileDetails h1 {
-    font-size: 26px;
-    line-height: 1.2;
-  }
-
-  .petHealthShell .metadata {
-    gap: 4px 8px;
-    font-size: 16px;
-  }
-
-  .petHealthShell .metadataItem {
-    gap: 8px;
-  }
-
-  .petHealthShell .vaccineStatus {
-    margin-top: 10px;
-    font-size: 16px;
-  }
-
-  .tabBar {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    min-height: 0;
-    margin: 28px 0 32px;
-    padding: 6px;
-    border-radius: 22px;
-    font-size: 15px;
-  }
-
-  .tabBar a {
-    min-height: 44px;
-    padding: 8px 6px;
-    line-height: 1.25;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  .petHealthShell .avatarWrap {
-    width: 130px;
-    height: 130px;
-    margin: 0 auto;
-  }
-
-  .petHealthShell .avatar {
-    width: 112px;
-    height: 112px;
-  }
-
-  .petHealthShell .profileAside {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .petHealthShell .tabBar {
-    min-height: 0;
-    margin: 28px 0 32px;
-    padding: 6px;
-    border-radius: 22px;
-  }
-
-  .petHealthShell .tabBar a {
-    min-height: 44px;
-    padding: 8px 6px;
   }
 
   .healthHeading {
@@ -3370,18 +3283,47 @@
     width: min(calc(100% - 32px), 720px);
   }
 
-  .profileCard {
-    grid-template-columns: 130px minmax(0, 1fr);
-  }
-
+  .profileCard,
+  .petHealthShell .profileCard,
   .petReminderShell .profileCard {
     grid-template-columns: 130px minmax(0, 1fr);
     min-height: 0;
-    padding: 24px 20px;
+    gap: 16px;
+    padding: 20px 16px;
   }
 
-  .profileAside {
+  .avatarWrap,
+  .petHealthShell .avatarWrap,
+  .petReminderShell .avatarWrap {
+    width: 130px;
+    height: 130px;
+  }
+
+  .avatar,
+  .petHealthShell .avatar,
+  .petReminderShell .avatar {
+    width: 112px;
+    height: 112px;
+  }
+
+  .metadata,
+  .petHealthShell .metadata,
+  .petReminderShell .metadata {
+    gap: 4px 8px;
+    font-size: 19px;
+  }
+
+  .metadataItem,
+  .petHealthShell .metadataItem,
+  .petReminderShell .metadataItem {
+    gap: 8px;
+  }
+
+  .profileAside,
+  .petHealthShell .profileAside,
+  .petReminderShell .profileAside {
     grid-column: 1 / -1;
+    width: 100%;
     flex-direction: row;
     align-items: center;
     padding-top: 0;
@@ -3390,14 +3332,6 @@
   .summaryGrid,
   .overviewGrid {
     grid-template-columns: 1fr;
-  }
-
-  .petReminderShell .profileAside {
-    grid-column: 1 / -1;
-    width: 100%;
-    flex-direction: row;
-    align-items: center;
-    padding-top: 0;
   }
 
   .overviewGrid {
@@ -3477,44 +3411,59 @@
     font-size: 17px;
   }
 
-  .profileCard {
-    grid-template-columns: 1fr;
-    gap: 18px;
-    padding: 24px;
-  }
-
+  .profileCard,
+  .petHealthShell .profileCard,
   .petReminderShell .profileCard {
     grid-template-columns: 1fr;
-    padding: 24px;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 22px;
   }
 
-  .avatarWrap {
-    width: 130px;
-    height: 130px;
-    margin: 0 auto;
-  }
-
+  .avatarWrap,
+  .petHealthShell .avatarWrap,
   .petReminderShell .avatarWrap {
     width: 130px;
     height: 130px;
     margin: 0 auto;
   }
 
+  .avatar,
+  .petHealthShell .avatar,
   .petReminderShell .avatar {
     width: 112px;
     height: 112px;
   }
 
-  .metadata {
-    font-size: 19px;
+  .profileDetails h1,
+  .petHealthShell .profileDetails h1,
+  .petReminderShell .profileDetails h1 {
+    font-size: 26px;
+    line-height: 1.2;
   }
 
-  .profileAside {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 15px;
+  .metadata,
+  .petHealthShell .metadata,
+  .petReminderShell .metadata {
+    gap: 4px 8px;
+    font-size: 16px;
   }
 
+  .metadataItem,
+  .petHealthShell .metadataItem,
+  .petReminderShell .metadataItem {
+    gap: 8px;
+  }
+
+  .vaccineStatus,
+  .petHealthShell .vaccineStatus,
+  .petReminderShell .vaccineStatus {
+    margin-top: 10px;
+    font-size: 16px;
+  }
+
+  .profileAside,
+  .petHealthShell .profileAside,
   .petReminderShell .profileAside {
     align-items: stretch;
     flex-direction: column;
@@ -3526,22 +3475,26 @@
     white-space: normal;
   }
 
-  .tabBar {
-    gap: 0;
-    margin: 38px 0 44px;
-    padding: 6px;
-    font-size: 14px;
-  }
-
+  .tabBar,
+  .petHealthShell .tabBar,
   .petReminderShell .tabBar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
     min-height: 0;
-    margin: 38px 0 44px;
+    margin: 28px 0 32px;
     padding: 6px;
-    border-radius: 32px;
+    border-radius: 22px;
+    font-size: 15px;
   }
 
+  .tabBar a,
+  .petHealthShell .tabBar a,
   .petReminderShell .tabBar a {
-    padding: 9px 4px;
+    min-height: 44px;
+    padding: 8px 6px;
+    line-height: 1.25;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .petReminderForm {
