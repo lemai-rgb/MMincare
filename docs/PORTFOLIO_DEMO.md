@@ -1,73 +1,41 @@
-# MMinCare — Portfolio Demo
+# MMinCare — trải nghiệm thử
 
-## Quyết định và trạng thái
+## Phạm vi và giao diện
 
-Baseline: `main` `fd7145ef7ad72f3bda7fe36613f88e5f22a795cd` (PR #23 đã merge). Nhánh demo bổ sung route công khai `/demo`, bộ mẫu và sandbox tương tác. Chưa được gọi là production-deployed cho tới khi PR merge và deployment được xác minh.
+Main baseline: `3ecfc6b866f05425eb3674e3626d3a5c6cd0070f`, sau khi PR #25 merge. Bản sửa hiện tại chưa merge/deploy.
 
-Đã push [Draft PR #25](https://github.com/lemai-rgb/MMincare/pull/25). Trên commit code `cffae9c9c332022a12629193934905903bf488a9`, [Portfolio Demo Checks](https://github.com/lemai-rgb/MMincare/actions/runs/37980089248) đã PASS (demo tests, export deterministic, TypeScript và lint); Vercel Preview status là success. Local có 75 test/14 file đạt, các script Auth/Reminder đạt, full lint/TypeScript/diff check đạt. Build production bằng Webpack đạt và `/demo` là static page; build mặc định Turbopack bị chặn bởi symlink `node_modules` bên ngoài project trong môi trường local.
+Demo dùng cùng màn, component, form và CSS với ứng dụng chính. `PetListView` và `PetDetailView` được tách nguyên markup từ server page; Auth/ownership/query vẫn ở protected server pages. Các form và component hiện có chỉ nhận thêm transport/navigation qua React context. Context mặc định dùng fetch và Next router như trước.
 
-Browser local không kết nối được; lần mở Preview bị browser URL policy chặn. Chưa có browser smoke, screenshot hoặc visual QA mobile/desktop; trạng thái deployment thành công không chứng minh những mục này.
+Chỉ trong cây `/demo`, adapter trả response từ dữ liệu tab-local và điều hướng tới `/demo?screen=...`. Adapter không gọi network; endpoint ngoài phạm vi trả lỗi. Không patch global fetch, không bypass thêm route/API, không thay Auth/RLS/Storage. Click link demo bằng modifier/open-new-tab vẫn mở URL demo.
 
-Website thật giữ Supabase Auth, API, Owner RLS và private Storage. Demo dùng dataset hư cấu và state client, tách khỏi backend. Chỉ route chính xác `/demo` hoặc `/demo/` bỏ qua session refresh; không mở bypass cho các API hoặc protected page. Không có mock API, service-role key, Auth account chung, migration hoặc seed production.
+Phần riêng hiển thị: nhãn **Trải nghiệm thử** và **Về trang chủ**. Click nhãn cho phép khôi phục mẫu sau xác nhận. Không có intro dashboard, card dọc, form hay biểu đồ riêng. Header, Pet cards/profile, Overview, Medical/Vaccine, Reminder, Health Log, chart/status tooltip và Notification popover dùng component production.
 
-`sessionStorage` giữ dữ liệu theo tab và qua reload. Hai trình duyệt/tab mới có bộ mẫu độc lập; tab được nhân bản có thể nhận bản sao khởi đầu theo hành vi trình duyệt, nhưng thao tác sau đó độc lập. Đây không phải chứng minh phân quyền Owner A/B của hệ thống thật. Nếu trình duyệt chặn storage, demo vẫn chạy trong bộ nhớ và báo rằng reload sẽ mất thay đổi.
+## Dữ liệu và thao tác
 
-## Phạm vi trải nghiệm
+Meo và Min có lịch sử riêng với số lần/ngày/trạng thái khác nhau; Bình thường là trạng thái xuất hiện nhiều nhất. Meo có mệt mỏi, tiêu chảy, Sốt và Tránh ánh sáng; Min có ăn kém, mệt mỏi, Nôn và hai lần Rụng lông. Không ép đầy mọi nhóm ở mỗi bé hoặc dồn vào tuần hiện tại. Giá trị ngoài danh mục giữ nguyên và được thống kê trong Khác. Năm quan sát thêm không có cân nặng; xu hướng cân nặng giữ nguyên. Seed revision 4 thay các fixture revision 3 còn nguyên, giữ chỉnh sửa và bản ghi gốc đã xóa của người xem, chỉ nâng cấp một lần.
 
-| Khả năng | Demo | Website thật |
-|---|---|---|
-| Xem hồ sơ Pet, summary, empty state | Có, ba hồ sơ mẫu | Owner-authenticated |
-| Thêm/sửa/xóa Health Log | Có, state của tab | API và RLS |
-| Enter trong input / textarea | Input text không implicit submit; textarea xuống dòng | Logic nghiệp vụ hiện có |
-| Thống kê tuần/tháng | Tính từ fixture bằng helper dashboard dùng chung; chart và bảng dữ liệu | API dashboard và component production |
-| Đổi ngày/ghi chú và hoàn thành Reminder | Có; source date được kiểm tra; Completed không sửa | API và RLS |
-| Thông báo và unread dot | Có; đọc idempotent, date snapshot mới khi đổi ngày, ẩn event của Reminder completed | API/trigger database |
-| Tiêm phòng và khám | Chỉ xem | Có create/delete |
-| Tạo/sửa Pet, upload ảnh/tệp | Chưa có trong demo | Có sau đăng nhập |
-| Đăng nhập, email confirmation/recovery | Không mô phỏng | Auth thật |
-| Owner isolation / Storage security | Không dùng demo làm bằng chứng | Phải kiểm thử với hai tài khoản thật |
-| Email/push, gợi ý lịch tiêm | Không triển khai bằng fixture | Theo trạng thái sản phẩm hiện tại; rule read/dataset còn riêng |
+Ba Pet: Meo và Min dùng ảnh được cung cấp; Sushi là mèo nhà đực, khoảng một tuổi, avatar mặc định, hai nhật ký (3,0 và 3,1 kg), một mũi tiêm và một nhắc chăm sóc. Sushi chưa có lần khám để giữ một empty state có ý nghĩa. Tổng mẫu: 31 Health Logs, 4 Vaccine Records, 2 Medical Records, 7 Reminders và 3 thông báo hiện hành ban đầu.
 
-Demo tái sử dụng taxonomy, date/period, weight/status aggregation, reminder labels/status và avatar mặc định cho Sushi. Meo và Min dùng hai ảnh người dùng cung cấp riêng cho demo, phục vụ cả trường hợp có ảnh và avatar mặc định. Nó là UI sandbox cho các luồng đã nêu, không phải bản sao toàn bộ giao diện/Auth/API production. Chart demo phân bổ theo thứ tự lần cân và có bảng giá trị; không tuyên bố hỗ trợ đủ tooltip/trục thời gian của chart production.
+Demo hỗ trợ các form hiện có: tạo/sửa Pet, chọn/đổi/bỏ ảnh; thêm/xóa Vaccine và Medical; attachment lựa chọn/mở tại trình duyệt; tạo nhắc hẹn thủ công/có nguồn, sửa ngày/ghi chú và hoàn thành; Health Log create/edit/delete; thống kê tuần/tháng; đọc notification. Không giả lập đăng nhập/email/Owner isolation hay máy chủ lưu file. Chưa có rule dataset nên gợi ý lịch tiêm giữ trạng thái unavailable và cho tự nhập ngày như ứng dụng hiện tại.
 
-## Hướng dẫn nhà tuyển dụng — 3 phút
+`sessionStorage` giữ dữ liệu và file đọc thành data URL chỉ trong trình duyệt. File không gửi lên Storage hoặc production. Nếu vượt quota hoặc storage bị chặn, UI báo rằng reload sẽ khôi phục mẫu; ứng dụng vẫn thao tác trong bộ nhớ. Không gửi dữ liệu riêng vào demo dùng cho portfolio. Tệp/ảnh được chọn không phải bằng chứng kiểm thử Storage thật.
 
-1. Mở `<DEMO_ORIGIN>/demo`, không cần tài khoản.
-2. Mở **Meo → Sức khỏe → Thống kê**. Đổi tuần/tháng; đối chiếu cân nặng và tình trạng.
-3. Mở **Sushi → Sức khỏe**, xem empty state. Thêm nhật ký có cân nặng và ghi chú, sửa cân nặng, reload và mở lại Sushi, sau đó xóa có xác nhận.
-4. Mở **Nhắc hẹn**, lọc quá hạn; sửa ngày, hoàn thành. Kiểm tra badge và thông báo cập nhật.
-5. Mở chuông, đọc một event. Dùng **Khôi phục dữ liệu mẫu** để bắt đầu lại; có thể tải JSON của state hiện tại.
+Phiên cũ nâng cấp Sushi một lần nếu vẫn trống, giữ chỉnh sửa khác. Phiên đã nâng cấp giữ việc bỏ ảnh và xóa bản ghi qua reload. Reset chỉ ghi key demo, không xóa storage của website thật; reset/unmount thu hồi blob URLs dùng mở tệp.
 
-## Dataset và kịch bản QA
+## Kiểm chứng và release
 
-Dataset: [demo/README](../demo/README.md), [template](../demo/dataset.template.json), [snapshot JSON](../demo/generated/dataset.json), [manifest](../demo/generated/manifest.json).
+- `test:demo`: fixture, adapter/contract, scoped boundary và rendered tests dùng các form/component thật.
+- Regression app: Health Log lifecycle, Medical/Reminder loading, statistics timestamp, notifications, image validation/picker, Auth and reminder validation.
+- Lint, TypeScript, production Webpack build, deterministic JSON/CSV export và diff checks.
+- Test/build không chứng minh visual parity hoặc thao tác authenticated production. Ghi rõ browser/Preview smoke nào thực sự thực hiện; không ghi visual PASS khi chưa chụp/đối chiếu.
+- Không cần migration hoặc seed Supabase. Giữ bản sửa trong PR cho review trước khi merge; chỉ dùng link CV sau khi đúng bản deploy được xác minh.
 
-| ID | Kịch bản | Kết quả mong đợi | Bằng chứng |
-|---|---|---|---|
-| DEMO-01 | Mở demo khi không có session/env backend | Có ba Pet; không gọi API nghiệp vụ | Store/component/proxy tests; browser runtime cần xác minh riêng |
-| DEMO-02 | Sushi chưa có dữ liệu | Empty state rõ ràng, có nút thêm | Rendered test |
-| DEMO-03 | Thêm/sửa/xóa nhật ký | Summary/thống kê dùng state mới; edit giữ ID/`logged_at`; delete phải xác nhận | Store và rendered tests |
-| DEMO-04 | Nhấn Enter trong input | Không tự lưu; nút Lưu vẫn thực hiện submit | Rendered test; IME/mobile keyboard cần manual |
-| DEMO-05 | Reload / reset | Reload giữ state tab; reset chỉ ghi key demo, không xóa storage khác | Store và rendered tests |
-| DEMO-06 | Đọc notification / complete / đổi ngày | Đọc một lần; completed không còn event; ngày mới không kế thừa read cũ | Store và rendered tests |
-| DEMO-07 | Storage bị chặn hoặc payload hỏng | Không crash; fallback mẫu/thông báo rõ | Store tests |
-| DEMO-08 | Mobile 320/360/390/430 và desktop | Không mất chữ/tràn trang; dialog scroll; vùng chạm ≥44px | Chưa visual QA bằng browser |
+## Trải nghiệm cho người xem CV
 
-Chạy `npm run test:demo`. Các test mock browser/Next component không chứng minh upload, RLS hoặc hiệu năng production. Không ghi PASS cho manual scenario chưa thực hiện.
+1. Mở `/demo`: danh sách Meo, Min, Sushi trên giao diện ứng dụng.
+2. Mở hồ sơ, xem Overview và Medical; thử thêm mũi tiêm/lần khám và nhắc hẹn có nguồn.
+3. Vào Sức khỏe: thêm chỉ số, sửa/xóa có xác nhận; xem thống kê và status tooltip.
+4. Mở Nhắc hẹn: tạo, lọc, chỉnh sửa ngày và hoàn thành; mở chuông để đọc thông báo.
+5. Tải lại để kiểm tra trạng thái của tab. Nhấn Trải nghiệm thử để khôi phục mẫu, hoặc Về trang chủ để thoát.
 
-## Đưa vào CV BA/PM/Tester
-
-Đặt hai link sau khi có deployment:
-
-- **Website:** `https://m-mincare.vercel.app/` — sản phẩm có đăng nhập.
-- **Live Demo:** `<DEMO_ORIGIN>/demo` — dữ liệu giả lập, không cần đăng ký.
-
-Mô tả theo công việc thực sự của dự án: phân tích vấn đề/persona, xác định MVP và business rules, mô hình hóa dữ liệu/use case, ưu tiên feedback, viết acceptance criteria/test scenarios và quản lý thay đổi qua PR. Code có hỗ trợ AI; không trình bày dự án cá nhân thành kinh nghiệm làm việc hoặc thêm KPI chưa đo.
-
-Repo có thể cần quyền truy cập; kiểm tra visibility trước khi đặt link GitHub vào CV. Chưa xuất bản CV hay thay đổi visibility trong task này.
-
-## Release
-
-Nhánh demo không yêu cầu env Supabase cho riêng `/demo`, nhưng các route thật và build hệ thống vẫn giữ yêu cầu hiện có. Inter vẫn do `next/font/google` tải khi build. Không đổi font hoặc bypass Auth để né lỗi môi trường.
-
-Sau khi Preview sẵn sàng, xác minh `/demo` truy cập không đăng nhập, thao tác/reset/reload và mobile/desktop. Chỉ sau merge và production check mới thay `<DEMO_ORIGIN>` bằng URL chính thức trong CV. Hai ảnh chó/mèo đã nhận được thêm dưới dạng asset riêng; không seed database. Session cũ nhận ảnh mới khi reload mà không mất các thao tác mẫu.
+Bộ export tại `demo/generated` dành cho đọc/BA/Tester, không dùng import production. CV/README nêu đúng vai trò thực tế và phạm vi kiểm chứng; demo không phải bằng chứng phân quyền hay hiệu năng backend.

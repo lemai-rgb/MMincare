@@ -8,20 +8,24 @@
 |---|---|---|
 | Meo | Mèo, cái, tam thể | Lịch sử sức khỏe, tiêm phòng và khám; nhắc sắp đến hạn/quá hạn/hoàn thành; nhật ký gần nhất thiếu cân nặng |
 | Min | Chó, đực, Corgi | Diễn biến cân nặng; bản ghi nhập bổ sung cho ngày cũ; nhắc thủ công và nhắc có nguồn |
-| Sushi | Mèo, chưa rõ giới tính | Chưa có nhật ký, hồ sơ y tế hoặc nhắc hẹn; dùng để thử empty state và thêm nhật ký đầu tiên |
+| Sushi | Mèo nhà, đực, khoảng 1 tuổi | Avatar mặc định; hai nhật ký (3,0 → 3,1 kg), một mũi tiêm và một nhắc chăm sóc; chưa có lần khám |
 
 | Thực thể | Số lượng ban đầu |
 |---|---:|
 | Pet | 3 |
-| Health Log | 24 |
-| Vaccine Record | 3 |
+| Health Log | 31 |
+| Vaccine Record | 4 |
 | Medical Record | 2 |
-| Reminder | 6 |
+| Reminder | 7 |
 | Notification hiện hành | 3 — 2 chưa đọc, 1 đã đọc |
+
+Mỗi bé có lịch sử riêng, phân bố không đều; **Bình thường** là trạng thái thường gặp nhất. Meo có 15 nhật ký, gồm vài lần mệt mỏi/tiêu chảy và quan sát **Sốt**, **Tránh ánh sáng**. Min có 14 nhật ký, gồm ăn kém, mệt mỏi, một lần nôn và hai lần **Rụng lông** ở các ngày khác nhau. Sushi giữ hai nhật ký cơ bản. Không ép mỗi bé hoặc mỗi tuần/tháng phải có đủ sáu nhóm. Trạng thái gốc ngoài danh mục được gom vào **Khác** và giữ nhãn trong tooltip/chi tiết.
+
+Năm quan sát thêm không có cân nặng; cân nặng, ngày và ảnh gốc giữ nguyên. Dữ liệu được chọn cố định để reload/export nhất quán, không bốc lại ngẫu nhiên khi xem biểu đồ.
 
 ## Định dạng và ngày
 
-- `dataset.template.json`: nguồn fixture, dùng offset ngày tương đối.
+- `dataset.template.json`: nguồn fixture, dùng offset ngày tương đối; giữ khoảng cách giữa các lần ghi nhận, không dồn quan sát vào tuần hiện tại. Một nhóm có thể bằng 0 nếu không có nhật ký tương ứng trong kỳ.
 - `lib/demo/data.ts`: tạo snapshot từ một ngày neo ở `Asia/Ho_Chi_Minh`; không gọi network.
 - `generated/dataset.json`: snapshot cụ thể ngày 10/10/2026 để xem/đối chiếu.
 - `generated/*.csv`: sáu bảng, UTF-8 BOM, giá trị null để trống. Phù hợp xem bằng Excel/Power BI; không phải lệnh seed database.
@@ -45,6 +49,6 @@ Owner UUID trong mẫu là định danh hư cấu, **không tồn tại như m�
 
 Nội dung vaccine/khám/lượng ăn chỉ minh họa form và dữ liệu. Không dùng làm hướng dẫn thú y, interval tiêm hoặc liều thuốc. Không seed `vaccine_schedule_rules`; CR-08 vẫn cần quyền/dataset nghiệp vụ được duyệt riêng.
 
-Meo dùng ảnh mèo tại `/images/demo/meo.webp`; Min dùng ảnh chó tại `/images/demo/min.webp`; Sushi có `picture_url = null` và giữ avatar mặc định theo loài. Hai ảnh được người dùng cung cấp, tối ưu thành WebP để giảm dung lượng, giữ nguyên nội dung và tỉ lệ ảnh; khung vuông dùng CSS `object-fit: cover`, căn giữa. Không upload Supabase Storage hoặc dùng ảnh của tài khoản thật. Session demo cũ tự nhận hai ảnh khi reload, vẫn giữ các chỉnh sửa nhật ký/nhắc hẹn.
+Meo dùng ảnh mèo tại `/images/demo/meo.webp`; Min dùng ảnh chó tại `/images/demo/min.webp`; Sushi có `picture_url = null` và giữ avatar mặc định theo loài. Hai ảnh được người dùng cung cấp, tối ưu thành WebP để giảm dung lượng, giữ nguyên nội dung và tỉ lệ ảnh; khung vuông dùng CSS `object-fit: cover`, căn giữa. Không upload Supabase Storage hoặc dùng ảnh của tài khoản thật. Seed revision 4 nâng cấp phiên cũ một lần: thay các quan sát revision 3 chưa được chỉnh sửa và cập nhật trạng thái mẫu còn nguyên; giữ bản ghi người xem đã sửa, không khôi phục bản ghi gốc đã xóa và không tạo trùng. Phiên rất cũ vẫn bổ sung Sushi nếu còn trống. Sau nâng cấp, bản ghi người xem xóa không được tự khôi phục khi reload. Ảnh đã đổi/bỏ trong phiên mới được giữ nguyên khi reload.
 
 Chi tiết trải nghiệm và acceptance: [Portfolio Demo](../docs/PORTFOLIO_DEMO.md).

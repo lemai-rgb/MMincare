@@ -80,6 +80,12 @@ export function createDemoStore() {
       if (!snapshot) throw new Error("Demo chưa sẵn sàng.");
       save(applyDemoAction(snapshot.data, action, now));
     },
+    update(transform: (data: DemoState) => DemoState) {
+      if (!snapshot) throw new Error("Demo chưa sẵn sàng.");
+      const next = transform(snapshot.data);
+      if (!parseDemoState(next)) throw new Error("Dữ liệu trải nghiệm không hợp lệ.");
+      save(next);
+    },
     reset(now = new Date()) { save(createDemoState(getVietnamToday(now))); },
   };
 }

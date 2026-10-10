@@ -28,10 +28,10 @@
       "name": "Sushi",
       "picture_url": null,
       "species": "Cat",
-      "gender": "Unknown",
-      "breed": null,
-      "birth_days_ago": null,
-      "created_days_ago": 0
+      "gender": "Male",
+      "breed": "Mèo nhà",
+      "birth_days_ago": 365,
+      "created_days_ago": 14
     }
   ],
   "vaccine_records": [
@@ -61,6 +61,15 @@
       "dose_number": 1,
       "clinic_name": "Phòng khám mẫu B",
       "note": null
+    },
+    {
+      "vaccine_record_id": "00000000-0000-4000-8000-000000000204",
+      "pet_id": "00000000-0000-4000-8000-000000000103",
+      "vaccine_name": "Vaccine tổng hợp cho mèo (mẫu)",
+      "vaccine_day_offset": -14,
+      "dose_number": 1,
+      "clinic_name": "Phòng khám mẫu",
+      "note": "Hồ sơ minh họa, không phải hướng dẫn lịch tiêm."
     }
   ],
   "medical_records": [
@@ -191,7 +200,7 @@
       "weight": 2.18,
       "food_amount": "80 g/ngày",
       "food_type": "Hạt và pate (mẫu)",
-      "status": "Bình thường",
+      "status": "Mệt mỏi",
       "note": null
     },
     {
@@ -203,7 +212,7 @@
       "weight": 2.2,
       "food_amount": "80 g/ngày",
       "food_type": "Hạt và pate (mẫu)",
-      "status": "Bình thường",
+      "status": "Tiêu chảy",
       "note": null
     },
     {
@@ -335,7 +344,7 @@
       "weight": 12.2,
       "food_amount": "180 g/ngày",
       "food_type": "Hạt cho chó (mẫu)",
-      "status": "Bình thường",
+      "status": "Ăn kém/Bỏ ăn",
       "note": null
     },
     {
@@ -373,6 +382,90 @@
       "food_type": null,
       "status": "Khác",
       "note": "Nhập bổ sung cho ngày cũ; không được thay thế nhật ký có ngày ghi nhận mới hơn."
+    },
+    {
+      "health_log_id": "00000000-0000-4000-8000-000000000352",
+      "pet_id": "00000000-0000-4000-8000-000000000103",
+      "recorded_day_offset": -7,
+      "logged_day_offset": -7,
+      "logged_time": "09:00:00",
+      "weight": 3.0,
+      "food_amount": "70 g/ngày",
+      "food_type": "Hạt và pate (mẫu)",
+      "status": "Bình thường",
+      "note": "Nhật ký chăm sóc mẫu."
+    },
+    {
+      "health_log_id": "00000000-0000-4000-8000-000000000353",
+      "pet_id": "00000000-0000-4000-8000-000000000103",
+      "recorded_day_offset": 0,
+      "logged_day_offset": 0,
+      "logged_time": "09:00:00",
+      "weight": 3.1,
+      "food_amount": "70 g/ngày",
+      "food_type": "Hạt và pate (mẫu)",
+      "status": "Bình thường",
+      "note": "Nhật ký chăm sóc mẫu."
+    },
+    {
+      "health_log_id": "00000000-0000-4000-8000-000000000380",
+      "pet_id": "00000000-0000-4000-8000-000000000101",
+      "recorded_day_offset": -8,
+      "logged_day_offset": -8,
+      "logged_time": "19:10:00",
+      "weight": null,
+      "food_amount": null,
+      "food_type": null,
+      "status": "Sốt",
+      "note": "Quan sát thấy bé nóng hơn thường ngày, nằm nghỉ nhiều (mẫu)."
+    },
+    {
+      "health_log_id": "00000000-0000-4000-8000-000000000381",
+      "pet_id": "00000000-0000-4000-8000-000000000101",
+      "recorded_day_offset": -1,
+      "logged_day_offset": -1,
+      "logged_time": "14:20:00",
+      "weight": null,
+      "food_amount": null,
+      "food_type": null,
+      "status": "Tránh ánh sáng",
+      "note": "Bé chọn nằm ở góc tối, tránh chỗ có nắng (mẫu)."
+    },
+    {
+      "health_log_id": "00000000-0000-4000-8000-000000000382",
+      "pet_id": "00000000-0000-4000-8000-000000000102",
+      "recorded_day_offset": -9,
+      "logged_day_offset": -9,
+      "logged_time": "07:45:00",
+      "weight": null,
+      "food_amount": null,
+      "food_type": null,
+      "status": "Rụng lông",
+      "note": "Khi chải lông thấy lượng lông rụng nhiều hơn thường ngày (mẫu)."
+    },
+    {
+      "health_log_id": "00000000-0000-4000-8000-000000000383",
+      "pet_id": "00000000-0000-4000-8000-000000000102",
+      "recorded_day_offset": -5,
+      "logged_day_offset": -5,
+      "logged_time": "21:15:00",
+      "weight": null,
+      "food_amount": null,
+      "food_type": null,
+      "status": "Nôn",
+      "note": "Ghi nhận một lần nôn sau bữa tối (mẫu)."
+    },
+    {
+      "health_log_id": "00000000-0000-4000-8000-000000000384",
+      "pet_id": "00000000-0000-4000-8000-000000000102",
+      "recorded_day_offset": -3,
+      "logged_day_offset": -3,
+      "logged_time": "08:30:00",
+      "weight": null,
+      "food_amount": null,
+      "food_type": null,
+      "status": "Rụng lông",
+      "note": "Vẫn thấy lông rụng khi vệ sinh chỗ nằm (mẫu)."
     }
   ],
   "reminders": [
@@ -446,6 +539,18 @@
       "source_vaccine_record_id": "00000000-0000-4000-8000-000000000203",
       "source_medical_record_id": null,
       "completed_day_offset": -14,
+      "notification_read": false
+    },
+    {
+      "reminder_id": "00000000-0000-4000-8000-000000000407",
+      "pet_id": "00000000-0000-4000-8000-000000000103",
+      "type": "Other",
+      "due_day_offset": 5,
+      "status": "Upcoming",
+      "note": "Cân và ghi nhật ký cho Sushi.",
+      "source_vaccine_record_id": null,
+      "source_medical_record_id": null,
+      "completed_day_offset": null,
       "notification_read": false
     }
   ]

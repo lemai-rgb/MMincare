@@ -1,7 +1,7 @@
 "use client";
+import { useRuntimeRouter, useRuntimePathname, useRuntimeSearchParams, useRuntimeJson } from "@/lib/appRuntime";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { HealthLogCreateForm } from "@/components/pets/HealthLogCreateForm";
 import { PetHealthStatistics } from "@/components/pets/PetHealthStatistics";
@@ -75,8 +75,8 @@ function sortHealthLogs(logs: HealthLog[]) {
   return [...logs].sort(compareHealthLogs);
 }
 
-async function getHealthLogs(petId: string, signal: AbortSignal) {
-  const { response, payload: rawPayload } = await fetchJsonWithTimeout(`/api/pets/${encodeURIComponent(petId)}/health-logs`, {
+async function getHealthLogs(petId: string, signal: AbortSignal, requestJson: typeof fetchJsonWithTimeout) {
+  const { response, payload: rawPayload } = await requestJson(`/api/pets/${encodeURIComponent(petId)}/health-logs`, {
     cache: "no-store",
     signal,
   });
@@ -273,9 +273,10 @@ export function PetHealthHistory({
   petId: string;
   petName: string;
 }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const requestJson = useRuntimeJson();
+  const pathname = useRuntimePathname();
+  const router = useRuntimeRouter();
+  const searchParams = useRuntimeSearchParams();
   const [healthLogs, setHealthLogs] = useState<HealthLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -350,7 +351,7 @@ export function PetHealthHistory({
       setLoadError(false);
     });
 
-    void getHealthLogs(petId, controller.signal)
+    void getHealthLogs(petId, controller.signal, requestJson)
       .then((nextLogs) => {
         if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
         setHealthLogs(nextLogs);
@@ -370,7 +371,7 @@ export function PetHealthHistory({
       controller.abort();
       if (historyRequestControllerRef.current === controller) historyRequestControllerRef.current = null;
     };
-  }, [activeView, petId, reloadToken]);
+  }, [activeView, petId, reloadToken, requestJson]);
 
   function setFormState(nextOpen: boolean) {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -440,7 +441,7 @@ export function PetHealthHistory({
     setIsDeleting(true);
     setDeleteError("");
     try {
-      const { response, payload: rawPayload } = await fetchJsonWithTimeout(
+      const { response, payload: rawPayload } = await requestJson(
         `/api/pets/${encodeURIComponent(petId)}/health-logs/${encodeURIComponent(deletingLog.health_log_id)}`,
         { method: "DELETE", signal: controller.signal },
       );

@@ -1,4 +1,5 @@
 "use client";
+import { useRuntimeJson } from "@/lib/appRuntime";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -64,8 +65,8 @@ function getOverdueLabel(dueDate: string, today: string) {
   return `Quá hạn ${Math.max(1, days)} ngày`;
 }
 
-async function fetchPetReminders(petId: string, signal: AbortSignal) {
-  const { response: result, payload: rawPayload } = await fetchJsonWithTimeout(`/api/pets/${encodeURIComponent(petId)}/reminders`, {
+async function fetchPetReminders(petId: string, signal: AbortSignal, requestJson: typeof fetchJsonWithTimeout) {
+  const { response: result, payload: rawPayload } = await requestJson(`/api/pets/${encodeURIComponent(petId)}/reminders`, {
     cache: "no-store",
     signal,
   });
@@ -119,6 +120,7 @@ export function PetReminders({
   petId: string;
   petName: string;
 }) {
+  const requestJson = useRuntimeJson();
   const [reminders, setReminders] = useState<PetReminder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
@@ -138,7 +140,7 @@ export function PetReminders({
       setReminders([]);
     });
 
-    void fetchPetReminders(petId, controller.signal)
+    void fetchPetReminders(petId, controller.signal, requestJson)
       .then((nextReminders) => {
         if (!active || controller.signal.aborted || activeRequestId !== requestId.current) return;
         setReminders(nextReminders);
@@ -156,7 +158,7 @@ export function PetReminders({
       active = false;
       controller.abort();
     };
-  }, [petId, reloadToken]);
+  }, [petId, reloadToken, requestJson]);
 
   useEffect(() => {
     if (!notice) return;

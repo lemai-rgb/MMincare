@@ -6,6 +6,12 @@ on:
       - 'app/demo/**'
       - 'components/demo/**'
       - 'lib/demo/**'
+      - 'lib/appRuntime.tsx'
+      - 'components/pets/**'
+      - 'components/reminders/**'
+      - 'components/layout/**'
+      - 'components/auth/LogoutButton.tsx'
+      - 'lib/http/**'
       - 'demo/**'
       - 'scripts/export-demo.ts'
       - 'styles/demo.module.css'
@@ -43,4 +49,4 @@ jobs:
           npx next typegen
           npx tsc --noEmit --incremental false
       - name: Lint demo and public route boundary
-        run: npx eslint lib/demo components/demo app/demo scripts/export-demo.ts proxy.ts
+        run: npm run lint

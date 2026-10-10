@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { AppLink as Link } from "@/lib/appRuntime";
 import { useEffect, useRef, useState } from "react";
 
 import { LogoutButton } from "@/components/auth/LogoutButton";

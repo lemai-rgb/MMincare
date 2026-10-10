@@ -1,4 +1,5 @@
 "use client";
+import { useRuntimeJson } from "@/lib/appRuntime";
 
 import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 
@@ -69,8 +70,8 @@ function formatReminderDays(dueDate: string) {
   return remaining === 0 ? "Hôm nay" : `Còn ${remaining} ngày`;
 }
 
-async function getDashboard(petId: string, period: HealthDashboardPeriod, signal: AbortSignal) {
-  const { response, payload: rawPayload } = await fetchJsonWithTimeout(
+async function getDashboard(petId: string, period: HealthDashboardPeriod, signal: AbortSignal, requestJson: typeof fetchJsonWithTimeout) {
+  const { response, payload: rawPayload } = await requestJson(
     `/api/pets/${encodeURIComponent(petId)}/dashboard?period=${encodeURIComponent(period)}`,
     { cache: "no-store", signal },
   );
@@ -549,6 +550,7 @@ export function PetHealthStatistics({
   petId: string;
   period: HealthDashboardPeriod;
 }) {
+  const requestJson = useRuntimeJson();
   const [data, setData] = useState<HealthDashboardData | null>(null);
   const [failedPeriod, setFailedPeriod] = useState<HealthDashboardPeriod | null>(null);
   const [retryToken, setRetryToken] = useState(0);
@@ -569,7 +571,7 @@ export function PetHealthStatistics({
       setIsRetrying(true);
     });
 
-    void getDashboard(petId, period, controller.signal)
+    void getDashboard(petId, period, controller.signal, requestJson)
       .then((nextData) => {
         if (!active || activeRequestId !== requestId.current || controller.signal.aborted) return;
         setData(nextData);
@@ -588,7 +590,7 @@ export function PetHealthStatistics({
       active = false;
       controller.abort();
     };
-  }, [period, petId, retryToken]);
+  }, [period, petId, retryToken, requestJson]);
 
   function retry() {
     setIsRetrying(true);

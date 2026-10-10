@@ -6,7 +6,7 @@ MMinCare helps dog and cat owners keep pet profiles, vaccination history, medica
 
 [Live application](https://m-mincare.vercel.app/) · [Portfolio Demo guide](docs/PORTFOLIO_DEMO.md) · [Sample dataset](demo/README.md) · [Project status](docs/PROJECT_STATUS.md) · [BA/PM/Tester evidence](docs/PORTFOLIO_EVIDENCE.md)
 
-> **Status — 10 October 2026:** Owner MVP; PRs #18–#23 merged. This branch adds a public `/demo` sandbox with three synthetic Pets, tab-local persistence/reset and dataset exports. Demo publication is pending PR merge/deployment; it does not use real Auth/API/Storage or establish production QA. [PR #24](https://github.com/lemai-rgb/MMincare/pull/24) separately fixes the statistics timestamp-validation defect and is not included as a deployed change here.
+> **Status — 10 October 2026:** PRs #18–#25 merged. The public `/demo` was published with a separate sandbox UI; this follow-up replaces it with the same application components, forms and styles. The correction is not yet deployed. Demo data stays browser-local and does not establish real Auth/Storage/RLS QA.
 
 ## Problem and intended users
 
@@ -60,7 +60,7 @@ Checks performed on 7 October 2026:
 - Latest relevant [migration replay run #23](https://github.com/lemai-rgb/MMincare/actions/runs/37615187127) passed on the PR #20 feature head. The workflow is path-filtered; not every check runs on every PR.
 - Vercel reports successful deployment for the reviewed main commit. Deployment success does not establish loading speed or authenticated functional correctness.
 
-**Quality follow-up:** request lifecycle/race/text-validation fixes were delivered by PR #22; optional vaccine rule access/dataset remains incomplete (CR-08). Timestamp range validation in statistics is addressed by the separate, pending PR #24. Focus recovery, CI coverage, database advisory follow-up and manual evidence should retain their verified status rather than infer completion from deployment. See the [dated review](docs/CODE_REVIEW_2026-10-07.md) and [current status](docs/PROJECT_STATUS.md).
+**Quality follow-up:** request lifecycle/race/text-validation fixes were delivered by PR #22; optional vaccine rule access/dataset remains incomplete (CR-08). Timestamp range validation in statistics was fixed by merged PR #24. Focus recovery, CI coverage, database advisory follow-up and manual evidence should retain their verified status rather than infer completion from deployment. See the [dated review](docs/CODE_REVIEW_2026-10-07.md) and [current status](docs/PROJECT_STATUS.md).
 
 Authenticated upload/reload, cross-Owner access, real email flows, desktop/mobile visual QA and production timings are not verified in this review. See the [manual scenarios](docs/PORTFOLIO_EVIDENCE.md).
 

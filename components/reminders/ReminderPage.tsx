@@ -1,4 +1,5 @@
 "use client";
+import { useRuntimeRequest } from "@/lib/appRuntime";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -69,14 +70,15 @@ function getConfirmationText(reminder: ReminderListItem) {
   return `Xác nhận ${reminder.pet_name} đã hoàn thành nhắc hẹn ${getReminderTypeLabel(reminder.type).toLowerCase()} theo lịch.`;
 }
 
-async function requestReminderData(signal?: AbortSignal) {
-  const response = await fetch("/api/reminders", { cache: "no-store", signal });
+async function requestReminderData(request: typeof fetch, signal?: AbortSignal) {
+  const response = await request("/api/reminders", { cache: "no-store", signal });
   const payload = await response.json() as ReminderResponse;
   if (!response.ok) throw new Error(payload.error || "Không thể tải danh sách nhắc hẹn.");
   return payload;
 }
 
 export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?: string }) {
+  const request = useRuntimeRequest();
   const [reminders, setReminders] = useState<ReminderListItem[]>([]);
   const [pets, setPets] = useState<ReminderPetOption[]>([]);
   const [statusFilter, setStatusFilter] = useState<ReminderFilter>("all");
@@ -129,7 +131,7 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
     setIsLoading(true);
     setLoadError("");
     try {
-      const payload = await requestReminderData();
+      const payload = await requestReminderData(request);
       setReminders(Array.isArray(payload.reminders) ? payload.reminders : []);
       setPets(Array.isArray(payload.pets) ? payload.pets : []);
     } catch (requestError: unknown) {
@@ -137,11 +139,11 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [request]);
 
   useEffect(() => {
     const controller = new AbortController();
-    requestReminderData(controller.signal)
+    requestReminderData(request, controller.signal)
       .then((payload) => {
         if (controller.signal.aborted) return;
         setReminders(Array.isArray(payload.reminders) ? payload.reminders : []);
@@ -156,7 +158,7 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
         if (!controller.signal.aborted) setIsLoading(false);
       });
     return () => controller.abort();
-  }, []);
+  }, [request]);
 
   useEffect(() => {
     if (!toast) return;
@@ -221,7 +223,7 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
     setCompleteError("");
 
     try {
-      const response = await fetch(`/api/reminders/${encodeURIComponent(selectedReminder.reminder_id)}/complete`, { method: "PATCH" });
+      const response = await request(`/api/reminders/${encodeURIComponent(selectedReminder.reminder_id)}/complete`, { method: "PATCH" });
       const payload = await response.json() as { reminder?: { reminder_id: string; completed_at?: string | null }; error?: string };
       if (!response.ok || !payload.reminder) throw new Error(payload.error || "Không thể hoàn thành nhắc hẹn lúc này.");
 
@@ -272,7 +274,7 @@ export function ReminderPage({ highlightedReminderId }: { highlightedReminderId?
   }
 
   async function handleReminderSaved(updated: ReminderUpdate) {
-    const payload = await requestReminderData();
+    const payload = await requestReminderData(request);
     const nextReminders = Array.isArray(payload.reminders) ? payload.reminders : [];
     const canonical = nextReminders.find((item) => item.reminder_id === updated.reminder_id);
     if (!canonical || (updated.due_date !== undefined && canonical.due_date !== updated.due_date) || (updated.note !== undefined && canonical.note !== updated.note)) {
