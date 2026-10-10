@@ -1,62 +1,78 @@
-Problem Statement \- MMinCare  
-   
-What?  
- 
+# MMinCare — Problem Statement
 
-- Thông tin sức khỏe thú cưng bị phân tán qua nhiều loại giấy tờ vật lý như sổ tiêm, toa thuốc, phiếu khám  khiến người nuôi không có một nguồn dữ liệu duy nhất, nhất quán để tham chiếu khi cần   
-- Chủ nuôi thường bỏ lỡ các mốc chăm sóc định kỳ do phụ thuộc vào trí nhớ cá nhân hoặc các phương thức ghi nhớ rời rạc.   
-- Người nuôi khó theo dõi tình trạng sức khỏe thú cưng theo thời gian. Các dữ liệu như cân nặng, ăn uống hoặc triệu chứng thường không được lưu trữ tập trung, dẫn đến việc phát hiện bất thường sức khỏe bị chậm.  
-- Nếu khám ở nơi khác phòng khám quen thuộc, chủ thú cưng không nắm rõ được tình trạng dùng thuốc và sức khỏe của thú cưng
+**Phiên bản:** 2.0 · **Cập nhật:** 2026-10-11 (Asia/Ho_Chi_Minh)  
+**Baseline ứng dụng:** `main` `bcd14b51f4b70cd3d418bd10638f7a996713fdcf` — PR #26 đã merge, Vercel Production thành công.  
+**Ứng dụng:** https://m-mincare.vercel.app/ · **Trải nghiệm thử:** https://m-mincare.vercel.app/demo
 
-   
-   
-Who?
+> Current = code đã triển khai tại baseline trên. Trạng thái này không có nghĩa mọi kịch bản đã kiểm thử thực tế. Demo dùng dữ liệu giả lập ở trình duyệt; không chứng minh Auth, Owner A/B, Storage hoặc hiệu năng backend.
 
-- Primary Actor \- Người nuôi chủ động (Active Owner)  
-+  Đặc điểm: Nuôi từ 1 thú cưng trở lên, tự chịu trách nhiệm chăm sóc, lịch trình cá nhân bận, quen dùng smartphone.  
-+  Pain point chính: Quên lịch, thiếu thông tin khi cần.  
-- Supporting Actor \- Người chăm sóc hộ (Caretaker)  
-+ Đặc điểm: Không phải chủ, chỉ chăm sóc tạm thời theo ủy quyền.  
-+ Pain point chính: Không có đủ thông tin để chăm sóc đúng cách.  
-- Out of Scope \- Phòng khám thú y  
-+ Lý do loại trừ: Hệ thống quản lý phía clinic là một domain riêng biệt với yêu cầu nghiệp vụ phức tạp, nằm ngoài phạm vi của chủ nuôi thú cưng của MMinCare.
+## 1. Problem hypothesis (not a quantified research finding)
 
-Where?  
- 
+The project starts from the hypothesis that pet health information is split across paper vaccination books, prescriptions, photographs, clinic messages and personal notes. Owners therefore lack one reliable source when they need to recall a vaccination, treatment, symptom or care date.
 
-- Người dùng thường ở ngoài đường hoặc tại phòng khám khi cần thông tin gấp, những bối cảnh không thể mang theo hồ sơ giấy tờ   
-- Chủ thú cưng có thể theo dõi tình trạng ở nhà của thú cưng  
-- Khi thú cưng đi cấp cứu ở các phòng khám có thể tra cứu hồ sơ y tế của thú cưng
+Owners also struggle to observe gradual changes in weight, food intake and health condition. Without dated records, it is difficult to explain a pattern to a veterinarian or notice that a condition has changed.
 
-When?  
- 
+Care dates are often remembered manually. A missed vaccination or recheck may only be noticed after the date has passed.
 
-- Painpoint thường xảy ra khi đến lịch tiêm/ chăm sóc định kỳ hàng tháng cho thú cưng  
-- Khi thú cưng cần được can thiệp cấp cứu tại cơ sở thú y khác   
-- Vấn đề thường được nhớ đến khi bác sĩ hỏi về tình trạng sức khỏe của thú cưng, khi trễ lịch chăm sóc sức khỏe
+## 2. Who experiences it?
 
-   
-Why?  
- 
+- **Current primary actor:** an authenticated Owner responsible for one or more dogs or cats.
+- **Future supporting actor:** an authorized Caretaker. The complete sharing and authorization flow is Phase 2.
+- **Out of scope:** veterinary clinic administration, appointment booking, payment and clinical diagnosis.
 
-- Việc nuôi thú cưng còn mang tính tự phát, chưa có kế hoạch cụ thể, việc theo dõi sức khỏe thú cưng chưa được chú trọng. Người chủ nuôi sẽ dựa vào việc cập nhật của bên thứ 3 là các phòng khám hơn vì lịch trình bận rộn và việc không nắm rõ sức khỏe ngay từ đầu  
-- Văn hóa đầu tư bài bản vào sức khỏe thú cưng (khám định kỳ, theo dõi dinh dưỡng) vẫn chưa phổ biến, phần lớn chủ nuôi chỉ đưa thú cưng đi khám khi đã có triệu chứng rõ ràng, không có thói quen theo dõi chủ động   
-- Các giải pháp như group chat, ghi chú điện thoại đang thất bại ở việc người dùng có thể bị bỏ lỡ thông tin khi có cuộc sống bận rộn và phải trao đổi công việc qua các nền tảng đó nhiều  
-- Việc sử dụng sổ giấy không thể lúc nào cũng mang theo và sổ giấy dễ bị làm mất hoặc lẫn lộn trong đồ dùng, khó tìm thấy trong lúc nguy cấp  
-- Không có cơ chế nhắc nhở người nuôi cập nhật thông tin ngay sau mỗi lần khám
+## 3. Where and when?
 
-Impact  
- 
+- At home while monitoring food, weight or symptoms.
+- At a clinic when a veterinarian requests prior history.
+- After a vaccination or examination when the Owner needs to record the event.
+- When checking upcoming or overdue care dates.
+- During account recovery when the Owner cannot log in.
 
-- Hậu quả sức khỏe: Tiêm phòng trễ khiến thú cưng mắc các bệnh nguy hiểm khi chưa đủ liều lượng vắc xin  
-- Hậu quả kinh tế: người chủ phải tiêm bổ sung, chi phí phát sinh tăng khi tiêm phòng trễ. Chi phí điều trị tăng khi phát hiện bệnh muộn  
-- Hậu quả cảm xúc: Lo lắng, stress của người nuôi 
+## 4. Why do current alternatives fail?
 
-   
-Expected Outcome  
- 
+- Paper records can be lost and are not always available.
+- General notes and chat applications mix pet information with unrelated content.
+- Calendar entries do not preserve the clinical context or source record.
+- Photos provide evidence but are difficult to search chronologically.
+- Informal sharing does not reliably enforce which Pet another person may access.
 
-- Sau khi có MMinCare, người nuôi có thể theo dõi lịch tiêm vaccine tập trung và nhận nhắc nhở đúng thời điểm, thay vì phụ thuộc vào trí nhớ cá nhân dẫn đến giảm nguy cơ bỏ sót mũi tiêm quan trọng.   
-- Sau khi có MMinCare, người nuôi có thể nắm rõ toàn bộ lịch sử sức khỏe thú cưng tại bất kỳ phòng khám nào mà không phụ thuộc vào trí nhớ hay hồ sơ giấy , dẫn đến việc bác sĩ có đủ thông tin để chẩn đoán chính xác hơn   
-- Sau khi có MMinCare, người trông thú cưng hộ có thể cập nhật tình trạng sức khỏe thú cưng mà không còn thông báo qua tin nhắn cho chủ thú cưng, dẫn đến người chủ thú cưng có thể theo dõi tình trạng thú cưng ngay cả khi đi vắng  
-- Sau khi có MMinCare, tại các trường hợp cấp cứu ở phòng khám lạ, người nuôi có thể chủ động cung cấp toàn bộ lịch sử sức khỏe thú cưng ngay lập tức thay vì chỉ dựa vào trí nhớ dẫn đến bác sĩ có đủ thông tin để can thiệp kịp thời và chính xác hơn 
+## 5. Current solution capability
+
+MMinCare currently allows an Owner to:
+
+- Maintain Pet profiles with optional selectable private photos and centralized vaccination/medical history, including confirmed deletion.
+- Store optional medical attachments privately.
+- Create manual or record-linked in-app Reminders; edit eligible dates/notes and complete them; read in-app Notifications.
+- Create/edit/delete dated Health Logs and view a weekly/monthly dashboard for one Pet; correct records with confirmation/idempotent retry safeguards.
+- Recover a password safely.
+
+The current product does not send proactive push/email reminders and does not provide Caretaker runtime access.
+
+## 6. Expected outcome
+
+- Owners retrieve consistent records without relying on memory or paper.
+- Upcoming and overdue care work is visible when the Owner opens the application.
+- Weight and health-status patterns are easier to discuss with a veterinarian.
+- Attachment failure does not cause loss of the underlying Medical Record.
+- Owner data remains isolated by authentication, authorization and RLS.
+
+## 7. Target/future outcome
+
+- Controlled Caretaker sharing with View + Add permission for authorized Pet records.
+- Aggregate dashboard across multiple Pets.
+- Optional proactive external notifications after separate product, privacy and delivery decisions.
+- Editing Vaccine/Medical records after a separate design decision; confirmed deletion is already Current.
+
+## 8. Reported usability feedback and response
+
+The project owner reported informal feedback; no sample size, interview transcript or quantitative result is inferred. Users found photo URLs technical, cards dense, Enter saving logs prematurely, mobile labels cut off and loading slow. Delivered responses: file picker/default avatar, compact summaries/footer, Enter guard and Health edit/delete, mobile wrap/tabs and bounded request waiting. These are implemented responses; full visual QA and production performance measurement remain pending.
+
+Public `/demo` is deployed with same product UI and synthetic per-tab records so a CV reviewer can inspect the solution without registration. It is not evidence of market adoption, clinical effectiveness, real Owner isolation or backend performance.
+
+## 9. Changelog
+
+| Version | Date | Change |
+|---|---|---|
+| 2.0 | 2026-10-11 | Đồng bộ code đã triển khai, CRUD/ảnh/thông báo, request lifecycle/idempotency và demo cùng UI; tách phạm vi kiểm chứng và kế hoạch. |
+| 1.1 | 2026-09-22 | Separated Current capability from target outcome; added Health Log/dashboard and recovery; moved Caretaker and external notifications to future scope. |
+| 1.0 | 2026-06-29 | Initial problem statement. |

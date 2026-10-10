@@ -1,77 +1,211 @@
-<mxfile host="Electron">
-  <diagram name="Page-1" id="4LCmDNVX83ycCIr0NU2n">
-    <mxGraphModel dx="1206" dy="1002" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" modified="2026-10-11T01:28:00+07:00" version="26.0.0" compressed="false">
+  <diagram id="Use-Case-MMinCare-1" name="01 — Owner Auth and records">
+    <mxGraphModel dx="1280" dy="1790" grid="1" gridSize="10" page="1" pageScale="1" pageWidth="1280" pageHeight="1790" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="1P3IH1Yffd4v1astD3pR-11" edge="1" parent="1" source="1P3IH1Yffd4v1astD3pR-1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;fontSize=18;" target="1P3IH1Yffd4v1astD3pR-4">
+        <mxCell id="title" value="MMinCare — Use Case / Owner Auth and records&#10;main bcd14b5 · 11/10/2026 (VN) · PR #26 deployed" vertex="1" parent="1" style="text;strokeColor=none;fillColor=none;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=24;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="30" y="16" width="1220" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="boundary" value="" vertex="1" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fillColor=#fafcf9;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="300" y="110" width="930" height="1540" as="geometry" />
+        </mxCell>
+        <mxCell id="boundary_label" value="MMinCare — Current Owner application" vertex="1" parent="1" style="text;strokeColor=none;fillColor=none;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=20;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="355" y="118" width="820" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="owner" value="Owner" vertex="1" parent="1" style="shape=umlActor;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=18;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="80" y="740" width="100" height="165" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_auth" value="Đăng ký / xác nhận email" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="180" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge0" source="owner" target="uc_auth" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-14" edge="1" parent="1" source="1P3IH1Yffd4v1astD3pR-1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;fontSize=18;" target="1P3IH1Yffd4v1astD3pR-12">
+        <mxCell id="uc_login" value="Đăng nhập / đăng xuất" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="325" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1" source="owner" target="uc_login" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-15" edge="1" parent="1" source="1P3IH1Yffd4v1astD3pR-1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;fontSize=18;" target="1P3IH1Yffd4v1astD3pR-8">
+        <mxCell id="uc_recovery" value="Khôi phục mật khẩu" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="470" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge2" source="owner" target="uc_recovery" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-17" edge="1" parent="1" source="1P3IH1Yffd4v1astD3pR-1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;fontSize=18;" target="1P3IH1Yffd4v1astD3pR-7">
+        <mxCell id="uc_pet" value="Tạo / xem / sửa hồ sơ Pet" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="615" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge3" source="owner" target="uc_pet" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-18" edge="1" parent="1" source="1P3IH1Yffd4v1astD3pR-1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;fontSize=18;" target="1P3IH1Yffd4v1astD3pR-6">
+        <mxCell id="uc_photo" value="Chọn / đổi / bỏ ảnh Pet" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="760" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge4" source="owner" target="uc_photo" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-19" edge="1" parent="1" source="1P3IH1Yffd4v1astD3pR-1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;fontSize=18;" target="1P3IH1Yffd4v1astD3pR-9">
+        <mxCell id="uc_vaccine" value="Ghi nhận / xem Vaccine" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="905" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge5" source="owner" target="uc_vaccine" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-20" edge="1" parent="1" source="1P3IH1Yffd4v1astD3pR-1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;fontSize=18;" target="1P3IH1Yffd4v1astD3pR-5">
+        <mxCell id="uc_medical" value="Tạo / xem Medical Record" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="1050" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge6" source="owner" target="uc_medical" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-1" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=18;" value="Người dùng&amp;nbsp;" vertex="1">
-          <mxGeometry height="60" width="30" x="250" y="320" as="geometry" />
+        <mxCell id="uc_delete" value="Xóa Vaccine / Medical có xác nhận" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="1195" width="650" height="110" as="geometry" />
         </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-2" parent="1" style="swimlane;startSize=0;fontSize=18;" value="" vertex="1">
-          <mxGeometry height="1000" width="510" x="350" y="40" as="geometry" />
-        </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-4" parent="1P3IH1Yffd4v1astD3pR-2" style="ellipse;whiteSpace=wrap;html=1;fontSize=18;" value="Đăng ký/ đăng nhập&amp;nbsp; tài khoản" vertex="1">
-          <mxGeometry height="80" width="185" x="170" y="10" as="geometry" />
-        </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-5" parent="1P3IH1Yffd4v1astD3pR-2" style="ellipse;whiteSpace=wrap;html=1;fontSize=18;" value="Quản lý chỉ số sức khỏe tổng hợp" vertex="1">
-          <mxGeometry height="80" width="200" x="70" y="870" as="geometry" />
-        </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-6" parent="1P3IH1Yffd4v1astD3pR-2" style="ellipse;whiteSpace=wrap;html=1;fontSize=18;" value="Cấp quyền truy cập&amp;nbsp;" vertex="1">
-          <mxGeometry height="80" width="160" x="180" y="210" as="geometry" />
-        </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-7" parent="1P3IH1Yffd4v1astD3pR-2" style="ellipse;whiteSpace=wrap;html=1;fontSize=18;" value="Quản lý hồ sơ y tế thú cưng" vertex="1">
-          <mxGeometry height="80" width="190" x="167.5" y="430" as="geometry" />
-        </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-8" parent="1P3IH1Yffd4v1astD3pR-2" style="ellipse;whiteSpace=wrap;html=1;fontSize=18;" value="Quản lý thông tin sức khỏe" vertex="1">
-          <mxGeometry height="80" width="170" x="177.5" y="320" as="geometry" />
-        </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-9" parent="1P3IH1Yffd4v1astD3pR-2" style="ellipse;whiteSpace=wrap;html=1;fontSize=18;" value="Quản lý nhắc hẹn&amp;nbsp;" vertex="1">
-          <mxGeometry height="80" width="190" x="165" y="650" as="geometry" />
-        </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-12" parent="1P3IH1Yffd4v1astD3pR-2" style="ellipse;whiteSpace=wrap;html=1;fontSize=18;" value="Quản lý hồ sơ thú cưng" vertex="1">
-          <mxGeometry height="80" width="170" x="180" y="110" as="geometry" />
-        </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-22" parent="1P3IH1Yffd4v1astD3pR-2" style="ellipse;whiteSpace=wrap;html=1;fontSize=18;" value="Xem nhắc hẹn&amp;nbsp;" vertex="1">
-          <mxGeometry height="80" width="187.5" x="161.25" y="760" as="geometry" />
-        </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-27" parent="1P3IH1Yffd4v1astD3pR-2" style="ellipse;whiteSpace=wrap;html=1;fontSize=18;" value="Cập nhật hồ sơ y tế thú cưng" vertex="1">
-          <mxGeometry height="80" width="190" x="157.5" y="540" as="geometry" />
-        </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-13" edge="1" parent="1" source="1P3IH1Yffd4v1astD3pR-10" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;fontSize=18;" target="1P3IH1Yffd4v1astD3pR-4">
+        <mxCell id="edge7" source="owner" target="uc_delete" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-16" edge="1" parent="1" source="1P3IH1Yffd4v1astD3pR-10" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;fontSize=18;" target="1P3IH1Yffd4v1astD3pR-8">
+        <mxCell id="note" value="Session / ownership / RLS là ràng buộc nội bộ, không actor System hoặc use case người dùng.&#10;Ảnh/attachment private; attachment upload có retry; source Reminder được giữ khi xóa hồ sơ." vertex="1" parent="1" style="shape=note;whiteSpace=wrap;html=0;fillColor=#fff7e9;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=15;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="300" y="1670" width="930" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_attach" value="Upload / retry / mở attachment" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="1340" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge8" source="owner" target="uc_attach" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-24" edge="1" parent="1" source="1P3IH1Yffd4v1astD3pR-10" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;fontSize=18;" target="1P3IH1Yffd4v1astD3pR-22">
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="Use-Case-MMinCare-2" name="02 — Owner journal and reminders">
+    <mxGraphModel dx="1280" dy="1790" grid="1" gridSize="10" page="1" pageScale="1" pageWidth="1280" pageHeight="1790" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="MMinCare — Use Case / Owner journal and reminders&#10;main bcd14b5 · 11/10/2026 (VN) · PR #26 deployed" vertex="1" parent="1" style="text;strokeColor=none;fillColor=none;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=24;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="30" y="16" width="1220" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="boundary" value="" vertex="1" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fillColor=#fafcf9;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="300" y="110" width="930" height="1540" as="geometry" />
+        </mxCell>
+        <mxCell id="boundary_label" value="MMinCare — Current Owner application" vertex="1" parent="1" style="text;strokeColor=none;fillColor=none;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=20;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="355" y="118" width="820" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="owner" value="Owner" vertex="1" parent="1" style="shape=umlActor;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=18;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="80" y="740" width="100" height="165" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_health" value="Thêm / xem nhật ký sức khỏe" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="180" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge0" source="owner" target="uc_health" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-28" edge="1" parent="1" source="1P3IH1Yffd4v1astD3pR-10" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;startArrow=none;startFill=0;endArrow=none;endFill=0;fontSize=18;" target="1P3IH1Yffd4v1astD3pR-27">
+        <mxCell id="uc_edithealth" value="Chỉnh sửa nhật ký" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="325" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1" source="owner" target="uc_edithealth" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="1P3IH1Yffd4v1astD3pR-10" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=18;" value="Người chăm hộ&amp;nbsp;" vertex="1">
-          <mxGeometry height="60" width="30" x="890" y="320" as="geometry" />
+        <mxCell id="uc_delhealth" value="Xóa nhật ký có xác nhận" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="470" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge2" source="owner" target="uc_delhealth" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_dashboard" value="Xem thống kê tuần / tháng" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="615" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge3" source="owner" target="uc_dashboard" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_reminder" value="Tạo / xem / lọc nhắc hẹn" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="760" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge4" source="owner" target="uc_reminder" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_editrem" value="Sửa ngày / ghi chú nhắc hẹn" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="905" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge5" source="owner" target="uc_editrem" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_complete" value="Hoàn tất nhắc hẹn" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="1050" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge6" source="owner" target="uc_complete" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_notif" value="Xem / đọc thông báo" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="1195" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge7" source="owner" target="uc_notif" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_tooltip" value="Chi tiết tooltip biểu đồ" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="1340" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge8" source="uc_tooltip" target="uc_dashboard" value="«extend»" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=open;endFill=0;dashed=1;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1190" y="1395" />
+              <mxPoint x="1190" y="670" />
+              <mxPoint x="1090" y="670" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="note" value="Owner-only API/RLS; immutable ID/logged_at; snapshot retry chống tạo trùng.&#10;Enter trong ô đo/ăn không submit. Notification đọc mới update unread; in-app only." vertex="1" parent="1" style="shape=note;whiteSpace=wrap;html=0;fillColor=#fff7e9;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=15;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="300" y="1670" width="930" height="90" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="Use-Case-MMinCare-3" name="03 — Public demo and future scope">
+    <mxGraphModel dx="1280" dy="1190" grid="1" gridSize="10" page="1" pageScale="1" pageWidth="1280" pageHeight="1190" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="MMinCare — Public demo / scope còn lại&#10;main bcd14b5 · 11/10/2026 (VN) · PR #26 deployed" vertex="1" parent="1" style="text;strokeColor=none;fillColor=none;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=24;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="30" y="16" width="1220" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="visitor" value="Người xem&#10;demo" vertex="1" parent="1" style="shape=umlActor;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="70" y="460" width="130" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="demo_boundary" value="" vertex="1" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fillColor=#fafcf9;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="300" y="120" width="930" height="750" as="geometry" />
+        </mxCell>
+        <mxCell id="dlabel" value="/demo — Current, same application UI" vertex="1" parent="1" style="text;strokeColor=none;fillColor=none;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=22;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="330" y="130" width="875" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="demo_entry" value="Mở trải nghiệm thử không đăng ký" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="210" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge0" source="visitor" target="demo_entry" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="demo_use" value="Thử nghiệp vụ bằng dữ liệu mẫu" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="365" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1" source="visitor" target="demo_use" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="demo_reset" value="Khôi phục mẫu có xác nhận" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="520" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge2" source="visitor" target="demo_reset" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="demo_home" value="Quay về trang chủ" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=0;fillColor=#eef5ed;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=17;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="420" y="675" width="650" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="edge3" source="visitor" target="demo_home" value="" edge="1" parent="1" style="edgeStyle=none;rounded=0;html=0;strokeColor=#68816c;fontColor=#405448;fontSize=14;labelBackgroundColor=#ffffff;endArrow=none;endFill=0;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="dnote" value="Adapter browser-local; reload giữ thay đổi của tab. Không thực hiện Auth/Owner A-B/Storage thật.&#10;Meo/Min ảnh mẫu; Sushi fallback + dữ liệu cơ bản. Reset không ghi dữ liệu production." vertex="1" parent="1" style="shape=note;whiteSpace=wrap;html=0;fillColor=#fff7e9;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=16;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="300" y="900" width="930" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="future" value="PLANNED — chưa use case production&#10;Caretaker sharing · Google OAuth · Push/email · Aggregate đa-Pet&#10;Chưa có/chưa chốt: Vaccine/Medical edit · Pet/account delete" vertex="1" parent="1" style="shape=note;whiteSpace=wrap;html=0;fillColor=#f1f0f8;strokeColor=#7e9880;fontColor=#243b2d;fontFamily=DejaVu Sans;fontSize=18;align=center;verticalAlign=middle;spacing=10;">
+          <mxGeometry x="300" y="1020" width="930" height="135" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

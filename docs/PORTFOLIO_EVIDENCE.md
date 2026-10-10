@@ -1,74 +1,81 @@
 # BA / PM / Tester portfolio evidence
 
-**Checkpoint:** 7 October 2026 · **Application baseline:** `8b91154`  
-This maps available project artifacts to reviewable skills, separating implemented features, automated checks and planned manual validation.
+**Cập nhật:** 2026-10-11 (VN) · **Application baseline:** `main` `bcd14b51f4b70cd3d418bd10638f7a996713fdcf`  
+**Đã triển khai:** PR #26 đã merge, [Vercel Production success](https://vercel.com/lemai-rgbs-projects/m-mincare/E3bmui2BdzU7iAzkP2kNtnM4XSLD).  
+[Ứng dụng](https://m-mincare.vercel.app/) · [Trải nghiệm thử](https://m-mincare.vercel.app/demo)
 
-## Evidence map
+## Artifact map
 
-| Perspective | Evidence | What reviewers can inspect |
+| Perspective | Available evidence | Limit |
 |---|---|---|
-| BA: problem analysis | [Problem](../Product/Problem%20statement.md), [personas](../Product/Persona%20Document.md) | Pain points and primary/secondary users |
-| BA: prioritization | [MVP/MoSCoW](../Product/MVP%20document.md), [current status](PROJECT_STATUS.md) | Original priorities, shipped/future scope |
-| BA: rules/data | [Business Rules](../MMinCare_Business_Rules.md), [Data Dictionary](../Data_Dictionary.md), [ERD](../ERD%20-%20WEB%20MMin%20Care.drawio), [Use Case](../Use%20Case_MMinCare.drawio) | Validation, ownership, state and data relationships; diagrams retain design scope |
-| BA: interface | [API document](../MMinCare_API_Documentation.md) | Implemented route inventory contrasted with original design examples |
-| PM/Product: delivery | [Merged PRs](https://github.com/lemai-rgb/MMincare/pulls?q=is%3Apr+is%3Amerged), [status/backlog](PROJECT_STATUS.md) | Feature boundaries, sequence, priorities, acceptance criteria |
-| PM/Product: decisions | [Architecture Decision Log](../Architecture_Decision_Log.md), PRs #19–#21 | Photo/summary/keyboard/card/loading changes based on informal user feedback |
-| Tester: design/evidence | Mapping/scenarios below; [code review](CODE_REVIEW_2026-10-07.md), tests/workflow | Negative/permission/lifecycle cases, reproduced defects and verification limits |
+| BA: analysis and requirements | [Problem](../Product/Problem%20statement.md), [constructed personas](../Product/Persona%20Document.md), [MVP/MoSCoW](../Product/MVP%20document.md), [User Stories](../Product/User%20story.md) | Personas/quotes illustrative; no formal interview or market metric |
+| BA: rules/data/flows | [BR](../MMinCare_Business_Rules.md), [API](../MMinCare_API_Documentation.md), [DD](../Data_Dictionary.md), [ERD](../ERD%20-%20WEB%20MMin%20Care.drawio), [Use Case](../Use%20Case_MMinCare.drawio), [User Flow](../Product/User%20flow%20Web%20theo%20d%C3%B5i%20th%C3%BA%20c%C6%B0ng.drawio) | Current/Planned separated; actual route/table names, preserved IDs |
+| PM/Product | [Delivery/backlog](PROJECT_STATUS.md), [ADL](../Architecture_Decision_Log.md), merged PRs | Feedback translated into scope/acceptance/release decisions; no team/employment claim |
+| Tester | Tests, migration replay, [dated defects](CODE_REVIEW_2026-10-07.md), manual matrix below | Mock/rendered tests differ from real service/security/UAT |
+| Product demonstration | [Demo](https://m-mincare.vercel.app/demo), [guide](PORTFOLIO_DEMO.md), [sample dataset](../demo/README.md) | Same product components, synthetic browser-local state; not real Owner access proof |
 
-Independent-project artifacts with AI-assisted development/review are not evidence of employment in three job roles. No formal UAT sign-off, adoption metric or measured speed improvement is claimed.
+Independent project with AI-assisted implementation/review. Evidence supports project activities, not three professional job titles or certification.
 
-## Lightweight traceability
+## Sample traceability (PF IDs preserved)
 
-`PF-*` IDs are new portfolio mapping IDs, not replacements for original US/BR IDs. This is sampled traceability, not complete acceptance-criteria coverage.
+This is sampled mapping, not full acceptance/test coverage. Original US/BR IDs remain stable.
 
-| ID | Requirement/decision | Implementation | Automated evidence | Manual evidence |
-|---|---|---|---|---|
-| PF-01 | Appropriate confirmation/resend/error feedback | Auth forms; `lib/auth/` | Mapper/resend scripts pass | Real mail/callback not executed |
-| PF-02 | Optional image, format/size validation, species fallback | `PetImagePicker`, `PetAvatar`, image helper | 6 image tests pass | Upload/change/remove/reload pending |
-| PF-03 | Owner-only private access | API ownership and RLS/Storage policies | Policy assertions/route review | A/B runtime isolation pending |
-| PF-04 | Eligible Reminder editing; completion distinct | Edit helper/API/database guard | Edit script/migration assertions | Date/status boundaries pending |
-| PF-05 | Notification read/invalidation/navigation | Notification UI/reducer/validation | Selector/reducer and 16 UI tests pass | Real events pending; CR-01 open |
-| PF-06 | Health Log business date/permitted edits | Health Log routes | 3 mutation API tests pass | Persistence/A/B pending; CR-03 open |
-| PF-07 | Enter in measurement/food inputs must not save | Health Log form | 3 keyboard/composition tests pass | Real keyboard/mobile IME pending |
-| PF-08 | Journal updates; confirmed deletion | Health Log history | 2 existing mutation UI tests pass | CR-02/CR-04 open |
-| PF-09 | Read timeout/retry/stale protection | HTTP helper/read components | Lifecycle/UI/validation checks pass | Production timing pending |
-| PF-10 | Concise latest journal summary | Summary helper/batch dashboard query | 3 summary tests pass separately | Desktop/mobile appearance pending |
-
-The total of 45 covers 11 Vitest files, not 45 browser end-to-end tests. Script suites add coverage but are not counted as another 45 tests. Database replay uses isolated local CI; reading production policies is not exercising two live Owner sessions.
-
-## Manual regression scenarios — not executed here
-
-Use synthetic data and separate Owner A/B sessions. Record date, device/browser, application commit and actual results. Never store passwords, cookies, tokens or personal data in evidence.
-
-| ID | Steps | Expected result | Status |
+| ID | Requirement | Implementation / automated evidence | Runtime evidence |
 |---|---|---|---|
-| MAN-01 | Register, confirm email, login, password recovery | Clear feedback, valid session, safe redirects | Not run |
-| MAN-02 | Create without image; switch species | Profile saved, correct fallback | Not run |
-| MAN-03 | Upload portrait/landscape/square; save/reload | Centered square crop, private image persists | Not run |
-| MAN-04 | Invalid/oversized selection; change/remove valid photo | Specific error, valid state preserved, fallback on removal | Not run |
-| MAN-05 | Owner B requests A's Pet/photo/Health Log and mutations | No exposure/mutation; private-resource handling | Not run |
-| MAN-06 | Enter in weight/food/amount; explicit save; textarea/IME | No accidental save; button keyboard works; newline/composition preserved | Not run |
-| MAN-07 | Create/edit/delete log; reload; inspect summaries | Canonical values/count/order and confirmed deletion | Not run |
-| MAN-08 | Delay GET; mutate while old read pending | No erased change/resurrected row — CR-02 target | Local defect; manual not run |
-| MAN-09 | Stall mutation/notification; retry unknown outcome | Released pending state, actionable error, no duplicate creation — CR-01 target | Source risk; manual not run |
-| MAN-10 | Edit/complete Reminder; inspect dot/deep link | Correct states/event/badge and highlighted destination | Not run |
-| MAN-11 | Delete vaccine/medical record with dependencies; cleanup failure | Confirmed deletion, documented reminder/attachment handling, warning if needed | Not run |
-| MAN-12 | Keyboard open/cancel/confirm delete | Focus trap/Escape and meaningful restored focus — CR-04 target | Not run |
-| MAN-13 | Mobile/desktop; long/missing content | Readable compact card, square image, accessible actions, no overflow | Not run |
-| MAN-14 | Measure cold/warm authenticated tabs/server stages | Browser/network/Auth/database waits distinguished; no guessed speedup | Not run |
+| PF-01 | US-01…03 / BR-AUTH | Auth forms/error-resend scripts, callback/session guards | Real email/callback pending |
+| PF-02 | US-20 / BR-PET-05 | Picker/validation/fallback/cover,6 image tests at prior checkpoint | Live upload/change/remove/reload pending |
+| PF-03 | BR-PHOTO-01 / Owner access | API/RLS/Storage review and CI assertions | A/B real sessions pending |
+| PF-04 | US-18 / BR-REM-08…09 | Edit allowlist/eligibility/helper/migration guards | Real date/status race pending |
+| PF-05 | US-19 / BR-NOTIF | Read/invalidation/deep link/timeout,16 rendered tests at prior checkpoint | Real scheduler/read/navigation pending |
+| PF-06 | US-12/21 / BR-HLOG | Date/business allowlist, literal invalid accepted, immutable identity | Owner persistence/A-B pending |
+| PF-07 | BR-UX-01 | Enter/textarea/button/IME regression | Real mobile IME pending |
+| PF-08 | US-21 / BR-HLOG-14…16 | Cancel GET recovery, stale mutation protection, POST key/snapshot, DELETE ambiguity regressions | Real retry/cleanup pending |
+| PF-09 | ADL-030 |15s whole-response helper, cleanup/retry/timing instrumentation | Production timing unmeasured |
+| PF-10 | BR-PET-06 / ADL-013 | Batch latest Health summary, no N+1, ordering/fallback tests | Full visual pending |
+| PF-11 | US-22 / BR-DEMO |31 demo tests/4 files, scoped adapter/persistence/migration contracts | Production public smoke, sampled |
+| PF-12 | US-23 / BR-UX-02 | Responsive tabs2×2/grouped metadata/footer | Full viewport/device matrix pending |
 
-## Execution record template
+## Evidence checkpoint
 
-| Scenario | Date / environment / commit | Actual result | Pass/Fail | Evidence / defect ID |
+- Current application main bcd14b5; exact Vercel deployment success linked above.
+- Latest [CI](https://github.com/lemai-rgb/MMincare/actions/runs/38068595221) passed on release feature head7b777d1. Demo31 tests/4 files; lint/TypeScript/Webpack build passed. These are release-head checks, not a separate merged-SHA CI run.
+- Public production smoke:3 Pet cards, Min14 logs, different monthly Meo/Min frequency data, two Rụng lông in Min Other details, return-home.
+- Historical45 Vitest/11 files at8b91154 and earlier app suite results stay historical; do not sum into a made-up total of current E2E tests.
+- No formal UAT sign-off or live Owner A/B/security/performance validation claimed.
+
+## Manual regression matrix
+
+Use synthetic data and separate Owner A/B sessions; record environment, commit, date, actual result. Do not store credentials/cookies/tokens or personal data in evidence.
+
+| ID | Steps / expected outcome | Status |
+|---|---|---|
+| MAN-01 | Register/confirm/login/recovery, safe session/redirect and feedback | Real flow not run |
+| MAN-02 | Create no-image Pet/switch species; correct fallback | Real flow not run |
+| MAN-03 | Portrait/landscape/square upload/save/reload; private image persists | Not run |
+| MAN-04 | Invalid/oversized/change/remove; specific error and fallback | Not run |
+| MAN-05 | B accesses A's Pet/image/log and mutations; no data exposure or change | Not run |
+| MAN-06 | Enter weight/food/amount, textarea, date/select, Save focus, IME | Automated regression; real keyboard/device pending |
+| MAN-07 | Health create/edit/delete/reload; canonical summary/count/order | Automated regressions; real flow pending |
+| MAN-08 | Delay GET then create/edit/delete; old read cannot overwrite/resurrect | CR-02 delivered; real race pending |
+| MAN-09 | Server may commit while response lost; retry same key/snapshot; no duplicate creation, DELETE404 revalidation | PR #22 regressions; real retry pending |
+| MAN-10 | Edit/complete Reminder/read notification/deep link; dot/filter/highlight consistent | Automated coverage; real flow pending |
+| MAN-11 | Delete care source/attachments; source null and cleanup warning accurate | Real dependency cleanup pending |
+| MAN-12 | Delete keyboard trap/Escape, cancel trigger and post-delete live focus target | Not re-certified / pending |
+| MAN-13 |320/360/390/430/768/1280/1440, long/missing content, readable controls/no overflow | Full visual not run |
+| MAN-14 | Cold/warm authenticated tab timings; network/Auth/DB/render separated | Not measured |
+| MAN-15 | Public demo3 Pets, Min logs, month statuses/Other, home | Sampled production smoke PASS; not all interactions |
+| MAN-16 | Demo CRUD/file local/reload/reset; storage quota/new-tab behavior and no prod mutation | Automated tests; complete browser matrix pending |
+
+## Execution record
+
+| Scenario | Date/environment/application SHA | Actual | Pass/Fail/Blocked | Sanitized evidence/defect |
 |---|---|---|---|---|
-| MAN-xx | Fill after execution | Fill after execution | Not run | Sanitized screenshot/log |
+| MAN-xx | Fill when executed | Describe actual result | Not run | Screenshot/log/issue |
 
 ## Supported CV wording
 
-Choose the emphasis for the application rather than presenting three professional titles:
+- BA emphasis: defined a pet-care MVP using problem/persona hypotheses, MoSCoW, business rules, User Stories, API/data/flow documentation and sampled requirement-to-test mapping.
+- Product/PM emphasis: tracked feature/fix delivery through GitHub PRs and scope/acceptance decisions; translated informal feedback into photo, summary, keyboard, responsive and demo improvements.
+- Tester emphasis: designed validation/permission/lifecycle scenarios, maintained regression tests and dated defects, and separated automated/smoke evidence from pending manual tests.
 
-- **BA:** Defined a pet-care MVP through problem/persona analysis, MoSCoW prioritization, business rules, API/data documentation and requirement-to-test mapping.
-- **PM/Product:** Tracked Owner MVP delivery through GitHub PRs, scope decisions and a prioritized quality backlog; translated informal feedback into photo-upload, summary and keyboard-UX improvements.
-- **Tester:** Designed negative, permission and lifecycle scenarios; maintained regression evidence and documented reproduced defects with verification limits.
-
-Only add user counts, speed percentages, formal interview/UAT or team leadership claims when supported. Share an accessible artifact/repository link and the live-app link; label any future seeded demo separately.
+Use [public demo](https://m-mincare.vercel.app/demo) on the CV; app link is the real authenticated system. Repository access must be granted or visibility checked before giving it to recruiters. Do not claim adoption numbers, measured speedup, formal interviews/UAT, team leadership or real security PASS without evidence.

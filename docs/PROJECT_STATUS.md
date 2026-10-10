@@ -1,104 +1,58 @@
 # MMinCare — delivery status
 
-**Updated:** 10 October 2026 — demo UI parity correction
-**Reviewed main baseline:** `3ecfc6b866f05425eb3674e3626d3a5c6cd0070f` (merged PR #25).
-**Stage:** Owner MVP deployed; demo correction prepared for review, not yet deployed.
+**Cập nhật:** 2026-10-11 (VN) · **Application baseline:** `main` `bcd14b51f4b70cd3d418bd10638f7a996713fdcf`  
+**Đã triển khai:** PR #26 đã merge, [Vercel Production success](https://vercel.com/lemai-rgbs-projects/m-mincare/E3bmui2BdzU7iAzkP2kNtnM4XSLD).  
+[Ứng dụng](https://m-mincare.vercel.app/) · [Trải nghiệm thử](https://m-mincare.vercel.app/demo)
 
-## Current delivery update
+## Current delivery
 
-- PR #25 was merged and its demo is accessible, but it used separate screens and omitted working application flows. That implementation did not meet the requested product experience.
-- This follow-up uses shared `PetListView`/`PetDetailView` shells extracted from the existing app markup, plus the existing Pet, Medical, Vaccine, Reminder, Notification and Health components. Application CSS, labels, validation and workflows are retained.
-- An explicit React context adapter supplies browser-local requests and navigation only under `/demo`. Outside it, the existing fetch/router implementations are used. No global fetch override, API/Auth/RLS/Storage changes or production dataset writes.
-- Demo-only UI: “Trải nghiệm thử” label (click to confirm reset) and “Về trang chủ”. The old intro/three-column cards/custom chart/guide UI is removed.
-- Demo histories vary by Pet, date and frequency: Meo has tired/diarrhea observations plus Sốt/Tránh ánh sáng; Min has appetite/tired/vomiting observations and repeated Rụng lông on separate dates. Normal remains the most common status; categories may be zero in a selected period. There are 31 initial Health Logs. Seed revision 4 replaces only untouched earlier fixture values and preserves visitor edits/deletions. Weight history, Sushi data and application UI/aggregation are unchanged.
-- Three initial Pets: Meo/Min keep supplied photos; Sushi retains default avatar and now has basic profile data, two Health Logs, one Vaccine Record and one manual Reminder.
-- Automated checks cover shared forms, CRUD/reload, API response contracts and the public-route boundary. Real Owner A/B/Storage tests, production timing and authenticated manual QA remain separate and unverified.
-- CR-08 remains open for approved production rule access/dataset; demo does not invent vaccine intervals.
-
-## Historical 7 October checkpoint
-
-Reviewed application baseline for the historical checkpoint below: `8b911540ddfb4856d29f414f1e771f0ae22dc989`.
-
-## Status definitions
-
-| Label | Meaning |
-|---|---|
-| Deployed | Merged application code with successful Vercel deployment status; not an automatic runtime QA pass |
-| Automated pass | A named test/check has evidence at the stated baseline |
-| Pending manual validation | Authenticated browser, visual or real-service scenario not checked in this review |
-| Planned | Product/design scope without a shipped end-to-end implementation |
-| Open defect | Code evidence or a local reproduction exists; not fixed by this documentation update |
-
-## Delivery snapshot
-
-| Workstream | Delivery | Evidence/remaining work |
+| Workstream | Implementation | Evidence / remaining |
 |---|---|---|
-| Email/password Auth, confirmation feedback and recovery | Deployed | Mapper/resend scripts pass; real mail/callback QA pending |
-| Owner Pet create/view/edit and private photos | Deployed | [PR #19](https://github.com/lemai-rgb/MMincare/pull/19) merged; image tests pass; upload/change/remove/reload and A/B isolation pending |
-| Vaccine/Medical records and confirmed deletion | Deployed | Create/history/DELETE routes present; dependency/attachment cleanup behavior needs manual evidence |
-| Optional next-vaccination suggestion | Unavailable at checkpoint | CR-08: production rule table empty and user-client read denied; vaccine creation remains independent |
-| Reminder create/edit/complete | Deployed | Edit script tests pass; manual date/status checks pending |
-| Notification Center and unread red dot | Deployed | [PR #18](https://github.com/lemai-rgb/MMincare/pull/18) merged; 16 UI tests pass; real event/navigation QA pending |
-| Health Log create/edit/delete and keyboard behavior | Deployed | [PR #20](https://github.com/lemai-rgb/MMincare/pull/20) merged; UI/API tests pass, with additional defects found in this review |
-| Square photo fit, compact pet summary, loading safeguards | Deployed | PR #20; image/summary/request lifecycle tests pass; no measured production speed comparison |
-| Compact Health Log footer | Deployed | [PR #21](https://github.com/lemai-rgb/MMincare/pull/21) merged; attribution left, actions right; desktop/mobile visual QA pending |
-| Per-pet weekly/monthly statistics | Deployed | Dashboard route/payload tests present; calculations/period boundaries pending manual QA |
-| Caretaker sharing, Google OAuth, email/push delivery, multi-pet aggregate | Planned | Existing design references do not establish implementation |
-| Separate seeded portfolio demo | Planned | No public demo mode or dataset reset/isolation mechanism implemented |
+| Email/password, confirm/resend, recovery | Deployed | Auth regression; real email/callback matrix pending |
+| Owner Pet profile and photos | Deployed | Private upload/change/remove, cover/fallback; live A/B/storage/reload pending |
+| Vaccine/Medical, optional private attachments | Deployed | Create/read/delete + source detach/cleanup reporting; no edit endpoints; real cleanup/permission QA pending |
+| Reminder create/edit/complete | Deployed | Edit eligible Upcoming date/note; Overdue derived; real mutation/navigation matrix pending |
+| Notification Center red dot/read/deep-link | Deployed | Revalidation, stale/timeout/error safeguards, 16 rendered tests at prior checkpoints; real event QA pending |
+| Health Log CRUD and Enter behavior | Deployed | PR #20/#22; immutable identity/logged_at, idempotent POST/canonical recovery, cancel revalidation, delete ambiguity; real retry/A/B pending |
+| Compact summaries/cards and square images | Deployed | Latest log/date/status/weight link, attribution left/actions right; full desktop/mobile visual pending |
+| Per-Pet weekly/monthly statistics | Deployed | Weight/status tooltips; PR #24 fixed timestamp/range contract; public demo chart smoke, authenticated calculation matrix pending |
+| Responsive Pet layout | Deployed | PR #23 tabs2×2/wrap/shared layout; not a full device sign-off |
+| Public demo same UI and isolated dataset | Deployed | PR #26;3 Pets/31 Health Logs; browser-local adapter; public smoke detailed below |
+| Optional vaccine schedule suggestion | Partially delivered / unavailable | CR-08 status contract fixed; approved read access/dataset not complete; manual dates allowed |
+| Caretaker, OAuth, push/email, aggregate analytics | Planned | Reserved designs do not mean runtime permission |
 
-## Release evidence
+## Latest release evidence
 
-- PR #18 merge: `36829d5a86e8194490e5b8f65702316d9020a9c6`.
-- PR #19 merge: `5e0fe323d6d44b3f457a22056ebe506e5c550073`.
-- PR #20 merge: `10f616d83bbefba57165cc29fb29ec55cf4de71f`.
-- PR #21 merge: `8b911540ddfb4856d29f414f1e771f0ae22dc989`.
-- Reviewed main Vercel status: success — [deployment](https://vercel.com/lemai-rgbs-projects/m-mincare/DdgGF5VBsZ3Zs3j3rus6HL2N1Gn7).
-- Relevant migration CI: [run #23](https://github.com/lemai-rgb/MMincare/actions/runs/37615187127), passed on PR #20 head `3f144f967fd44586516f03930056a41f1d9be008`, before merge.
+- Application main `bcd14b5`: merged [PR #26](https://github.com/lemai-rgb/MMincare/pull/26), same application UI/forms/styles for demo, distinct fixture histories and non-empty Sushi profile.
+- [CI run 38068595221](https://github.com/lemai-rgb/MMincare/actions/runs/38068595221): PASS at PR head `7b777d16928148f1e83afc888e79521220eb28f2`, before merge. No separate merge-SHA CI run was claimed.
+- Demo suite:31 tests/4 files at that release head. Lint, TypeScript, Webpack production build and diff checks passed at release. This is not31 browser end-to-end tests; prior app suites have their own checkpoint evidence.
+- Exact merged-main Vercel deployment above succeeded.
+- Public production browser smoke: Meo/Min/Sushi cards; Min14 logs; monthly Meo/Min status frequencies differ; Min Khác details include two Rụng lông observations; Về trang chủ returns root. This is a sampled smoke, not all forms/device sizes.
+- Latest demo needs no migration or Supabase seed. Dataset/table counts in `demo/generated/manifest.json` are synthetic, not production counts.
 
-Supabase migration history was read without changes. Recent production versions:
+## Database delivery references
 
-| Version | Name |
-|---|---|
-| `20261005081930` | `pet_photos_storage` |
-| `20261005082042` | `pet_photos_private_and_pet_idempotency` |
-| `20261007113449` | `owner_edit_delete_health_logs` |
+Previously deployed migration versions: `20260926193909` notification Phase1; `20261005081930` pet photos; `20261005082042` private photos/Pet idempotency; `20261007113449` Owner Health edit/delete; `20261009180809` Health POST idempotency. Repo filenames match recorded remote versions. The docs sync performs no new production audit, migration, repair, grant or dataset mutation.
 
-Health Log Owner policies were inspected. Schema/policy presence is not a live cross-Owner access test. This review did not mutate production records, apply migrations, or alter Auth/Storage settings.
+## Review follow-up
 
-## Verification checkpoint
-
-| Check | Result at reviewed baseline |
-|---|---|
-| Targeted Vitest suite | PASS — 45 tests, 11 files |
-| Auth mapper/resend, Reminder edit, Notification selector/reducer scripts | PASS |
-| HTTP timeout lifecycle script | PASS |
-| ESLint / TypeScript / production build | PASS |
-| Additional defect reproductions | Two local mock reproductions confirmed; original test files restored |
-| Authenticated browser/manual regression | Not performed |
-| Owner A/B isolation against live API/Storage | Not performed |
-| Production loading timings | Not measured |
-
-The sandbox prevented the `tsx` CLI from opening its IPC pipe. Equivalent script checks used `node --import tsx`; Vitest ran through its Node entry point. No dependency/configuration changes were needed.
-
-## Prioritized follow-up
-
-Priority is proposed project triage, not a measured incident severity. Detailed evidence is in the [code review](CODE_REVIEW_2026-10-07.md).
-
-| Priority | Item | Acceptance criteria |
+| Item | Current status | Next evidence/action |
 |---|---|---|
-| P1 | Bound Health Log mutations and Notification GET/read waiting | Hung requests leave pending state after a defined limit; actionable error/retry; no stale updates; mutation retry accounts for ambiguous server success |
-| P1 | Prevent GET overwriting successful Health Log mutations | Pre-mutation GET cannot erase/resurrect a created/edited/deleted row; deterministic race regressions pass |
-| P2 | Restore optional vaccine schedule suggestion contract | Approved rule read access/dataset; no-match distinct from query failure; no automatic Reminder |
-| P2 | Remove text-validation sentinel collision | Literal `invalid` accepted; non-string values rejected for create/edit |
-| P2 | Restore focus after successful deletion | Focus moves to an existing row action/list heading/add button; cancel restores original trigger |
-| P2 | Expand application CI | Source PRs run lint, TypeScript and relevant complete test groups, including health summary; build requirements documented |
-| P2 | Review Supabase duplicate indexes/Reminder policies | Compare definitions, dependencies/plans first; approved migration preserves access; no index removed solely because unused |
-| P2 | Capture real performance/manual QA evidence | Authenticated timing/flow result recorded with environment/date; no personal data/tokens |
-| P3 | Clarify Health Log metric labels and visual checks | Explicit weight/food/amount labels; long/missing values readable on desktop/mobile |
-| P3 | Seeded portfolio demo | Synthetic data, isolation from real users, safe reset and clear demo label before publication |
+| CR-01 bounded waiting/unknown POST outcome | Delivered PR #22 | Real lost-response/retry with test data remains pending |
+| CR-02 stale Health GET and cancellation recovery | Delivered PR #22 | Create/edit/delete race regressions; real runtime pending |
+| CR-03 literal invalid / Vietnamese encoding | Delivered PR #22 | Structured validation and UTF-8 warning; negative/manual checks pending |
+| CR-04 deletion focus | Not re-certified in this sync | Inspect current mounted target and execute keyboard scenario; do not infer fixed |
+| CR-05 broad CI / summary coverage | Not re-certified | Audit workflow path coverage and required checks; no configuration changed here |
+| CR-06 duplicate-index/policy advisors | Historical advisory | Read current definitions/plans before approved migration; no index dropped |
+| CR-07 Auth hardening/reserved-table advisory | Historical configuration limitation | Check plan/configuration separately; no change made |
+| CR-08 schedule rules | Contract delivered; permission/dataset outstanding | Approved rule/read contract, no guessed clinical intervals |
+| Performance | Code safeguards delivered; unmeasured | Authenticated network/stage timings before/after; no speed percentage |
+| Real Owner A/B, upload/cleanup/email, full mobile QA | Pending manual validation | Use separate synthetic Owner fixtures and execution template |
 
-## Scope and documentation decisions
+The [7 October review](CODE_REVIEW_2026-10-07.md) remains dated historical evidence; its findings are not all current open defects. Use this status table for current dispositions. Do not use demo operations as proof of live access controls.
 
-Original persona/MoSCoW/API/ERD material remains planning evidence. Current-scope notices distinguish planned sharing/OAuth/API examples from implemented routes. Health Logs/statistics/Notification Center moved into the deployed Owner product. Vaccine/medical deletion is implemented; editing remains a future decision.
+## Documentation baseline
 
-Progress is feature/evidence based. No “100% complete”, percentage speedup, uptime guarantee or professional-role claim follows from passing checks. Informal user feedback informed photo selection, square fit, concise summaries, accidental-Enter prevention and compact cards.
+All11 product/technical artifacts (eight Markdown, ERD, User Flow, Use Case) now describe the application SHA above. BR/US/ADL IDs are preserved; new stories/decisions cover delivered feedback and public demo. API examples reflect actual handlers; Data Dictionary uses real column/FK names plus incremental migration fields. Personas/quotes are design hypotheses, not interviews. README/portfolio material distinguishes shipped features, checked evidence, planned work and runtime limitations.
+
+No “100% complete”, user-adoption count, production SLA, formal UAT sign-off or measured business improvement is claimed.

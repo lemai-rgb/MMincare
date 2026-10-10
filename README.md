@@ -4,9 +4,9 @@
 
 MMinCare helps dog and cat owners keep pet profiles, vaccination history, medical records, health observations, and care reminders in one place. It does not diagnose conditions or replace veterinary advice.
 
-[Live application](https://m-mincare.vercel.app/) · [Portfolio Demo guide](docs/PORTFOLIO_DEMO.md) · [Sample dataset](demo/README.md) · [Project status](docs/PROJECT_STATUS.md) · [BA/PM/Tester evidence](docs/PORTFOLIO_EVIDENCE.md)
+[Live application](https://m-mincare.vercel.app/) · [Try the demo](https://m-mincare.vercel.app/demo) · [Portfolio Demo guide](docs/PORTFOLIO_DEMO.md) · [Sample dataset](demo/README.md) · [Project status](docs/PROJECT_STATUS.md) · [BA/PM/Tester evidence](docs/PORTFOLIO_EVIDENCE.md)
 
-> **Status — 10 October 2026:** PRs #18–#25 merged. The public `/demo` was published with a separate sandbox UI; this follow-up replaces it with the same application components, forms and styles. The correction is not yet deployed. Demo data stays browser-local and does not establish real Auth/Storage/RLS QA.
+> **Status —11 October2026 (VN):** Owner MVP and public same-UI demo are deployed at main `bcd14b51f4b70cd3d418bd10638f7a996713fdcf` after PR #26. Demo state is browser-local, with3 synthetic Pets and31 Health Logs; real Auth/Owner A-B/Storage and production timings remain separate, unverified tests.
 
 ## Problem and intended users
 
@@ -18,7 +18,7 @@ The initial scope prioritizes an owner managing dogs or cats. Shared Caretaker a
 
 | Focus | Evidence available in this repository |
 |---|---|
-| BA | [Problem statement](Product/Problem%20statement.md), [personas](Product/Persona%20Document.md), [MVP and MoSCoW](Product/MVP%20document.md), [business rules](MMinCare_Business_Rules.md), [API design/current route inventory](MMinCare_API_Documentation.md), [data dictionary](Data_Dictionary.md), [Use Case](Use%20Case_MMinCare.drawio), [ERD](ERD%20-%20WEB%20MMin%20Care.drawio) |
+| BA | [Problem statement](Product/Problem%20statement.md), [personas](Product/Persona%20Document.md), [MVP and MoSCoW](Product/MVP%20document.md), [User Stories](Product/User%20story.md), [business rules](MMinCare_Business_Rules.md), [API design/current route inventory](MMinCare_API_Documentation.md), [data dictionary](Data_Dictionary.md), [Use Case](Use%20Case_MMinCare.drawio), [User Flow](Product/User%20flow%20Web%20theo%20d%C3%B5i%20th%C3%BA%20c%C6%B0ng.drawio), [ERD](ERD%20-%20WEB%20MMin%20Care.drawio) |
 | PM/Product | [Delivery status and prioritized backlog](docs/PROJECT_STATUS.md), [architecture decisions](Architecture_Decision_Log.md), merged feature/fix PRs, scope changes based on user feedback |
 | Tester/QA | [Requirement-to-test mapping and manual scenarios](docs/PORTFOLIO_EVIDENCE.md), automated regression tests, migration/RLS assertions, [defect report and verification limits](docs/CODE_REVIEW_2026-10-07.md) |
 
@@ -50,19 +50,13 @@ This is an independent project with AI-assisted implementation and review. Repos
 
 ## Delivery and quality
 
-Current demo base: [`fd7145e`](https://github.com/lemai-rgb/MMincare/commit/fd7145ef7ad72f3bda7fe36613f88e5f22a795cd), after [PR #23](https://github.com/lemai-rgb/MMincare/pull/23). PR #22 fixed Health Log/Notification request lifecycle and idempotency; PR #23 updated mobile layout. Authenticated manual QA and production timings remain unverified. The following results are historical evidence from the earlier `8b91154` review, not new results for this demo branch.
+Current application baseline is main `bcd14b51f4b70cd3d418bd10638f7a996713fdcf`, merged PR #26, with [successful exact-commit production deployment](https://vercel.com/lemai-rgbs-projects/m-mincare/E3bmui2BdzU7iAzkP2kNtnM4XSLD).
 
-Checks performed on 7 October 2026:
+Release-head checks:31 demo tests/4 files, lint, TypeScript, Webpack production build and [CI](https://github.com/lemai-rgb/MMincare/actions/runs/38068595221) passed at7b777d1. Public production smoke covered3 cards, Min14 logs, different monthly status data, Min Other details and return-home. This is sampled evidence, not full E2E/UAT. Historical app-suite counts are documented separately, not presented as rerun at this merge SHA.
 
-- **45 Vitest tests across 11 files passed**, including notifications, photo picker, Health Log UI/API, timeout/retry and validation scenarios.
-- Auth error/resend, Reminder edit, Notification selector/reducer and HTTP-timeout script tests passed.
-- ESLint, TypeScript and a production build passed.
-- Latest relevant [migration replay run #23](https://github.com/lemai-rgb/MMincare/actions/runs/37615187127) passed on the PR #20 feature head. The workflow is path-filtered; not every check runs on every PR.
-- Vercel reports successful deployment for the reviewed main commit. Deployment success does not establish loading speed or authenticated functional correctness.
+PR #22 delivered request lifecycle/idempotency/text fixes; PR #23 responsive layout; PR #24 statistics timestamp/range contract; PR #26 corrected demo parity and fixtures. CR-08 rule access/dataset remains incomplete. Post-delete focus, CI coverage/database advisories and manual QA keep their stated evidence status. See [current status](docs/PROJECT_STATUS.md) and [portfolio evidence](docs/PORTFOLIO_EVIDENCE.md).
 
-**Quality follow-up:** request lifecycle/race/text-validation fixes were delivered by PR #22; optional vaccine rule access/dataset remains incomplete (CR-08). Timestamp range validation in statistics was fixed by merged PR #24. Focus recovery, CI coverage, database advisory follow-up and manual evidence should retain their verified status rather than infer completion from deployment. See the [dated review](docs/CODE_REVIEW_2026-10-07.md) and [current status](docs/PROJECT_STATUS.md).
-
-Authenticated upload/reload, cross-Owner access, real email flows, desktop/mobile visual QA and production timings are not verified in this review. See the [manual scenarios](docs/PORTFOLIO_EVIDENCE.md).
+Authenticated email/upload/reload/retry, Owner A/B access, full desktop/mobile visual QA and production timings remain unverified. No speedup percentage, adoption metric or formal sign-off is claimed.
 
 ## Architecture and stack
 
@@ -76,13 +70,13 @@ flowchart TD
 
 Next.js 16.3.5 · React 19.2.4 · TypeScript · CSS modules/Tailwind CSS 4 · Supabase Auth/Postgres/Storage · Vercel · Vitest/Testing Library.
 
-APIs validate authentication and pet ownership; RLS supplies a database authorization boundary. The deployed API uses `/api/...` with SSR cookie sessions. Original API examples are design material; current routes are marked separately in the [API document](MMinCare_API_Documentation.md).
+APIs validate authentication and pet ownership; RLS supplies a database authorization boundary. The deployed API uses `/api/...` with SSR cookie sessions. The [API document](MMinCare_API_Documentation.md) now describes actual handlers and request/response contracts; obsolete design-only endpoints are excluded.
 
 ## Repository navigation
 
 | Directory/file | Purpose |
 |---|---|
-| `Product/` | Problem statement, personas, original MVP prioritization |
+| `Product/` | Problem/personas/MVP, current User Stories and User Flow |
 | `docs/` | Current status, portfolio traceability/manual scenarios, dated review |
 | `app/`, `components/`, `styles/` | Pages, route handlers, feature/shared UI and styles |
 | `lib/` | Auth, domain validation, request lifecycle and Supabase helpers |
@@ -138,8 +132,8 @@ Configure Supabase Site URL/auth redirects, reconcile migrations, and verify pri
 
 Optional `MINCARE_PERF_LOG=1` enables server timing logs with request/stage identifiers and durations. Actual production before/after timings have not been captured; no speed improvement percentage is claimed.
 
-This branch's `/demo` uses only synthetic client data, no backend credentials, and exposes selected Health Log/Reminder/Notification interactions. The real application still needs its configured Supabase environment. See [demo scope and acceptance](docs/PORTFOLIO_DEMO.md) before using a demo URL on a CV. Future scope includes controlled sharing, external notifications, OAuth and multi-pet analytics.
+The deployed `/demo` uses shared application components and synthetic per-tab client data, no backend credentials, with Pet, Vaccine/Medical, Reminder/Notification and Health flows. The real application still needs its configured Supabase environment. See [demo scope and acceptance](docs/PORTFOLIO_DEMO.md) before using a demo URL on a CV. Future scope includes controlled sharing, external notifications, OAuth and multi-pet analytics.
 
 ## Portfolio access
 
-The live application uses real authenticated workflows; `/demo` in this branch provides synthetic data for recruiters without account registration. Use its public URL on a CV only after deployment is verified. The repository was private at the earlier audit; its URL alone does not grant recruiter access. Decide visibility/access explicitly before sharing code/documentation. Demo fixtures and tests do not establish real Owner isolation or production performance.
+The [live application](https://m-mincare.vercel.app/) uses authenticated workflows; [public demo](https://m-mincare.vercel.app/demo) is deployed for CV reviewers without registration. It uses the same UI/forms/CSS and3 synthetic Pets, while changes/reset stay browser-local. Repository links require reviewer access if private; do not assume a URL alone grants it. Demo does not prove real Owner isolation, private Storage or backend performance. The11 current product/technical artifacts are synchronized to the application baseline; see the [documentation index](docs/DOCUMENTATION_SYNC.md).
