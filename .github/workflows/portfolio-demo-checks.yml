@@ -1,0 +1,46 @@
+name: Portfolio Demo Checks
+
+on:
+  pull_request:
+    paths:
+      - 'app/demo/**'
+      - 'components/demo/**'
+      - 'lib/demo/**'
+      - 'demo/**'
+      - 'scripts/export-demo.ts'
+      - 'styles/demo.module.css'
+      - 'proxy.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/portfolio-demo-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: portfolio-demo-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:demo
+      - name: Check deterministic dataset exports
+        run: |
+          npm run demo:export -- --date 2026-10-10
+          git diff --exit-code -- demo/generated
+      - name: Check types
+        run: |
+          npx next typegen
+          npx tsc --noEmit --incremental false
+      - name: Lint demo and public route boundary
+        run: npx eslint lib/demo components/demo app/demo scripts/export-demo.ts proxy.ts
