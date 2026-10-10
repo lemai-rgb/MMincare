@@ -1,17 +1,57 @@
 import { describe, expect, it } from "vitest";
 import { createDemoState, DEMO_STORAGE_KEY, demoReminderStatus, getDemoNotifications, parseDemoState, shiftDemoDate, sortDemoHealthLogs } from "./data";
 import { applyDemoAction, createDemoStore } from "./store";
+import { aggregateOtherStatusBreakdown, aggregateStatusCounts, getPeriodRange } from "@/lib/healthLogs/dashboard";
+import { HEALTH_STATUS_OPTIONS } from "@/lib/healthLogs/statusOptions";
 
 const now = new Date("2026-10-10T03:00:00Z");
 const today = "2026-10-10";
 const newId = "00000000-0000-4000-8000-000000000999";
 
 describe("synthetic portfolio dataset", () => {
+  it("shows all six groups and the three named Other examples for Meo/Min on every weekday", () => {
+    for (let day = 5; day <= 11; day++) {
+      const anchor = `2026-10-${String(day).padStart(2, "0")}`;
+      const state = createDemoState(anchor);
+      expect(parseDemoState(state)).toEqual(state);
+      for (const period of ["week", "month"] as const) {
+        const range = getPeriodRange(period, new Date(`${anchor}T12:00:00+07:00`));
+        for (const pet of state.pets.filter((pet) => pet.name !== "Sushi")) {
+          const rows = state.health_logs.filter((log) => log.pet_id === pet.pet_id);
+          const counts = aggregateStatusCounts(rows, range);
+          expect(counts.map((count) => count.status)).toEqual([...HEALTH_STATUS_OPTIONS]);
+          expect(counts.every((count) => count.count > 0)).toBe(true);
+          const labels = aggregateOtherStatusBreakdown(rows, range).map((entry) => entry.label);
+          expect(labels).toEqual(expect.arrayContaining(["Sốt", "Rụng lông", "Tránh ánh sáng"]));
+        }
+      }
+    }
+  });
+
+  it("upgrades earlier sessions once without replacing edits, restoring deleted old logs or duplicating additions", () => {
+    const state = createDemoState(today);
+    const extraIds = new Set(state.health_logs.filter((log) => /0000000003(?:6\d|7[0-3])$/.test(log.health_log_id)).map((log) => log.health_log_id));
+    const oldLogs = state.health_logs.filter((log) => !extraIds.has(log.health_log_id));
+    const deletedId = oldLogs[1].health_log_id;
+    const edited = {...oldLogs[0], status:"Quan sát riêng", note:"Giữ sửa đổi của người xem"};
+    const legacy = {...state, seed_revision:2 as const, pets:state.pets.map((pet) => ({...pet,picture_url:null})),
+      health_logs:oldLogs.filter((log) => log.health_log_id !== deletedId).map((log) => log.health_log_id === edited.health_log_id ? edited : log)};
+    const upgraded = parseDemoState(legacy)!;
+    expect(upgraded.seed_revision).toBe(3);
+    expect(upgraded.health_logs).toHaveLength(39);
+    expect(upgraded.health_logs.find((log) => log.health_log_id === edited.health_log_id)).toEqual(edited);
+    expect(upgraded.health_logs.some((log) => log.health_log_id === deletedId)).toBe(false);
+    expect(upgraded.pets.every((pet) => pet.picture_url === null)).toBe(true);
+    expect(parseDemoState(upgraded)).toEqual(upgraded);
+    const removed = {...upgraded, health_logs:upgraded.health_logs.filter((log) => !extraIds.has(log.health_log_id))};
+    expect(parseDemoState(removed)).toEqual(removed);
+  });
+
   it("has coherent ownership, unique IDs, relation sources and a basic Sushi profile", () => {
     const state = createDemoState(today);
     expect(parseDemoState(state)).toEqual(state);
     expect(state.pets).toHaveLength(3);
-    expect(state.health_logs).toHaveLength(26);
+    expect(state.health_logs).toHaveLength(40);
     expect(state.reminders).toHaveLength(7);
     const empty = state.pets.find((p) => p.name === "Sushi")!;
     expect(state.health_logs.filter((r) => r.pet_id === empty.pet_id)).toHaveLength(2);
@@ -44,7 +84,7 @@ describe("synthetic portfolio dataset", () => {
   it("does not share mutable fixture arrays across sessions and rejects malformed persisted data", () => {
     const first = createDemoState(today); const second = createDemoState(today);
     first.health_logs.length = 0;
-    expect(second.health_logs).toHaveLength(26);
+    expect(second.health_logs).toHaveLength(40);
     expect(parseDemoState({ ...second, pets: [] })).toBeNull();
     expect(parseDemoState({ ...second, health_logs: [{ ...second.health_logs[0], weight: "2.1" }] })).toBeNull();
     expect(parseDemoState({ ...second, reminders: [{ ...second.reminders[0], source_medical_record_id: second.medical_records[0].record_id }] })).toBeNull();
@@ -67,7 +107,7 @@ describe("isolated demo lifecycle", () => {
     expect(twice.health_logs.filter((r) => r.health_log_id === newId)).toHaveLength(1);
     const edited = applyDemoAction(twice, { ...action, input: { ...action.input, weight: 3.2 } }, new Date("2026-10-10T05:00:00Z"));
     expect(edited.health_logs.find((r) => r.health_log_id === newId)?.logged_at).toBe(now.toISOString());
-    expect(applyDemoAction(edited, { type: "health-delete", id: newId }, now).health_logs).toHaveLength(26);
+    expect(applyDemoAction(edited, { type: "health-delete", id: newId }, now).health_logs).toHaveLength(40);
   });
 
   it("rejects invalid future, empty, precision and cross-Pet health operations", () => {

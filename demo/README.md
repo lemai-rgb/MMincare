@@ -13,15 +13,17 @@
 | Thực thể | Số lượng ban đầu |
 |---|---:|
 | Pet | 3 |
-| Health Log | 26 |
+| Health Log | 40 |
 | Vaccine Record | 4 |
 | Medical Record | 2 |
 | Reminder | 7 |
 | Notification hiện hành | 3 — 2 chưa đọc, 1 đã đọc |
 
+Meo và Min có đủ sáu nhóm trạng thái trong thống kê tuần/tháng khi khởi tạo mẫu. Các trạng thái gốc **Sốt**, **Rụng lông**, **Tránh ánh sáng** được gom vào **Khác**, nhưng vẫn xuất hiện riêng trong tooltip/chi tiết. Có 7 bản ghi quan sát bổ sung cho mỗi bé, không điền cân nặng để giữ nguyên đường cân nặng trước đó. Đây là tình huống giả lập để minh họa biểu đồ.
+
 ## Định dạng và ngày
 
-- `dataset.template.json`: nguồn fixture, dùng offset ngày tương đối.
+- `dataset.template.json`: nguồn fixture, dùng offset ngày tương đối; các bản ghi có `display_current_week` được giới hạn vào tuần bắt đầu thứ Hai của ngày neo, không ở tương lai.
 - `lib/demo/data.ts`: tạo snapshot từ một ngày neo ở `Asia/Ho_Chi_Minh`; không gọi network.
 - `generated/dataset.json`: snapshot cụ thể ngày 10/10/2026 để xem/đối chiếu.
 - `generated/*.csv`: sáu bảng, UTF-8 BOM, giá trị null để trống. Phù hợp xem bằng Excel/Power BI; không phải lệnh seed database.
@@ -45,6 +47,6 @@ Owner UUID trong mẫu là định danh hư cấu, **không tồn tại như m�
 
 Nội dung vaccine/khám/lượng ăn chỉ minh họa form và dữ liệu. Không dùng làm hướng dẫn thú y, interval tiêm hoặc liều thuốc. Không seed `vaccine_schedule_rules`; CR-08 vẫn cần quyền/dataset nghiệp vụ được duyệt riêng.
 
-Meo dùng ảnh mèo tại `/images/demo/meo.webp`; Min dùng ảnh chó tại `/images/demo/min.webp`; Sushi có `picture_url = null` và giữ avatar mặc định theo loài. Hai ảnh được người dùng cung cấp, tối ưu thành WebP để giảm dung lượng, giữ nguyên nội dung và tỉ lệ ảnh; khung vuông dùng CSS `object-fit: cover`, căn giữa. Không upload Supabase Storage hoặc dùng ảnh của tài khoản thật. Session cũ được nâng cấp một lần cho Sushi nếu còn trống; giữ chỉnh sửa khác. Ảnh đã đổi/bỏ trong phiên mới được giữ nguyên khi reload.
+Meo dùng ảnh mèo tại `/images/demo/meo.webp`; Min dùng ảnh chó tại `/images/demo/min.webp`; Sushi có `picture_url = null` và giữ avatar mặc định theo loài. Hai ảnh được người dùng cung cấp, tối ưu thành WebP để giảm dung lượng, giữ nguyên nội dung và tỉ lệ ảnh; khung vuông dùng CSS `object-fit: cover`, căn giữa. Không upload Supabase Storage hoặc dùng ảnh của tài khoản thật. Session cũ được nâng cấp một lần cho Sushi nếu còn trống và bổ sung các bản ghi trạng thái theo ID; giữ chỉnh sửa khác và không tạo trùng. Sau nâng cấp, bản ghi người xem xóa không được tự khôi phục khi reload. Ảnh đã đổi/bỏ trong phiên mới được giữ nguyên khi reload.
 
 Chi tiết trải nghiệm và acceptance: [Portfolio Demo](../docs/PORTFOLIO_DEMO.md).

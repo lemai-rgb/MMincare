@@ -24,7 +24,7 @@ export type DemoReminder = {
   completed_at: string | null; created_at: string; updated_at: string;
 };
 export type DemoState = {
-  version: 1; seed_revision?: 2; anchor_day: string; pets: Pet[]; health_logs: DemoHealthLog[];
+  version: 1; seed_revision?: 2 | 3; anchor_day: string; pets: Pet[]; health_logs: DemoHealthLog[];
   vaccine_records: DemoVaccine[]; medical_records: DemoMedical[];
   reminders: DemoReminder[]; read_notifications: string[];
   attachments?: { attachment_id: string; record_id: string; file_name: string; file_type: "jpg" | "jpeg" | "png" | "pdf"; data: string }[];
