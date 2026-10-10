@@ -16,7 +16,7 @@ describe("synthetic portfolio dataset", () => {
     const empty = state.pets.find((p) => p.name === "Sushi")!;
     expect(state.health_logs.some((r) => r.pet_id === empty.pet_id)).toBe(false);
     expect(state.reminders.some((r) => r.pet_id === empty.pet_id)).toBe(false);
-    expect(state.pets.every((p) => p.picture_url === null)).toBe(true);
+    expect(state.pets.map((p) => p.picture_url)).toEqual(["/images/demo/meo.webp", "/images/demo/min.webp", null]);
   });
 
   it("resolves offsets across year/leap-day boundaries and retains upcoming/overdue/completed scenarios", () => {
@@ -46,6 +46,12 @@ describe("synthetic portfolio dataset", () => {
     expect(parseDemoState({ ...second, pets: [] })).toBeNull();
     expect(parseDemoState({ ...second, health_logs: [{ ...second.health_logs[0], weight: "2.1" }] })).toBeNull();
     expect(parseDemoState({ ...second, reminders: [{ ...second.reminders[0], source_medical_record_id: second.medical_records[0].record_id }] })).toBeNull();
+    expect(parseDemoState({ ...second, pets: second.pets.map((p) => ({ ...p, picture_url: "https://external.invalid/pet.jpg" })) })).toBeNull();
+    const legacy = { ...second, pets: second.pets.map((p) => ({ ...p, picture_url: null })) };
+    legacy.health_logs[0].note = "Visitor edit kept after photo update";
+    const restored = parseDemoState(legacy)!;
+    expect(restored.pets.map((p) => p.picture_url)).toEqual(["/images/demo/meo.webp", "/images/demo/min.webp", null]);
+    expect(restored.health_logs[0].note).toBe("Visitor edit kept after photo update");
   });
 });
 

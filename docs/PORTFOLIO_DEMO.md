@@ -28,7 +28,7 @@ Website thật giữ Supabase Auth, API, Owner RLS và private Storage. Demo dù
 | Owner isolation / Storage security | Không dùng demo làm bằng chứng | Phải kiểm thử với hai tài khoản thật |
 | Email/push, gợi ý lịch tiêm | Không triển khai bằng fixture | Theo trạng thái sản phẩm hiện tại; rule read/dataset còn riêng |
 
-Demo tái sử dụng taxonomy, date/period, weight/status aggregation, reminder labels/status và avatar mặc định. Nó là UI sandbox cho các luồng đã nêu, không phải bản sao toàn bộ giao diện/Auth/API production. Chart demo phân bổ theo thứ tự lần cân và có bảng giá trị; không tuyên bố hỗ trợ đủ tooltip/trục thời gian của chart production.
+Demo tái sử dụng taxonomy, date/period, weight/status aggregation, reminder labels/status và avatar mặc định cho Sushi. Meo và Min dùng hai ảnh người dùng cung cấp riêng cho demo, phục vụ cả trường hợp có ảnh và avatar mặc định. Nó là UI sandbox cho các luồng đã nêu, không phải bản sao toàn bộ giao diện/Auth/API production. Chart demo phân bổ theo thứ tự lần cân và có bảng giá trị; không tuyên bố hỗ trợ đủ tooltip/trục thời gian của chart production.
 
 ## Hướng dẫn nhà tuyển dụng — 3 phút
 
@@ -70,4 +70,4 @@ Repo có thể cần quyền truy cập; kiểm tra visibility trước khi đ�
 
 Nhánh demo không yêu cầu env Supabase cho riêng `/demo`, nhưng các route thật và build hệ thống vẫn giữ yêu cầu hiện có. Inter vẫn do `next/font/google` tải khi build. Không đổi font hoặc bypass Auth để né lỗi môi trường.
 
-Sau khi Preview sẵn sàng, xác minh `/demo` truy cập không đăng nhập, thao tác/reset/reload và mobile/desktop. Chỉ sau merge và production check mới thay `<DEMO_ORIGIN>` bằng URL chính thức trong CV. Hai ảnh chó/mèo được cung cấp sau sẽ là thay đổi asset riêng, không phải seed database.
+Sau khi Preview sẵn sàng, xác minh `/demo` truy cập không đăng nhập, thao tác/reset/reload và mobile/desktop. Chỉ sau merge và production check mới thay `<DEMO_ORIGIN>` bằng URL chính thức trong CV. Hai ảnh chó/mèo đã nhận được thêm dưới dạng asset riêng; không seed database. Session cũ nhận ảnh mới khi reload mà không mất các thao tác mẫu.

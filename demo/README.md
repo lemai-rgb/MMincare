@@ -1,6 +1,6 @@
 # Bộ dữ liệu mẫu MMinCare
 
-Đây là dữ liệu hoàn toàn giả lập cho **portfolio demo**, không lấy từ Supabase, tài khoản hoặc ảnh người dùng thật. Không import bộ này vào production. Không có password, email, token, Auth user, object Storage hay rule tiêm phòng.
+Đây là dữ liệu nghiệp vụ hoàn toàn giả lập cho **portfolio demo**, không lấy từ Supabase hoặc tài khoản thật. Hai ảnh đại diện được người dùng cung cấp riêng để dùng cho demo. Không import bộ này vào production. Không có password, email, token, Auth user, object Storage hay rule tiêm phòng.
 
 ## Nội dung
 
@@ -45,6 +45,6 @@ Owner UUID trong mẫu là định danh hư cấu, **không tồn tại như m�
 
 Nội dung vaccine/khám/lượng ăn chỉ minh họa form và dữ liệu. Không dùng làm hướng dẫn thú y, interval tiêm hoặc liều thuốc. Không seed `vaccine_schedule_rules`; CR-08 vẫn cần quyền/dataset nghiệp vụ được duyệt riêng.
 
-Ảnh hiện dùng avatar mặc định. Hai ảnh chó/mèo người dùng cung cấp sẽ được thay vào bằng asset riêng sau khi nhận file; không dùng Storage path hoặc ảnh của tài khoản thật.
+Meo dùng ảnh mèo tại `/images/demo/meo.webp`; Min dùng ảnh chó tại `/images/demo/min.webp`; Sushi có `picture_url = null` và giữ avatar mặc định theo loài. Hai ảnh được người dùng cung cấp, tối ưu thành WebP để giảm dung lượng, giữ nguyên nội dung và tỉ lệ ảnh; khung vuông dùng CSS `object-fit: cover`, căn giữa. Không upload Supabase Storage hoặc dùng ảnh của tài khoản thật. Session demo cũ tự nhận hai ảnh khi reload, vẫn giữ các chỉnh sửa nhật ký/nhắc hẹn.
 
 Chi tiết trải nghiệm và acceptance: [Portfolio Demo](../docs/PORTFOLIO_DEMO.md).

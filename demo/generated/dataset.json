@@ -12,7 +12,7 @@
       "species": "Cat",
       "gender": "Female",
       "breed": "Tam thể",
-      "picture_url": null,
+      "picture_url": "/images/demo/meo.webp",
       "date_of_birth": "2026-02-12",
       "created_at": "2026-07-12T08:00:00+07:00",
       "updated_at": "2026-10-10T08:00:00+07:00"
@@ -24,7 +24,7 @@
       "species": "Dog",
       "gender": "Male",
       "breed": "Corgi",
-      "picture_url": null,
+      "picture_url": "/images/demo/min.webp",
       "date_of_birth": "2024-10-10",
       "created_at": "2026-08-11T08:00:00+07:00",
       "updated_at": "2026-10-10T08:00:00+07:00"

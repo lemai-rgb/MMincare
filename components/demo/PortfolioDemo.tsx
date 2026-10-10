@@ -172,14 +172,14 @@ export function PortfolioDemo() {
       <h2 id="demo-content-title" tabIndex={-1} className={styles.contentTitle}>{area === "reminders" ? "Lịch chăm sóc mẫu" : pet ? `Hồ sơ của ${pet.name}` : "Thú cưng của bạn"}</h2>
       {area === "reminders" ? reminders() : !pet ? <div className={styles.petGrid}>
         {state.pets.map((p) => { const latest = sortDemoHealthLogs(state.health_logs.filter((l) => l.pet_id === p.pet_id))[0]; return <article className={styles.petCard} key={p.pet_id}>
-          <div className={styles.avatarWrap}><PetAvatar species={p.species} className={styles.avatar} /></div>
+          <div className={styles.avatarWrap}><PetAvatar species={p.species} pictureUrl={p.picture_url} className={styles.avatar} /></div>
           <h3>{p.name}</h3><p className={styles.muted}>{getPetSpeciesLabel(p.species)} · {p.breed ?? "Chưa rõ giống"} · {getPetGenderLabel(p.gender)}</p>
           {latest ? <div className={styles.summary}><strong>Nhật ký gần nhất · {displayDate(latest.recorded_on)}</strong><p>Tình trạng: {show(latest.status)}</p><p>Cân nặng: {weightLabel(latest.weight)}</p><button type="button" className={styles.textButton} onClick={() => openPet(p.pet_id, "health")}>Xem nhật ký →</button></div> : <p className={styles.summary}>Chưa có nhật ký sức khỏe</p>}
           <button type="button" className={styles.primary} onClick={() => openPet(p.pet_id)}>Xem hồ sơ {p.name} →</button>
         </article>; })}
       </div> : <section className={styles.stack}>
         <button type="button" className={styles.back} onClick={() => setPetId(null)}>← Danh sách thú cưng</button>
-        <div className={styles.profile}><div className={styles.avatarWrap}><PetAvatar species={pet.species} className={styles.avatar} /></div>
+        <div className={styles.profile}><div className={styles.avatarWrap}><PetAvatar species={pet.species} pictureUrl={pet.picture_url} className={styles.avatar} /></div>
           <div><h3>{pet.name}</h3><p>{getPetSpeciesLabel(pet.species)} · {pet.breed ?? "Chưa rõ giống"} · {getPetGenderLabel(pet.gender)}</p><span className={styles.badge}>{logs.length} nhật ký sức khỏe</span></div></div>
         <nav className={styles.petTabs} aria-label="Các mục hồ sơ mẫu">
           {([["overview", "Tổng quan"], ["medical", "Hồ sơ y tế"], ["reminders", "Nhắc hẹn"], ["health", "Sức khỏe"]] as const).map(([value, label]) => <button type="button" key={value} aria-pressed={tab === value} onClick={() => { setTab(value); setFilter("All"); }}>{label}</button>)}

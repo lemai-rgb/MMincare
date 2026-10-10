@@ -5,6 +5,7 @@ import type { DemoHealthInput, DemoHealthLog, DemoNotification, DemoState } from
 
 export const DEMO_OWNER_ID = template.owner_id;
 export const DEMO_STORAGE_KEY = "mmincare:portfolio-demo:v1";
+const demoPhoto = (petId: unknown) => template.pets.find((pet) => pet.pet_id === petId)?.picture_url ?? null;
 
 export function isDemoDate(value: unknown): value is string {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -29,7 +30,7 @@ export function createDemoState(today = getVietnamToday()): DemoState {
     pets: template.pets.map((pet) => ({
       pet_id: pet.pet_id, owner_id: DEMO_OWNER_ID, name: pet.name,
       species: pet.species as "Cat" | "Dog", gender: pet.gender as "Male" | "Female" | "Unknown",
-      breed: pet.breed, picture_url: null,
+      breed: pet.breed, picture_url: pet.picture_url,
       date_of_birth: pet.birth_days_ago === null ? null : shiftDemoDate(today, -pet.birth_days_ago),
       created_at: timestamp(shiftDemoDate(today, -pet.created_days_ago)), updated_at: timestamp(today),
     })),
@@ -126,7 +127,7 @@ export function parseDemoState(value: unknown): DemoState | null {
   const pets = value.pets as unknown[];
   if (!pets.length || !pets.every((p) => record(p) && id(p.pet_id) && p.owner_id === DEMO_OWNER_ID
     && text(p.name) && ["Cat", "Dog"].includes(String(p.species)) && ["Male", "Female", "Unknown"].includes(String(p.gender))
-    && optionalText(p.breed) && p.picture_url === null
+    && optionalText(p.breed) && (p.picture_url === null || p.picture_url === demoPhoto(p.pet_id))
     && (p.date_of_birth === null || isDemoDate(p.date_of_birth)) && stamp(p.created_at) && stamp(p.updated_at))) return null;
   const ids = new Set(pets.map((p) => (p as Record<string, unknown>).pet_id));
   const owned = (r: Record<string, unknown>) => ids.has(r.pet_id) && r.created_by === DEMO_OWNER_ID;
@@ -156,5 +157,7 @@ export function parseDemoState(value: unknown): DemoState | null {
     ...(value.reminders as Record<string, unknown>[]).map((r) => r.reminder_id),
   ];
   if (new Set(allIds).size !== allIds.length || !(value.read_notifications as unknown[]).every((r) => typeof r === "string")) return null;
-  return value as unknown as DemoState;
+  const state = value as unknown as DemoState;
+  // Upgrade old avatar-only sessions without resetting the visitor's edits.
+  return { ...state, pets: state.pets.map((pet) => ({ ...pet, picture_url: demoPhoto(pet.pet_id) })) };
 }

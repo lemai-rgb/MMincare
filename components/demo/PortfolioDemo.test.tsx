@@ -4,7 +4,6 @@ import { PortfolioDemo } from "./PortfolioDemo";
 import { DEMO_STORAGE_KEY } from "@/lib/demo/data";
 
 vi.mock("next/link", () => ({ default: ({ children, href }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => <a href={href}>{children}</a> }));
-vi.mock("@/components/pets/PetAvatar", () => ({ PetAvatar: () => <span aria-hidden="true">Avatar</span> }));
 
 describe("portfolio demo without production APIs", () => {
   beforeEach(() => { window.sessionStorage.clear(); vi.stubGlobal("fetch", vi.fn(() => { throw new Error("Demo must not fetch production API"); })); });
@@ -12,6 +11,12 @@ describe("portfolio demo without production APIs", () => {
 
   it("renders three Pets, empty state, Health Log create/edit/delete and persists through reload", async () => {
     const view = render(<PortfolioDemo />);
+    await screen.findByRole("button", { name: "Xem hồ sơ Meo →" });
+    for (const [name, source] of [["Meo", "/images/demo/meo.webp"], ["Min", "/images/demo/min.webp"]]) {
+      const card = screen.getByRole("button", { name: `Xem hồ sơ ${name} →` }).closest("article")!;
+      expect(card.querySelector('img[data-pet-photo="true"]')?.getAttribute("src")).toBe(source);
+    }
+    expect(screen.getByRole("button", { name: "Xem hồ sơ Sushi →" }).closest("article")!.querySelector('img[data-pet-photo="false"]')).toBeTruthy();
     fireEvent.click(await screen.findByRole("button", { name: "Xem hồ sơ Sushi →" }));
     fireEvent.click(screen.getByRole("button", { name: "Sức khỏe" }));
     expect(screen.getByText(/nhật ký đầu tiên cho Sushi/)).toBeTruthy();

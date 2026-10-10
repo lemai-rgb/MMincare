@@ -6,6 +6,7 @@
     {
       "pet_id": "00000000-0000-4000-8000-000000000101",
       "name": "Meo",
+      "picture_url": "/images/demo/meo.webp",
       "species": "Cat",
       "gender": "Female",
       "breed": "Tam thể",
@@ -15,6 +16,7 @@
     {
       "pet_id": "00000000-0000-4000-8000-000000000102",
       "name": "Min",
+      "picture_url": "/images/demo/min.webp",
       "species": "Dog",
       "gender": "Male",
       "breed": "Corgi",
@@ -24,6 +26,7 @@
     {
       "pet_id": "00000000-0000-4000-8000-000000000103",
       "name": "Sushi",
+      "picture_url": null,
       "species": "Cat",
       "gender": "Unknown",
       "breed": null,

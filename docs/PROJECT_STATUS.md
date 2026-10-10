@@ -7,11 +7,11 @@
 ## Current delivery update
 
 - `main` at `fd7145ef7ad72f3bda7fe36613f88e5f22a795cd` contains merged PR #22 (request lifecycle/idempotency) and #23 (mobile responsive UI). The snapshot below is the preserved 7 October review; its open defects are historical unless explicitly carried forward.
-- The reproduced dashboard date/timestamp mismatch has a separate fix in [PR #24](https://github.com/lemai-rgb/MMincare/pull/24), not yet merged at this update.
+- The reproduced dashboard date/timestamp mismatch is fixed by merged [PR #24](https://github.com/lemai-rgb/MMincare/pull/24); `main` at `5c0d0b316cb03c533b1d2ae1ead3c68f0b3a056d` has been merged into the demo branch, retaining both dashboard regression tests and demo scripts.
 - [Draft PR #25](https://github.com/lemai-rgb/MMincare/pull/25) adds a [synthetic dataset](../demo/README.md) and [portfolio sandbox](PORTFOLIO_DEMO.md): three Pets, 24 Health Logs, three vaccine records, two medical records, six Reminders and three initial current notifications.
 - `/demo` uses tab-local state, safe reset and JSON export. No migration, real Auth user, Storage object or production data is written. Demo is implemented in the branch; publication and real browser/visual validation remain pending.
 - CR-08: code distinguishes rule lookup failure/no-match; production rule read access and approved dataset are not completed by this demo. No clinical intervals are seeded.
-- Two dog/cat photos are expected from the user; current fixture uses default avatars. Do not mark these assets as received.
+- Two user-supplied photos are received: cat for Meo and dog for Min. They are optimized local WebP assets; Sushi intentionally keeps the default species avatar. No Storage object or production Pet image is changed.
 - Production Auth/Owner A/B/Storage tests, live retry behavior and measured loading performance remain pending. Demo results are not substitutes for them.
 
 ## Historical 7 October checkpoint
