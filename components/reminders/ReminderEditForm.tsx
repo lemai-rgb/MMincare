@@ -1,4 +1,5 @@
 "use client";
+import { useRuntimeRequest } from "@/lib/appRuntime";
 
 import { FormEvent, useRef, useState } from "react";
 import type { ReminderListItem, ReminderUpdate } from "@/lib/reminders";
@@ -12,6 +13,7 @@ export function ReminderEditForm({ reminder, titleId, onCancel, onSaved, onSavin
   onSaved: (reminder: ReminderUpdate) => void | Promise<void>;
   onSavingChange?: (saving: boolean) => void;
 }) {
+  const request = useRuntimeRequest();
   const [dueDate, setDueDate] = useState(reminder.due_date);
   const [note, setNote] = useState(reminder.note ?? "");
   const [error, setError] = useState("");
@@ -23,7 +25,7 @@ export function ReminderEditForm({ reminder, titleId, onCancel, onSaved, onSavin
     if (!dueDate) { setError("Vui lòng chọn ngày hẹn."); return; }
     guard.current = true; setSaving(true); onSavingChange?.(true); setError("");
     try {
-      const response = await fetch(`/api/reminders/${encodeURIComponent(reminder.reminder_id)}`, {
+      const response = await request(`/api/reminders/${encodeURIComponent(reminder.reminder_id)}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ due_date: dueDate, note: note.trim() || null }),
       });

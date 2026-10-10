@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { PortfolioDemo } from "@/components/demo/PortfolioDemo";
 
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function DemoPage() {
-  return <PortfolioDemo />;
+  return <Suspense fallback={<p role="status">Đang tải trải nghiệm thử…</p>}><PortfolioDemo /></Suspense>;
 }

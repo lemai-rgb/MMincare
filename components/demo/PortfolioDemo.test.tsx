@@ -1,79 +1,92 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { AnchorHTMLAttributes } from "react";
 import { PortfolioDemo } from "./PortfolioDemo";
 import { DEMO_STORAGE_KEY } from "@/lib/demo/data";
 
-vi.mock("next/link", () => ({ default: ({ children, href }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => <a href={href}>{children}</a> }));
+const router = {push:vi.fn(),replace:vi.fn(),refresh:vi.fn()};
+vi.mock("next/navigation",() => ({useRouter:() => router,usePathname:() => "/demo",useSearchParams:() => new URLSearchParams()}));
+vi.mock("next/link",() => ({default:({children,href,prefetch,...props}:AnchorHTMLAttributes<HTMLAnchorElement> & {prefetch?:boolean}) => { void prefetch; return <a {...props} href={href}>{children}</a>; }}));
 
-describe("portfolio demo without production APIs", () => {
-  beforeEach(() => { window.sessionStorage.clear(); vi.stubGlobal("fetch", vi.fn(() => { throw new Error("Demo must not fetch production API"); })); });
-  afterEach(() => vi.unstubAllGlobals());
-
-  it("renders three Pets, empty state, Health Log create/edit/delete and persists through reload", async () => {
-    const view = render(<PortfolioDemo />);
-    await screen.findByRole("button", { name: "Xem hồ sơ Meo →" });
-    for (const [name, source] of [["Meo", "/images/demo/meo.webp"], ["Min", "/images/demo/min.webp"]]) {
-      const card = screen.getByRole("button", { name: `Xem hồ sơ ${name} →` }).closest("article")!;
-      expect(card.querySelector('img[data-pet-photo="true"]')?.getAttribute("src")).toBe(source);
+describe("demo uses real application views without production requests",() => {
+  beforeEach(() => {
+    sessionStorage.clear();window.history.replaceState(null,"","/demo");
+    vi.stubGlobal("fetch",vi.fn(() => {throw new Error("Must not call a production API");}));
+    vi.spyOn(window,"confirm").mockReturnValue(true);
+    HTMLElement.prototype.scrollIntoView = vi.fn();
+  });
+  afterEach(() => {vi.unstubAllGlobals();vi.restoreAllMocks();});
+  const state = () => JSON.parse(sessionStorage.getItem(DEMO_STORAGE_KEY)!);
+  async function openSushi() {
+    await screen.findByRole("heading",{name:"Thú cưng của bạn"});
+    const card = screen.getByRole("heading",{name:"Sushi"}).closest("article")!;
+    fireEvent.click(within(card).getByRole("link",{name:"Xem hồ sơ →"}));
+    await screen.findByRole("heading",{name:"Sushi",level:1});
+  }
+  it("renders original row cards, header and detail; Sushi has basic data and a default avatar",async () => {
+    render(<PortfolioDemo />);
+    await screen.findByRole("heading",{name:"Thú cưng của bạn"});
+    expect(screen.queryByText("Một nơi để chăm sóc Meo, Min và Sushi")).toBeNull();
+    expect(screen.getByRole("link",{name:"+ Thêm hồ sơ thú cưng"})).toBeTruthy();
+    expect(screen.getByRole("link",{name:"Về trang chủ"}).getAttribute("href")).toBe("/");
+    for (const name of ["Meo","Min","Sushi"]) {
+      const card = screen.getByRole("heading",{name}).closest("article")!;
+      expect(card.className).toContain("petListCard");
+      expect(card.querySelector(name === "Sushi" ? 'img[data-pet-photo="false"]' : 'img[data-pet-photo="true"]')).toBeTruthy();
     }
-    expect(screen.getByRole("button", { name: "Xem hồ sơ Sushi →" }).closest("article")!.querySelector('img[data-pet-photo="false"]')).toBeTruthy();
-    fireEvent.click(await screen.findByRole("button", { name: "Xem hồ sơ Sushi →" }));
-    fireEvent.click(screen.getByRole("button", { name: "Sức khỏe" }));
-    expect(screen.getByText(/nhật ký đầu tiên cho Sushi/)).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "+ Thêm nhật ký" }));
-    let dialog = screen.getByRole("dialog");
-    const input = within(dialog).getByLabelText("Cân nặng (kg)");
-    fireEvent.change(input, { target: { value: "3,1" } });
-    fireEvent.keyDown(input, { key: "Enter" });
-    expect(screen.getByRole("dialog")).toBeTruthy();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Lưu nhật ký" }));
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(screen.getByText("3,1 kg")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /Chỉnh sửa nhật ký ngày/ }));
-    dialog = screen.getByRole("dialog");
-    fireEvent.change(within(dialog).getByLabelText("Cân nặng (kg)"), { target: { value: "3.2" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Lưu thay đổi" }));
-    expect(screen.getByText("3,2 kg")).toBeTruthy();
-    expect(JSON.parse(sessionStorage.getItem(DEMO_STORAGE_KEY)!).health_logs).toHaveLength(25);
-    view.unmount();
-    render(<PortfolioDemo />);
-    fireEvent.click(await screen.findByRole("button", { name: "Xem hồ sơ Sushi →" }));
-    fireEvent.click(screen.getByRole("button", { name: "Sức khỏe" }));
-    expect(screen.getByText("3,2 kg")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /Xóa nhật ký ngày/ }));
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Hủy" }));
-    expect(screen.getByText("3,2 kg")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /Xóa nhật ký ngày/ }));
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Xóa nhật ký" }));
-    expect(screen.getByText(/nhật ký đầu tiên cho Sushi/)).toBeTruthy();
+    await openSushi();
+    expect(screen.getByText("Mèo nhà")).toBeTruthy();
+    fireEvent.click(screen.getByRole("link",{name:"Sức khỏe"}));
+    await screen.findAllByRole("button",{name:/Chỉnh sửa nhật ký ngày/});
+    expect(state().health_logs.filter((r:{pet_id:string}) => r.pet_id.endsWith("103"))).toHaveLength(2);
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
-
-  it("renders live statistics from the seed and resets only demo state after confirmation", async () => {
-    render(<PortfolioDemo />);
-    fireEvent.click(await screen.findByRole("button", { name: "Xem hồ sơ Meo →" }));
-    fireEvent.click(screen.getByRole("button", { name: "Sức khỏe" }));
-    fireEvent.click(screen.getByRole("button", { name: "Thống kê" }));
-    expect(screen.getByRole("table", { name: "Các lần cân trong kỳ" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Khôi phục dữ liệu mẫu" }));
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Khôi phục" }));
-    await waitFor(() => expect(screen.getByText("Đã khôi phục dữ liệu mẫu.")).toBeTruthy());
-    expect(screen.getByRole("button", { name: "Xem hồ sơ Meo →" })).toBeTruthy();
+  it("uses the production Health Log form for create/edit/delete, Enter guard and reload",async () => {
+    const view = render(<PortfolioDemo />); await openSushi();
+    fireEvent.click(screen.getByRole("link",{name:"Sức khỏe"}));
+    await screen.findAllByRole("button",{name:/Chỉnh sửa nhật ký ngày/});
+    fireEvent.click(screen.getByRole("button",{name:"Thêm chỉ số"}));
+    const input = await screen.findByPlaceholderText("VD: 2.00");
+    fireEvent.change(input,{target:{value:"3.25"}});
+    fireEvent.keyDown(input,{key:"Enter"}); expect(state().health_logs).toHaveLength(26);
+    fireEvent.click(screen.getByRole("button",{name:"Lưu chỉ số"}));
+    await waitFor(() => expect(state().health_logs).toHaveLength(27));
+    await screen.findAllByRole("button",{name:/Chỉnh sửa nhật ký ngày/});
+    const card = screen.getByText("3,25 kg").closest("article")!;
+    fireEvent.click(within(card).getByRole("button",{name:/Chỉnh sửa nhật ký/}));
+    fireEvent.change(await screen.findByPlaceholderText("VD: 2.00"),{target:{value:"3.35"}});
+    fireEvent.click(screen.getByRole("button",{name:"Lưu thay đổi"}));
+    await screen.findByText("3,35 kg");
+    view.unmount();render(<PortfolioDemo />);
+    const saved = await screen.findByText("3,35 kg");
+    fireEvent.click(within(saved.closest("article")!).getByRole("button",{name:/Xóa nhật ký/}));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button",{name:"Xóa nhật ký"}));
+    await waitFor(() => expect(state().health_logs).toHaveLength(26));
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
-
-  it("reads notifications, navigates to the matching Pet and restores dialog trigger focus on Escape", async () => {
-    render(<PortfolioDemo />);
-    const trigger = await screen.findByRole("button", { name: /Thông báo demo, 2 chưa đọc/ });
-    trigger.focus(); fireEvent.click(trigger);
-    let dialog = screen.getByRole("dialog");
-    fireEvent.keyDown(dialog, { key: "Escape" });
-    expect(document.activeElement).toBe(trigger);
-    fireEvent.click(trigger);
-    dialog = screen.getByRole("dialog");
-    fireEvent.click(within(dialog).getByRole("button", { name: /Quá hạn · Meo/ }));
-    expect(screen.getByRole("heading", { name: "Hồ sơ của Meo" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Thông báo demo, 1 chưa đọc/ })).toBeTruthy();
-    expect(globalThis.fetch).not.toHaveBeenCalled();
+  it("uses original overview, statistics and reset while preserving unrelated browser storage",async () => {
+    sessionStorage.setItem("unrelated","keep");render(<PortfolioDemo />);await openSushi();
+    await screen.findByRole("heading",{name:"Mũi tiêm gần nhất"});
+    fireEvent.click(screen.getByRole("link",{name:"Sức khỏe"}));
+    fireEvent.click(await screen.findByRole("tab",{name:"Thống kê"}));
+    await screen.findByText("Lần khám gần nhất");
+    expect(screen.queryByText("Không thể tải thống kê sức khỏe lúc này.")).toBeNull();
+    fireEvent.click(screen.getByRole("button",{name:/Trải nghiệm thử/}));
+    await screen.findByRole("heading",{name:"Thú cưng của bạn"});
+    expect(sessionStorage.getItem("unrelated")).toBe("keep");expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+  it("creates a Pet with the original form and keeps navigation in demo",async () => {
+    render(<PortfolioDemo />);await screen.findByRole("heading",{name:"Thú cưng của bạn"});
+    fireEvent.click(screen.getByRole("link",{name:"+ Thêm hồ sơ thú cưng"}));
+    await screen.findByRole("heading",{name:"Tạo hồ sơ cho bé"});
+    fireEvent.change(screen.getByPlaceholderText("VD: Min"),{target:{value:"Bông"}});
+    fireEvent.change(screen.getByLabelText(/Loài/),{target:{value:"Cat"}});
+    fireEvent.change(screen.getByLabelText(/Giới tính/),{target:{value:"Female"}});
+    fireEvent.click(screen.getByRole("button",{name:"Lưu hồ sơ"}));
+    await screen.findByRole("heading",{name:"Đã tạo hồ sơ thú cưng thành công"});
+    expect(state().pets).toHaveLength(4);
+    fireEvent.click(screen.getByRole("link",{name:"Mở hồ sơ"}));
+    await screen.findByRole("heading",{name:"Bông",level:1});
+    expect(window.location.pathname).toBe("/demo");expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 });

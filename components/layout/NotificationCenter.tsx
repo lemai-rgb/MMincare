@@ -1,6 +1,6 @@
 "use client";
+import { useRuntimeRouter, useRuntimeJson } from "@/lib/appRuntime";
 
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
 import {
@@ -14,7 +14,7 @@ import {
 } from "@/lib/notifications/center";
 import { parseNotificationReadAt, parseNotificationRows, type NotificationRow } from "@/lib/notifications/current";
 import { NOTIFICATION_CENTER_INVALIDATED_EVENT } from "@/lib/notifications/events";
-import { fetchJsonWithTimeout, InvalidJsonResponseError, RequestTimeoutError } from "@/lib/http/fetchJsonWithTimeout";
+import { InvalidJsonResponseError, RequestTimeoutError } from "@/lib/http/fetchJsonWithTimeout";
 import styles from "@/styles/dashboard.module.css";
 
 const PANEL_ID = "notification-center-panel";
@@ -33,7 +33,8 @@ function serverError(_payload: { error?: string }, fallback: string) {
 }
 
 export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: NotificationCenterProps = {}) {
-  const router = useRouter();
+  const requestJson = useRuntimeJson();
+  const router = useRuntimeRouter();
   const [state, dispatch] = useReducer(notificationCenterReducer, initialNotificationCenterState);
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const isOpen = controlledOpen ?? uncontrolledOpen;
@@ -61,7 +62,7 @@ export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: Not
     dispatch({ type: "load-start" });
 
     try {
-      const { response, payload: rawPayload } = await fetchJsonWithTimeout("/api/notifications", { cache: "no-store", signal: controller.signal });
+      const { response, payload: rawPayload } = await requestJson("/api/notifications", { cache: "no-store", signal: controller.signal });
       const payload = rawPayload && typeof rawPayload === "object" ? rawPayload as NotificationResponse : {};
       if (!response.ok) throw serverError(payload, "Không thể tải thông báo lúc này.");
       const rows = parseNotificationRows(payload.notifications);
@@ -82,7 +83,7 @@ export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: Not
           ? "Tải thông báo quá lâu. Hãy thử lại."
           : "Không thể tải thông báo lúc này." });
     }
-  }, []);
+  }, [requestJson]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -163,7 +164,7 @@ export function NotificationCenter({ isOpen: controlledOpen, onOpenChange }: Not
       let response: Response;
       let rawPayload: unknown = null;
       try {
-        const result = await fetchJsonWithTimeout(`/api/notifications/${encodeURIComponent(item.notification_event_id)}/read`, { method: "PATCH", signal: controller.signal });
+        const result = await requestJson(`/api/notifications/${encodeURIComponent(item.notification_event_id)}/read`, { method: "PATCH", signal: controller.signal });
         response = result.response;
         rawPayload = result.payload;
       } catch (error) {

@@ -8,15 +8,15 @@
 |---|---|---|
 | Meo | Mèo, cái, tam thể | Lịch sử sức khỏe, tiêm phòng và khám; nhắc sắp đến hạn/quá hạn/hoàn thành; nhật ký gần nhất thiếu cân nặng |
 | Min | Chó, đực, Corgi | Diễn biến cân nặng; bản ghi nhập bổ sung cho ngày cũ; nhắc thủ công và nhắc có nguồn |
-| Sushi | Mèo, chưa rõ giới tính | Chưa có nhật ký, hồ sơ y tế hoặc nhắc hẹn; dùng để thử empty state và thêm nhật ký đầu tiên |
+| Sushi | Mèo nhà, đực, khoảng 1 tuổi | Avatar mặc định; hai nhật ký (3,0 → 3,1 kg), một mũi tiêm và một nhắc chăm sóc; chưa có lần khám |
 
 | Thực thể | Số lượng ban đầu |
 |---|---:|
 | Pet | 3 |
-| Health Log | 24 |
-| Vaccine Record | 3 |
+| Health Log | 26 |
+| Vaccine Record | 4 |
 | Medical Record | 2 |
-| Reminder | 6 |
+| Reminder | 7 |
 | Notification hiện hành | 3 — 2 chưa đọc, 1 đã đọc |
 
 ## Định dạng và ngày
@@ -45,6 +45,6 @@ Owner UUID trong mẫu là định danh hư cấu, **không tồn tại như m�
 
 Nội dung vaccine/khám/lượng ăn chỉ minh họa form và dữ liệu. Không dùng làm hướng dẫn thú y, interval tiêm hoặc liều thuốc. Không seed `vaccine_schedule_rules`; CR-08 vẫn cần quyền/dataset nghiệp vụ được duyệt riêng.
 
-Meo dùng ảnh mèo tại `/images/demo/meo.webp`; Min dùng ảnh chó tại `/images/demo/min.webp`; Sushi có `picture_url = null` và giữ avatar mặc định theo loài. Hai ảnh được người dùng cung cấp, tối ưu thành WebP để giảm dung lượng, giữ nguyên nội dung và tỉ lệ ảnh; khung vuông dùng CSS `object-fit: cover`, căn giữa. Không upload Supabase Storage hoặc dùng ảnh của tài khoản thật. Session demo cũ tự nhận hai ảnh khi reload, vẫn giữ các chỉnh sửa nhật ký/nhắc hẹn.
+Meo dùng ảnh mèo tại `/images/demo/meo.webp`; Min dùng ảnh chó tại `/images/demo/min.webp`; Sushi có `picture_url = null` và giữ avatar mặc định theo loài. Hai ảnh được người dùng cung cấp, tối ưu thành WebP để giảm dung lượng, giữ nguyên nội dung và tỉ lệ ảnh; khung vuông dùng CSS `object-fit: cover`, căn giữa. Không upload Supabase Storage hoặc dùng ảnh của tài khoản thật. Session cũ được nâng cấp một lần cho Sushi nếu còn trống; giữ chỉnh sửa khác. Ảnh đã đổi/bỏ trong phiên mới được giữ nguyên khi reload.
 
 Chi tiết trải nghiệm và acceptance: [Portfolio Demo](../docs/PORTFOLIO_DEMO.md).

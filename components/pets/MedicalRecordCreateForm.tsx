@@ -1,4 +1,5 @@
 "use client";
+import { useRuntimeRequest } from "@/lib/appRuntime";
 
 import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 
@@ -50,6 +51,7 @@ function toEntry(record: SavedMedicalRecord): MedicalHistoryEntry {
 }
 
 export function MedicalRecordCreateForm({ petId, onCancel, onRecordSaved, onReadyForReminder }: MedicalRecordCreateFormProps) {
+  const request = useRuntimeRequest();
   const [visitDate, setVisitDate] = useState("");
   const [symptoms, setSymptoms] = useState("");
   const [diagnosis, setDiagnosis] = useState("");
@@ -114,7 +116,7 @@ export function MedicalRecordCreateForm({ petId, onCancel, onRecordSaved, onRead
   async function uploadAttachment(recordId: string, file: File, signal: AbortSignal) {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await fetch(`/api/medical-records/${encodeURIComponent(recordId)}/attachments`, {
+    const response = await request(`/api/medical-records/${encodeURIComponent(recordId)}/attachments`, {
       method: "POST",
       body: formData,
       signal,
@@ -171,7 +173,7 @@ export function MedicalRecordCreateForm({ petId, onCancel, onRecordSaved, onRead
     requestController.current = controller;
 
     try {
-      const response = await fetch(`/api/pets/${encodeURIComponent(petId)}/medical-records`, {
+      const response = await request(`/api/pets/${encodeURIComponent(petId)}/medical-records`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ visit_date: visitDate, symptoms, diagnosis, clinic_name: clinicName, medication, note }),

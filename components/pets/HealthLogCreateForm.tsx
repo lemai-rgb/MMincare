@@ -1,9 +1,10 @@
 "use client";
+import { useRuntimeJson } from "@/lib/appRuntime";
 
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 
 import type { HealthLog } from "@/components/pets/PetHealthHistory";
-import { fetchJsonWithTimeout, InvalidJsonResponseError, RequestTimeoutError } from "@/lib/http/fetchJsonWithTimeout";
+import { InvalidJsonResponseError, RequestTimeoutError } from "@/lib/http/fetchJsonWithTimeout";
 import {
   HEALTH_STATUS_OPTIONS,
   type HealthStatusOption,
@@ -110,6 +111,7 @@ function isValidRecordedOn(value: string) {
 }
 
 export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onUpdated, onMutationStart, onMutationCancel }: HealthLogCreateFormProps) {
+  const requestJson = useRuntimeJson();
   const isEditing = Boolean(healthLog);
   const [recordedOn, setRecordedOn] = useState(() => healthLog?.recorded_on ?? getVietnamToday());
   const [weight, setWeight] = useState(() => healthLog?.weight === null || healthLog?.weight === undefined ? "" : String(healthLog.weight));
@@ -252,7 +254,7 @@ export function HealthLogCreateForm({ healthLog, petId, onCancel, onCreated, onU
       };
 
     try {
-      const { response, payload: rawPayload } = await fetchJsonWithTimeout(
+      const { response, payload: rawPayload } = await requestJson(
         isEditing
           ? `/api/pets/${encodeURIComponent(petId)}/health-logs/${encodeURIComponent(healthLog?.health_log_id ?? "")}`
           : `/api/pets/${encodeURIComponent(petId)}/health-logs`,

@@ -1,4 +1,5 @@
 "use client";
+import { useRuntimeRequest } from "@/lib/appRuntime";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 
@@ -65,6 +66,7 @@ function getTodayInVietnam() {
 }
 
 export function ReminderCreateForm(props: ReminderCreateFormProps) {
+  const request = useRuntimeRequest();
   const [selectedPetId, setSelectedPetId] = useState("");
   const [type, setType] = useState<ReminderType | "">("");
   const [dueDate, setDueDate] = useState("");
@@ -123,7 +125,7 @@ export function ReminderCreateForm(props: ReminderCreateFormProps) {
     let failureMessage = "Không thể tạo nhắc hẹn. Vui lòng thử lại.";
 
     try {
-      const response = await fetch(`/api/pets/${encodeURIComponent(effectivePetId)}/reminders`, {
+      const response = await request(`/api/pets/${encodeURIComponent(effectivePetId)}/reminders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

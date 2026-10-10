@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "seed_revision": 2,
   "anchor_day": "2026-10-10",
   "read_notifications": [
     "00000000-0000-4000-8000-000000000403:2026-10-11:due_soon"
@@ -34,11 +35,11 @@
       "owner_id": "00000000-0000-4000-8000-000000000001",
       "name": "Sushi",
       "species": "Cat",
-      "gender": "Unknown",
-      "breed": null,
+      "gender": "Male",
+      "breed": "Mèo nhà",
       "picture_url": null,
-      "date_of_birth": null,
-      "created_at": "2026-10-10T08:00:00+07:00",
+      "date_of_birth": "2025-10-10",
+      "created_at": "2026-09-26T08:00:00+07:00",
       "updated_at": "2026-10-10T08:00:00+07:00"
     }
   ],
@@ -330,6 +331,30 @@
       "food_type": null,
       "status": "Khác",
       "note": "Nhập bổ sung cho ngày cũ; không được thay thế nhật ký có ngày ghi nhận mới hơn."
+    },
+    {
+      "health_log_id": "00000000-0000-4000-8000-000000000352",
+      "pet_id": "00000000-0000-4000-8000-000000000103",
+      "created_by": "00000000-0000-4000-8000-000000000001",
+      "recorded_on": "2026-10-03",
+      "logged_at": "2026-10-03T09:00:00+07:00",
+      "weight": 3,
+      "food_amount": "70 g/ngày",
+      "food_type": "Hạt và pate (mẫu)",
+      "status": "Bình thường",
+      "note": "Nhật ký chăm sóc mẫu."
+    },
+    {
+      "health_log_id": "00000000-0000-4000-8000-000000000353",
+      "pet_id": "00000000-0000-4000-8000-000000000103",
+      "created_by": "00000000-0000-4000-8000-000000000001",
+      "recorded_on": "2026-10-10",
+      "logged_at": "2026-10-10T09:00:00+07:00",
+      "weight": 3.1,
+      "food_amount": "70 g/ngày",
+      "food_type": "Hạt và pate (mẫu)",
+      "status": "Bình thường",
+      "note": "Nhật ký chăm sóc mẫu."
     }
   ],
   "vaccine_records": [
@@ -365,6 +390,17 @@
       "clinic_name": "Phòng khám mẫu B",
       "note": null,
       "created_at": "2026-08-26T08:00:00+07:00"
+    },
+    {
+      "vaccine_record_id": "00000000-0000-4000-8000-000000000204",
+      "pet_id": "00000000-0000-4000-8000-000000000103",
+      "created_by": "00000000-0000-4000-8000-000000000001",
+      "vaccine_name": "Vaccine tổng hợp cho mèo (mẫu)",
+      "vaccine_date": "2026-09-26",
+      "dose_number": 1,
+      "clinic_name": "Phòng khám mẫu",
+      "note": "Hồ sơ minh họa, không phải hướng dẫn lịch tiêm.",
+      "created_at": "2026-09-26T08:00:00+07:00"
     }
   ],
   "medical_records": [
@@ -475,6 +511,20 @@
       "source_vaccine_record_id": "00000000-0000-4000-8000-000000000203",
       "source_medical_record_id": null,
       "completed_at": "2026-09-26T08:00:00+07:00",
+      "created_at": "2026-09-10T08:00:00+07:00",
+      "updated_at": "2026-10-10T08:00:00+07:00"
+    },
+    {
+      "reminder_id": "00000000-0000-4000-8000-000000000407",
+      "pet_id": "00000000-0000-4000-8000-000000000103",
+      "user_id": "00000000-0000-4000-8000-000000000001",
+      "type": "Other",
+      "due_date": "2026-10-15",
+      "status": "Upcoming",
+      "note": "Cân và ghi nhật ký cho Sushi.",
+      "source_vaccine_record_id": null,
+      "source_medical_record_id": null,
+      "completed_at": null,
       "created_at": "2026-09-10T08:00:00+07:00",
       "updated_at": "2026-10-10T08:00:00+07:00"
     }

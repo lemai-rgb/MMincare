@@ -58,6 +58,7 @@ export async function fetchJsonWithTimeout(
   input: RequestInfo | URL,
   init: RequestInit = {},
   timeoutMs = 15_000,
+  request: typeof fetch = (...args) => fetch(...args),
 ): Promise<{ response: Response; payload: unknown }> {
   const controller = new AbortController();
   let timedOut = false;
@@ -72,7 +73,7 @@ export async function fetchJsonWithTimeout(
 
   try {
     const getAbortError = () => timedOut ? new RequestTimeoutError() : createAbortError();
-    const response = await awaitAbortable(fetch(input, { ...init, signal: controller.signal }), controller.signal, getAbortError);
+    const response = await awaitAbortable(request(input, { ...init, signal: controller.signal }), controller.signal, getAbortError);
     if (timedOut) throw new RequestTimeoutError();
     let payload: unknown = null;
     if (response.status !== 204) {

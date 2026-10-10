@@ -6,10 +6,10 @@
   "production_import_allowed": false,
   "counts": {
     "pets": 3,
-    "vaccine_records": 3,
+    "vaccine_records": 4,
     "medical_records": 2,
-    "health_logs": 24,
-    "reminders": 6,
+    "health_logs": 26,
+    "reminders": 7,
     "notification_events": 3
   },
   "note": "No Auth users, passwords, storage objects or vaccine schedule rules. Notification IDs are demo snapshot keys, not database UUIDs."

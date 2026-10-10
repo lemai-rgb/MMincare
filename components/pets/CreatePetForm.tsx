@@ -1,8 +1,8 @@
 "use client";
+import { useRuntimeRouter, useRuntimeRequest } from "@/lib/appRuntime";
 
-import Link from "next/link";
+import { AppLink as Link } from "@/lib/appRuntime";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 
@@ -24,7 +24,8 @@ const speciesLabels: Record<PetSpecies, string> = { Cat: "Mèo", Dog: "Chó" };
 const genderLabels: Record<PetGender, string> = { Male: "Đực", Female: "Cái", Unknown: "Chưa rõ" };
 
 export function CreatePetForm({ initialSpecies, mode = "create", petId, initialPet }: CreatePetFormProps) {
-  const router = useRouter();
+  const request = useRuntimeRequest();
+  const router = useRuntimeRouter();
   const [name, setName] = useState(initialPet?.name ?? "");
   const [species, setSpecies] = useState<PetSpecies | "">(initialPet?.species ?? initialSpecies ?? "");
   const [gender, setGender] = useState<PetGender | "">(initialPet?.gender ?? "");
@@ -81,7 +82,7 @@ export function CreatePetForm({ initialSpecies, mode = "create", petId, initialP
       if (!creationKeyRef.current) creationKeyRef.current = crypto.randomUUID();
       formData.set("idempotency_key", creationKeyRef.current);
       try {
-        const response = await fetch("/api/pets", { method: "POST", body: formData });
+        const response = await request("/api/pets", { method: "POST", body: formData });
         const result = await response.json() as CreatePetResponse;
 
         if (!response.ok || !result.pet?.pet_id) {
@@ -107,7 +108,7 @@ export function CreatePetForm({ initialSpecies, mode = "create", petId, initialP
     }
 
     try {
-      const response = await fetch(`/api/pets/${encodeURIComponent(petId ?? "")}`, { method: "PATCH", body: formData });
+      const response = await request(`/api/pets/${encodeURIComponent(petId ?? "")}`, { method: "PATCH", body: formData });
       const result = await response.json() as CreatePetResponse;
       if (!response.ok || !result.pet?.pet_id) {
         if (result.field === "image") setImageError(result.error ?? "Ảnh không hợp lệ.");

@@ -1,18 +1,18 @@
 # MMinCare — delivery status
 
-**Updated:** 10 October 2026 — portfolio-demo branch update
-**Current application baseline:** `fd7145ef7ad72f3bda7fe36613f88e5f22a795cd`
-**Stage:** deployed Owner MVP; quality follow-up and manual validation pending.
+**Updated:** 10 October 2026 — demo UI parity correction
+**Reviewed main baseline:** `3ecfc6b866f05425eb3674e3626d3a5c6cd0070f` (merged PR #25).
+**Stage:** Owner MVP deployed; demo correction prepared for review, not yet deployed.
 
 ## Current delivery update
 
-- `main` at `fd7145ef7ad72f3bda7fe36613f88e5f22a795cd` contains merged PR #22 (request lifecycle/idempotency) and #23 (mobile responsive UI). The snapshot below is the preserved 7 October review; its open defects are historical unless explicitly carried forward.
-- The reproduced dashboard date/timestamp mismatch is fixed by merged [PR #24](https://github.com/lemai-rgb/MMincare/pull/24); `main` at `5c0d0b316cb03c533b1d2ae1ead3c68f0b3a056d` has been merged into the demo branch, retaining both dashboard regression tests and demo scripts.
-- [Draft PR #25](https://github.com/lemai-rgb/MMincare/pull/25) adds a [synthetic dataset](../demo/README.md) and [portfolio sandbox](PORTFOLIO_DEMO.md): three Pets, 24 Health Logs, three vaccine records, two medical records, six Reminders and three initial current notifications.
-- `/demo` uses tab-local state, safe reset and JSON export. No migration, real Auth user, Storage object or production data is written. Demo is implemented in the branch; publication and real browser/visual validation remain pending.
-- CR-08: code distinguishes rule lookup failure/no-match; production rule read access and approved dataset are not completed by this demo. No clinical intervals are seeded.
-- Two user-supplied photos are received: cat for Meo and dog for Min. They are optimized local WebP assets; Sushi intentionally keeps the default species avatar. No Storage object or production Pet image is changed.
-- Production Auth/Owner A/B/Storage tests, live retry behavior and measured loading performance remain pending. Demo results are not substitutes for them.
+- PR #25 was merged and its demo is accessible, but it used separate screens and omitted working application flows. That implementation did not meet the requested product experience.
+- This follow-up uses shared `PetListView`/`PetDetailView` shells extracted from the existing app markup, plus the existing Pet, Medical, Vaccine, Reminder, Notification and Health components. Application CSS, labels, validation and workflows are retained.
+- An explicit React context adapter supplies browser-local requests and navigation only under `/demo`. Outside it, the existing fetch/router implementations are used. No global fetch override, API/Auth/RLS/Storage changes or production dataset writes.
+- Demo-only UI: “Trải nghiệm thử” label (click to confirm reset) and “Về trang chủ”. The old intro/three-column cards/custom chart/guide UI is removed.
+- Three initial Pets: Meo/Min keep supplied photos; Sushi retains default avatar and now has basic profile data, two Health Logs, one Vaccine Record and one manual Reminder.
+- Automated checks cover shared forms, CRUD/reload, API response contracts and the public-route boundary. Real Owner A/B/Storage tests, production timing and authenticated manual QA remain separate and unverified.
+- CR-08 remains open for approved production rule access/dataset; demo does not invent vaccine intervals.
 
 ## Historical 7 October checkpoint
 
