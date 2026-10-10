@@ -26,9 +26,8 @@ const timestamp = (day: string, time = "08:00:00") => `${day}T${time}+07:00`;
 /** No database/Auth client. Every date is resolved from one explicit anchor. */
 export function createDemoState(today = getVietnamToday()): DemoState {
   if (!isDemoDate(today)) throw new Error("Invalid demo anchor");
-  const elapsedWeekDays = (new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7;
   const state: DemoState = {
-    version: 1, seed_revision: 3, anchor_day: today, read_notifications: [],
+    version: 1, seed_revision: 4, anchor_day: today, read_notifications: [],
     pets: template.pets.map((pet) => ({
       pet_id: pet.pet_id, owner_id: DEMO_OWNER_ID, name: pet.name,
       species: pet.species as "Cat" | "Dog", gender: pet.gender as "Male" | "Female" | "Unknown",
@@ -36,18 +35,12 @@ export function createDemoState(today = getVietnamToday()): DemoState {
       date_of_birth: pet.birth_days_ago === null ? null : shiftDemoDate(today, -pet.birth_days_ago),
       created_at: timestamp(shiftDemoDate(today, -pet.created_days_ago)), updated_at: timestamp(today),
     })),
-    health_logs: template.health_logs.map((log) => {
-      // Only the additional status examples stay in the current Monday–Sunday
-      // period, even when a visitor starts the demo early in the week.
-      const offset = (days: number) => "display_current_week" in log && log.display_current_week
-        ? Math.max(days, -elapsedWeekDays) : days;
-      return {
+    health_logs: template.health_logs.map((log) => ({
       health_log_id: log.health_log_id, pet_id: log.pet_id, created_by: DEMO_OWNER_ID,
-      recorded_on: shiftDemoDate(today, offset(log.recorded_day_offset)),
-      logged_at: timestamp(shiftDemoDate(today, offset(log.logged_day_offset)), log.logged_time),
+      recorded_on: shiftDemoDate(today, log.recorded_day_offset),
+      logged_at: timestamp(shiftDemoDate(today, log.logged_day_offset), log.logged_time),
       weight: log.weight, food_amount: log.food_amount, food_type: log.food_type, status: log.status, note: log.note,
-      };
-    }),
+    })),
     vaccine_records: template.vaccine_records.map((row) => ({
       vaccine_record_id: row.vaccine_record_id, pet_id: row.pet_id, created_by: DEMO_OWNER_ID,
       vaccine_name: row.vaccine_name, vaccine_date: shiftDemoDate(today, row.vaccine_day_offset),
@@ -171,7 +164,7 @@ export function parseDemoState(value: unknown): DemoState | null {
       && typeof a.data === "string" && a.data.length <= 7_000_000
       && /^data:(?:image\/(?:jpeg|png)|application\/pdf);base64,[A-Za-z0-9+/]+={0,2}$/.test(a.data)))) return null;
   let state = value as unknown as DemoState;
-  if (state.seed_revision !== 2 && state.seed_revision !== 3) {
+  if (state.seed_revision !== 2 && state.seed_revision !== 3 && state.seed_revision !== 4) {
     const base = createDemoState(state.anchor_day);
     const sushi = base.pets.find((p) => p.name === "Sushi")!;
     const oldSushi = state.pets.find((p) => p.pet_id === sushi.pet_id);
@@ -181,11 +174,46 @@ export function parseDemoState(value: unknown): DemoState | null {
       vaccine_records:oldSushi && !state.vaccine_records.some((l) => l.pet_id === sushi.pet_id) ? [...state.vaccine_records,...base.vaccine_records.filter((l) => l.pet_id === sushi.pet_id)] : state.vaccine_records,
       reminders:oldSushi && !state.reminders.some((l) => l.pet_id === sushi.pet_id) ? [...state.reminders,...base.reminders.filter((l) => l.pet_id === sushi.pet_id)] : state.reminders};
   }
-  if (state.seed_revision !== 3) {
-    const extraIds = new Set(template.health_logs.filter((log) => "display_current_week" in log && log.display_current_week).map((log) => log.health_log_id));
-    const existingIds = new Set(state.health_logs.map((log) => log.health_log_id));
-    const additions = createDemoState(state.anchor_day).health_logs.filter((log) => extraIds.has(log.health_log_id) && !existingIds.has(log.health_log_id) && ids.has(log.pet_id));
-    return {...state, seed_revision:3, health_logs:[...state.health_logs,...additions]};
+  if (state.seed_revision !== 4) {
+    // Revision 3 forced identical observations into the current week. Remove
+    // only unchanged seed rows; a visitor's edits to those rows must survive.
+    const legacyRows = legacyStatusExamples(state.anchor_day);
+    const base = createDemoState(state.anchor_day);
+    const statusChanges = new Set(["00000000-0000-4000-8000-000000000308", "00000000-0000-4000-8000-000000000309", "00000000-0000-4000-8000-000000000320"]);
+    const kept = state.health_logs.filter((log) => {
+      const old = legacyRows.find((row) => row.health_log_id === log.health_log_id);
+      return !old || Object.keys(log).length !== Object.keys(old).length
+        || Object.entries(old).some(([key, field]) => log[key as keyof DemoHealthLog] !== field);
+    });
+    const updated = kept.map((log) => {
+      if (!statusChanges.has(log.health_log_id)) return log;
+      const current = base.health_logs.find((row) => row.health_log_id === log.health_log_id)!;
+      const old = {...current, status:"Bình thường"};
+      return Object.keys(log).length === Object.keys(old).length
+        && Object.entries(old).every(([key, field]) => log[key as keyof DemoHealthLog] === field)
+        ? current : log;
+    });
+    const existingIds = new Set(updated.map((log) => log.health_log_id));
+    const additions = base.health_logs.filter((log) =>
+      /^00000000-0000-4000-8000-00000000038[0-4]$/.test(log.health_log_id)
+      && !existingIds.has(log.health_log_id) && ids.has(log.pet_id));
+    return {...state, seed_revision:4, health_logs:[...updated,...additions]};
   }
   return state;
+}
+
+/** Exact previous seed values, used only to upgrade saved browser sessions. */
+function legacyStatusExamples(anchor: string): DemoHealthLog[] {
+  const elapsedWeekDays = (new Date(`${anchor}T00:00:00Z`).getUTCDay() + 6) % 7;
+  const statuses = ["Mệt mỏi", "Ăn kém/Bỏ ăn", "Nôn", "Tiêu chảy", "Sốt", "Rụng lông", "Tránh ánh sáng"];
+  return [101, 102].flatMap((pet, petIndex) => statuses.map((status, index) => {
+    const day = shiftDemoDate(anchor, Math.max(index - 6, -elapsedWeekDays));
+    return {
+      health_log_id: `00000000-0000-4000-8000-${String(360 + petIndex * 7 + index).padStart(12, "0")}`,
+      pet_id: `00000000-0000-4000-8000-${String(pet).padStart(12, "0")}`, created_by: DEMO_OWNER_ID,
+      recorded_on: day, logged_at: timestamp(day, `10:${String(index * 5).padStart(2, "0")}:00`),
+      weight: null, food_amount: null, food_type: null, status,
+      note: `Quan sát ${status.toLocaleLowerCase("vi-VN")} (dữ liệu mẫu).`,
+    };
+  }));
 }

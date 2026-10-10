@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seed_revision": 3,
+  "seed_revision": 4,
   "anchor_day": "2026-10-10",
   "read_notifications": [
     "00000000-0000-4000-8000-000000000403:2026-10-11:due_soon"
@@ -149,7 +149,7 @@
       "weight": 2.18,
       "food_amount": "80 g/ngày",
       "food_type": "Hạt và pate (mẫu)",
-      "status": "Bình thường",
+      "status": "Mệt mỏi",
       "note": null
     },
     {
@@ -161,7 +161,7 @@
       "weight": 2.2,
       "food_amount": "80 g/ngày",
       "food_type": "Hạt và pate (mẫu)",
-      "status": "Bình thường",
+      "status": "Tiêu chảy",
       "note": null
     },
     {
@@ -293,7 +293,7 @@
       "weight": 12.2,
       "food_amount": "180 g/ngày",
       "food_type": "Hạt cho chó (mẫu)",
-      "status": "Bình thường",
+      "status": "Ăn kém/Bỏ ăn",
       "note": null
     },
     {
@@ -357,172 +357,64 @@
       "note": "Nhật ký chăm sóc mẫu."
     },
     {
-      "health_log_id": "00000000-0000-4000-8000-000000000360",
+      "health_log_id": "00000000-0000-4000-8000-000000000380",
       "pet_id": "00000000-0000-4000-8000-000000000101",
       "created_by": "00000000-0000-4000-8000-000000000001",
-      "recorded_on": "2026-10-05",
-      "logged_at": "2026-10-05T10:00:00+07:00",
-      "weight": null,
-      "food_amount": null,
-      "food_type": null,
-      "status": "Mệt mỏi",
-      "note": "Quan sát mệt mỏi (dữ liệu mẫu)."
-    },
-    {
-      "health_log_id": "00000000-0000-4000-8000-000000000361",
-      "pet_id": "00000000-0000-4000-8000-000000000101",
-      "created_by": "00000000-0000-4000-8000-000000000001",
-      "recorded_on": "2026-10-05",
-      "logged_at": "2026-10-05T10:05:00+07:00",
-      "weight": null,
-      "food_amount": null,
-      "food_type": null,
-      "status": "Ăn kém/Bỏ ăn",
-      "note": "Quan sát ăn kém/bỏ ăn (dữ liệu mẫu)."
-    },
-    {
-      "health_log_id": "00000000-0000-4000-8000-000000000362",
-      "pet_id": "00000000-0000-4000-8000-000000000101",
-      "created_by": "00000000-0000-4000-8000-000000000001",
-      "recorded_on": "2026-10-06",
-      "logged_at": "2026-10-06T10:10:00+07:00",
-      "weight": null,
-      "food_amount": null,
-      "food_type": null,
-      "status": "Nôn",
-      "note": "Quan sát nôn (dữ liệu mẫu)."
-    },
-    {
-      "health_log_id": "00000000-0000-4000-8000-000000000363",
-      "pet_id": "00000000-0000-4000-8000-000000000101",
-      "created_by": "00000000-0000-4000-8000-000000000001",
-      "recorded_on": "2026-10-07",
-      "logged_at": "2026-10-07T10:15:00+07:00",
-      "weight": null,
-      "food_amount": null,
-      "food_type": null,
-      "status": "Tiêu chảy",
-      "note": "Quan sát tiêu chảy (dữ liệu mẫu)."
-    },
-    {
-      "health_log_id": "00000000-0000-4000-8000-000000000364",
-      "pet_id": "00000000-0000-4000-8000-000000000101",
-      "created_by": "00000000-0000-4000-8000-000000000001",
-      "recorded_on": "2026-10-08",
-      "logged_at": "2026-10-08T10:20:00+07:00",
+      "recorded_on": "2026-10-02",
+      "logged_at": "2026-10-02T19:10:00+07:00",
       "weight": null,
       "food_amount": null,
       "food_type": null,
       "status": "Sốt",
-      "note": "Quan sát sốt (dữ liệu mẫu)."
+      "note": "Quan sát thấy bé nóng hơn thường ngày, nằm nghỉ nhiều (mẫu)."
     },
     {
-      "health_log_id": "00000000-0000-4000-8000-000000000365",
+      "health_log_id": "00000000-0000-4000-8000-000000000381",
       "pet_id": "00000000-0000-4000-8000-000000000101",
       "created_by": "00000000-0000-4000-8000-000000000001",
       "recorded_on": "2026-10-09",
-      "logged_at": "2026-10-09T10:25:00+07:00",
-      "weight": null,
-      "food_amount": null,
-      "food_type": null,
-      "status": "Rụng lông",
-      "note": "Quan sát rụng lông (dữ liệu mẫu)."
-    },
-    {
-      "health_log_id": "00000000-0000-4000-8000-000000000366",
-      "pet_id": "00000000-0000-4000-8000-000000000101",
-      "created_by": "00000000-0000-4000-8000-000000000001",
-      "recorded_on": "2026-10-10",
-      "logged_at": "2026-10-10T10:30:00+07:00",
+      "logged_at": "2026-10-09T14:20:00+07:00",
       "weight": null,
       "food_amount": null,
       "food_type": null,
       "status": "Tránh ánh sáng",
-      "note": "Quan sát tránh ánh sáng (dữ liệu mẫu)."
+      "note": "Bé chọn nằm ở góc tối, tránh chỗ có nắng (mẫu)."
     },
     {
-      "health_log_id": "00000000-0000-4000-8000-000000000367",
+      "health_log_id": "00000000-0000-4000-8000-000000000382",
       "pet_id": "00000000-0000-4000-8000-000000000102",
       "created_by": "00000000-0000-4000-8000-000000000001",
-      "recorded_on": "2026-10-05",
-      "logged_at": "2026-10-05T10:00:00+07:00",
+      "recorded_on": "2026-10-01",
+      "logged_at": "2026-10-01T07:45:00+07:00",
       "weight": null,
       "food_amount": null,
       "food_type": null,
-      "status": "Mệt mỏi",
-      "note": "Quan sát mệt mỏi (dữ liệu mẫu)."
+      "status": "Rụng lông",
+      "note": "Khi chải lông thấy lượng lông rụng nhiều hơn thường ngày (mẫu)."
     },
     {
-      "health_log_id": "00000000-0000-4000-8000-000000000368",
+      "health_log_id": "00000000-0000-4000-8000-000000000383",
       "pet_id": "00000000-0000-4000-8000-000000000102",
       "created_by": "00000000-0000-4000-8000-000000000001",
       "recorded_on": "2026-10-05",
-      "logged_at": "2026-10-05T10:05:00+07:00",
-      "weight": null,
-      "food_amount": null,
-      "food_type": null,
-      "status": "Ăn kém/Bỏ ăn",
-      "note": "Quan sát ăn kém/bỏ ăn (dữ liệu mẫu)."
-    },
-    {
-      "health_log_id": "00000000-0000-4000-8000-000000000369",
-      "pet_id": "00000000-0000-4000-8000-000000000102",
-      "created_by": "00000000-0000-4000-8000-000000000001",
-      "recorded_on": "2026-10-06",
-      "logged_at": "2026-10-06T10:10:00+07:00",
+      "logged_at": "2026-10-05T21:15:00+07:00",
       "weight": null,
       "food_amount": null,
       "food_type": null,
       "status": "Nôn",
-      "note": "Quan sát nôn (dữ liệu mẫu)."
+      "note": "Ghi nhận một lần nôn sau bữa tối (mẫu)."
     },
     {
-      "health_log_id": "00000000-0000-4000-8000-000000000370",
+      "health_log_id": "00000000-0000-4000-8000-000000000384",
       "pet_id": "00000000-0000-4000-8000-000000000102",
       "created_by": "00000000-0000-4000-8000-000000000001",
       "recorded_on": "2026-10-07",
-      "logged_at": "2026-10-07T10:15:00+07:00",
-      "weight": null,
-      "food_amount": null,
-      "food_type": null,
-      "status": "Tiêu chảy",
-      "note": "Quan sát tiêu chảy (dữ liệu mẫu)."
-    },
-    {
-      "health_log_id": "00000000-0000-4000-8000-000000000371",
-      "pet_id": "00000000-0000-4000-8000-000000000102",
-      "created_by": "00000000-0000-4000-8000-000000000001",
-      "recorded_on": "2026-10-08",
-      "logged_at": "2026-10-08T10:20:00+07:00",
-      "weight": null,
-      "food_amount": null,
-      "food_type": null,
-      "status": "Sốt",
-      "note": "Quan sát sốt (dữ liệu mẫu)."
-    },
-    {
-      "health_log_id": "00000000-0000-4000-8000-000000000372",
-      "pet_id": "00000000-0000-4000-8000-000000000102",
-      "created_by": "00000000-0000-4000-8000-000000000001",
-      "recorded_on": "2026-10-09",
-      "logged_at": "2026-10-09T10:25:00+07:00",
+      "logged_at": "2026-10-07T08:30:00+07:00",
       "weight": null,
       "food_amount": null,
       "food_type": null,
       "status": "Rụng lông",
-      "note": "Quan sát rụng lông (dữ liệu mẫu)."
-    },
-    {
-      "health_log_id": "00000000-0000-4000-8000-000000000373",
-      "pet_id": "00000000-0000-4000-8000-000000000102",
-      "created_by": "00000000-0000-4000-8000-000000000001",
-      "recorded_on": "2026-10-10",
-      "logged_at": "2026-10-10T10:30:00+07:00",
-      "weight": null,
-      "food_amount": null,
-      "food_type": null,
-      "status": "Tránh ánh sáng",
-      "note": "Quan sát tránh ánh sáng (dữ liệu mẫu)."
+      "note": "Vẫn thấy lông rụng khi vệ sinh chỗ nằm (mẫu)."
     }
   ],
   "vaccine_records": [

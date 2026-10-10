@@ -15,19 +15,27 @@ describe("demo uses real application views without production requests",() => {
     vi.spyOn(window,"confirm").mockReturnValue(true);
     HTMLElement.prototype.scrollIntoView = vi.fn();
   });
-  afterEach(() => {vi.unstubAllGlobals();vi.restoreAllMocks();});
+  afterEach(() => {vi.useRealTimers();vi.unstubAllGlobals();vi.restoreAllMocks();});
   const state = () => JSON.parse(sessionStorage.getItem(DEMO_STORAGE_KEY)!);
-  it.each(["Meo", "Min"])("renders every status bar and named Other details for %s", async (name) => {
+  it.each([
+    {name:"Meo", counts:[4,1,0,0,1,2], details:["Sốt", "Tránh ánh sáng"], absent:["Rụng lông"]},
+    {name:"Min", counts:[4,0,1,1,0,2], details:["Rụng lông"], absent:["Sốt", "Tránh ánh sáng"]},
+  ])("renders distinct monthly status counts and Other details for $name", async ({name,counts,details,absent}) => {
+    vi.useFakeTimers({toFake:["Date"]});
+    vi.setSystemTime(new Date("2026-10-10T03:00:00Z"));
     const pet = createDemoState().pets.find((pet) => pet.name === name)!;
     const route = `/pets/${pet.pet_id}?tab=health&view=statistics`;
     window.history.replaceState(null, "", `/demo?screen=${encodeURIComponent(route)}`);
     render(<PortfolioDemo />);
-    for (const label of ["Bình thường", "Mệt mỏi", "Ăn kém/Bỏ ăn", "Nôn", "Tiêu chảy", "Khác"]) {
-      expect(await screen.findByRole("button", {name:new RegExp(`^${label}: [1-9]\\d* lần ghi nhận$`)})).toBeTruthy();
+    fireEvent.click(await screen.findByRole("button", {name:"Theo tháng"}));
+    const labels = ["Bình thường", "Mệt mỏi", "Ăn kém/Bỏ ăn", "Nôn", "Tiêu chảy", "Khác"];
+    for (const [index,label] of labels.entries()) {
+      expect(await screen.findByRole("button", {name:`${label}: ${counts[index]} lần ghi nhận`})).toBeTruthy();
     }
     fireEvent.click(screen.getByRole("button", {name:/^Khác: /}));
-    const details = await screen.findByRole("region", {name:"Chi tiết tình trạng khác"});
-    for (const label of ["Sốt", "Rụng lông", "Tránh ánh sáng"]) expect(within(details).getByText(label, {exact:true})).toBeTruthy();
+    const region = await screen.findByRole("region", {name:"Chi tiết tình trạng khác"});
+    for (const label of details) expect(within(region).getByText(label, {exact:true})).toBeTruthy();
+    for (const label of absent) expect(within(region).queryByText(label, {exact:true})).toBeNull();
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
   async function openSushi() {
@@ -61,9 +69,9 @@ describe("demo uses real application views without production requests",() => {
     fireEvent.click(screen.getByRole("button",{name:"Thêm chỉ số"}));
     const input = await screen.findByPlaceholderText("VD: 2.00");
     fireEvent.change(input,{target:{value:"3.25"}});
-    fireEvent.keyDown(input,{key:"Enter"}); expect(state().health_logs).toHaveLength(40);
+    fireEvent.keyDown(input,{key:"Enter"}); expect(state().health_logs).toHaveLength(31);
     fireEvent.click(screen.getByRole("button",{name:"Lưu chỉ số"}));
-    await waitFor(() => expect(state().health_logs).toHaveLength(41));
+    await waitFor(() => expect(state().health_logs).toHaveLength(32));
     await screen.findAllByRole("button",{name:/Chỉnh sửa nhật ký ngày/});
     const card = screen.getByText("3,25 kg").closest("article")!;
     fireEvent.click(within(card).getByRole("button",{name:/Chỉnh sửa nhật ký/}));
@@ -74,7 +82,7 @@ describe("demo uses real application views without production requests",() => {
     const saved = await screen.findByText("3,35 kg");
     fireEvent.click(within(saved.closest("article")!).getByRole("button",{name:/Xóa nhật ký/}));
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button",{name:"Xóa nhật ký"}));
-    await waitFor(() => expect(state().health_logs).toHaveLength(40));
+    await waitFor(() => expect(state().health_logs).toHaveLength(31));
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
   it("uses original overview, statistics and reset while preserving unrelated browser storage",async () => {

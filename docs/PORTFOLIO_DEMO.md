@@ -12,9 +12,9 @@ Phần riêng hiển thị: nhãn **Trải nghiệm thử** và **Về trang ch�
 
 ## Dữ liệu và thao tác
 
-Meo/Min có đủ sáu nhóm trạng thái ở tuần/tháng của ngày khởi tạo mẫu. Sốt, Rụng lông và Tránh ánh sáng giữ giá trị gốc và được thống kê trong Khác. Các quan sát bổ sung không có cân nặng; không làm thay đổi xu hướng cân nặng. Seed revision 3 nâng cấp phiên cũ một lần, giữ dữ liệu chỉnh sửa/xóa của người xem.
+Meo và Min có lịch sử riêng với số lần/ngày/trạng thái khác nhau; Bình thường là trạng thái xuất hiện nhiều nhất. Meo có mệt mỏi, tiêu chảy, Sốt và Tránh ánh sáng; Min có ăn kém, mệt mỏi, Nôn và hai lần Rụng lông. Không ép đầy mọi nhóm ở mỗi bé hoặc dồn vào tuần hiện tại. Giá trị ngoài danh mục giữ nguyên và được thống kê trong Khác. Năm quan sát thêm không có cân nặng; xu hướng cân nặng giữ nguyên. Seed revision 4 thay các fixture revision 3 còn nguyên, giữ chỉnh sửa và bản ghi gốc đã xóa của người xem, chỉ nâng cấp một lần.
 
-Ba Pet: Meo và Min dùng ảnh được cung cấp; Sushi là mèo nhà đực, khoảng một tuổi, avatar mặc định, hai nhật ký (3,0 và 3,1 kg), một mũi tiêm và một nhắc chăm sóc. Sushi chưa có lần khám để giữ một empty state có ý nghĩa. Tổng mẫu: 40 Health Logs, 4 Vaccine Records, 2 Medical Records, 7 Reminders và 3 thông báo hiện hành ban đầu.
+Ba Pet: Meo và Min dùng ảnh được cung cấp; Sushi là mèo nhà đực, khoảng một tuổi, avatar mặc định, hai nhật ký (3,0 và 3,1 kg), một mũi tiêm và một nhắc chăm sóc. Sushi chưa có lần khám để giữ một empty state có ý nghĩa. Tổng mẫu: 31 Health Logs, 4 Vaccine Records, 2 Medical Records, 7 Reminders và 3 thông báo hiện hành ban đầu.
 
 Demo hỗ trợ các form hiện có: tạo/sửa Pet, chọn/đổi/bỏ ảnh; thêm/xóa Vaccine và Medical; attachment lựa chọn/mở tại trình duyệt; tạo nhắc hẹn thủ công/có nguồn, sửa ngày/ghi chú và hoàn thành; Health Log create/edit/delete; thống kê tuần/tháng; đọc notification. Không giả lập đăng nhập/email/Owner isolation hay máy chủ lưu file. Chưa có rule dataset nên gợi ý lịch tiêm giữ trạng thái unavailable và cho tự nhập ngày như ứng dụng hiện tại.
 
