@@ -1,4 +1,6 @@
-# Code review — 7 October 2026
+# Code review —7 October2026 (historical checkpoint)
+
+> **Read this as dated evidence.** Application main bcd14b5 (11 October2026 VN) supersedes this baseline. CR-01/02/03 were delivered in PR #22; CR-08 status contract was corrected but rule access/dataset is still outstanding. Other findings were not re-certified here. Current dispositions and verification limits: [Project status](PROJECT_STATUS.md). Original observations and test counts below are preserved.
 
 **Baseline:** [`8b911540ddfb4856d29f414f1e771f0ae22dc989`](https://github.com/lemai-rgb/MMincare/commit/8b911540ddfb4856d29f414f1e771f0ae22dc989)  
 **Scope:** targeted review of Auth/session boundaries, Owner routes/RLS, private Pet/Medical files, Reminder/Notification state, Health Log mutations, loading, tests and documentation.

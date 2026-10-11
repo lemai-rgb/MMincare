@@ -2,7 +2,10 @@
 
 ## Phạm vi và giao diện
 
-Main baseline: `3ecfc6b866f05425eb3674e3626d3a5c6cd0070f`, sau khi PR #25 merge. Bản sửa hiện tại chưa merge/deploy.
+**Cập nhật:** 2026-10-11 (VN) · **Application baseline:** `main` `bcd14b51f4b70cd3d418bd10638f7a996713fdcf`  
+**Đã triển khai:** PR #26 đã merge, [Vercel Production success](https://vercel.com/lemai-rgbs-projects/m-mincare/E3bmui2BdzU7iAzkP2kNtnM4XSLD).  
+[Ứng dụng](https://m-mincare.vercel.app/) · [Trải nghiệm thử](https://m-mincare.vercel.app/demo)
+
 
 Demo dùng cùng màn, component, form và CSS với ứng dụng chính. `PetListView` và `PetDetailView` được tách nguyên markup từ server page; Auth/ownership/query vẫn ở protected server pages. Các form và component hiện có chỉ nhận thêm transport/navigation qua React context. Context mặc định dùng fetch và Next router như trước.
 
@@ -28,7 +31,7 @@ Phiên cũ nâng cấp Sushi một lần nếu vẫn trống, giữ chỉnh sử
 - Regression app: Health Log lifecycle, Medical/Reminder loading, statistics timestamp, notifications, image validation/picker, Auth and reminder validation.
 - Lint, TypeScript, production Webpack build, deterministic JSON/CSV export và diff checks.
 - Test/build không chứng minh visual parity hoặc thao tác authenticated production. Ghi rõ browser/Preview smoke nào thực sự thực hiện; không ghi visual PASS khi chưa chụp/đối chiếu.
-- Không cần migration hoặc seed Supabase. Giữ bản sửa trong PR cho review trước khi merge; chỉ dùng link CV sau khi đúng bản deploy được xác minh.
+- Không cần migration hoặc seed Supabase. PR #26 đã merge/deploy; public URL trên đã được smoke-check và có thể dẫn trong CV, với đúng giới hạn demo.
 
 ## Trải nghiệm cho người xem CV
 
@@ -39,3 +42,7 @@ Phiên cũ nâng cấp Sushi một lần nếu vẫn trống, giữ chỉnh sử
 5. Tải lại để kiểm tra trạng thái của tab. Nhấn Trải nghiệm thử để khôi phục mẫu, hoặc Về trang chủ để thoát.
 
 Bộ export tại `demo/generated` dành cho đọc/BA/Tester, không dùng import production. CV/README nêu đúng vai trò thực tế và phạm vi kiểm chứng; demo không phải bằng chứng phân quyền hay hiệu năng backend.
+
+## Release checkpoint
+
+Application main bcd14b5, PR #26 deployed. Demo31 tests/4 files and CI at feature head7b777d1 passed; lint/TypeScript/Webpack build passed. Public production smoke checked3 Pets, Min14 logs, Meo/Min monthly frequency differences, Min Other tooltip and return-home. This is sampled evidence, not full visual/manual coverage. Real Owner A/B, upload/cleanup, Auth/email and production timings remain unverified; no Supabase change was required for demo.

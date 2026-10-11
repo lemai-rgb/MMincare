@@ -1,96 +1,104 @@
-## Persona Document \- MMinCare
+# MMinCare — Persona Document
 
-## Scope: MVP \- Chó và Mèo
+**Phiên bản:** 2.0 · **Cập nhật:** 2026-10-11 (Asia/Ho_Chi_Minh)  
+**Baseline ứng dụng:** `main` `bcd14b51f4b70cd3d418bd10638f7a996713fdcf` — PR #26 đã merge, Vercel Production thành công.  
+**Ứng dụng:** https://m-mincare.vercel.app/ · **Trải nghiệm thử:** https://m-mincare.vercel.app/demo
 
----
+> Current = code đã triển khai tại baseline trên. Trạng thái này không có nghĩa mọi kịch bản đã kiểm thử thực tế. Demo dùng dữ liệu giả lập ở trình duyệt; không chứng minh Auth, Owner A/B, Storage hoặc hiệu năng backend.
 
-### PERSONA 1 \- Người nuôi lần đầu (Primary Persona)
+## 1. Scope and provenance
 
-Nguyễn Minh Anh \- Sinh viên, lần đầu nuôi mèo
+These are **constructed product personas**, not verified interview participants. Names/profiles and the representative quote below are illustrative. Informal user feedback reported during development is documented separately; do not attribute it to these fictional people or claim formal user research.
 
-Minh Anh vừa bắt đầu cuộc sống tự lập và lần đầu chịu trách nhiệm chăm sóc một thú cưng. Cô yêu quý mèo nhưng chưa có nhiều kiến thức về chăm sóc sức khỏe, vaccine hay các dấu hiệu bệnh lý thường gặp. Hầu hết thông tin cô có được đều đến từ bác sĩ thú y, cộng đồng nuôi thú cưng và các nội dung trên mạng xã hội.
+MMinCare currently serves authenticated Owners of dogs and cats. Caretaker is retained as a secondary future persona, not as a current production actor.
 
-**Hành vi sử dụng công nghệ**
+## 2. Primary Persona — Nguyễn Minh Anh
 
-* Sử dụng smartphone làm thiết bị chính trong mọi hoạt động hằng ngày.  
-* Thường tìm kiếm thông tin chăm sóc thú cưng trên Internet hoặc hỏi trong các cộng đồng nuôi thú cưng.  
-* Không có thói quen ghi chép hoặc quản lý hồ sơ sức khỏe bài bản.  
-* Lưu thông tin bằng ảnh chụp, tin nhắn hoặc ghi chú rời rạc.  
-  **Mục tiêu**  
-* Đảm bảo thú cưng được tiêm phòng đúng lịch và đúng loại vaccine.  
-* Theo dõi được lịch sử chăm sóc sức khỏe của thú cưng.  
-* Nhận biết sớm các dấu hiệu bất thường để xử lý kịp thời.  
-* Có thể dễ dàng tra cứu thông tin mỗi khi cần.  
-  **Pain Points**  
-* Không nhớ lịch tiêm và không biết cách tự tính các mốc vaccine tiếp theo.  
-* Phải hỏi lại bác sĩ nhiều lần vì không nhớ lịch sử chăm sóc trước đó.  
-* Hồ sơ khám bệnh, toa thuốc và hình ảnh bị lưu rải rác ở nhiều nơi.  
-* Khó cung cấp đầy đủ thông tin khi đổi phòng khám hoặc gặp bác sĩ mới.  
-  **Emotional Pain**  
-* Lo lắng mình chăm sóc thú cưng không đúng cách.  
-* Sợ bỏ lỡ một mũi vaccine quan trọng làm ảnh hưởng sức khỏe thú cưng.  
-* Thiếu tự tin khi bác sĩ hỏi về lịch sử bệnh hoặc lịch sử tiêm phòng.  
-* Áp lực khi phải tự chịu trách nhiệm cho sức khỏe của thú cưng lần đầu tiên.  
-  **Hành vi đặc trưng**  
-* Chụp ảnh sổ tiêm và toa thuốc để lưu trong điện thoại.  
-* Chỉ tìm lại hồ sơ khi có vấn đề phát sinh.  
-* Thường nhớ đến lịch tiêm khi đã gần đến hạn hoặc đã quá hạn.  
-* Hỏi cộng đồng nuôi thú cưng trước khi tìm lại hồ sơ sức khỏe.  
-  Câu nói đại diện
+**Profile:** Student, first-time cat owner, mainly uses a smartphone.
 
-"Mình không nhớ mấy tuần nữa mèo phải tiêm mũi gì, mỗi lần đến phòng khám lại phải hỏi bác sĩ từ đầu."
+### Context and behavior
 
-**MMinCare mang lại giá trị gì cho Minh Anh**
+- Keeps vaccination cards, prescriptions and photos in different places.
+- Searches online or asks a veterinarian when unsure.
+- Usually records information only when a problem occurs.
+- Needs a simple flow and clear validation rather than technical terminology.
 
-* Chủ động nhận được nhắc nhở khi đến gần lịch tiêm hoặc tái khám.  
-* Tra cứu toàn bộ lịch sử chăm sóc sức khỏe từ một nơi duy nhất.  
-* Giảm phụ thuộc vào trí nhớ cá nhân khi theo dõi sức khỏe thú cưng.  
-* Tự tin hơn khi trao đổi với bác sĩ hoặc đưa thú cưng đi khám.
+### Goals
 
----
+- Keep vaccination and medical history in one place.
+- Know which care dates are upcoming or overdue when opening the application.
+- Record weight, food and symptoms over time.
+- Retrieve a complete record when visiting a different clinic.
+- Recover account access without technical assistance.
 
-### PERSONA 2 \- Người đi làm bận rộn, nuôi nhiều thú cưng (Secondary Persona)
+### Pain points
 
-**Secondary về mức độ ưu tiên thiết kế MVP, không phải Secondary User theo định nghĩa WHO**   
-Trần Quốc Huy \- Nhân viên văn phòng, nuôi nhiều thú cưng
+- Forgets vaccination or recheck dates.
+- Cannot quickly reconstruct prior treatment.
+- Does not consistently monitor weight or eating behavior.
+- Worries about entering an incorrect date or losing a record when an attachment upload fails.
 
-Quốc Huy đã có kinh nghiệm nuôi thú cưng trong nhiều năm và hiểu rõ các nhu cầu chăm sóc cơ bản. Tuy nhiên, khi số lượng thú cưng tăng lên và lịch trình công việc ngày càng bận rộn, việc quản lý thông tin và lịch chăm sóc trở nên khó khăn hơn.
+### Current MMinCare value
 
-**Hành vi sử dụng công nghệ**
+- Centralized Pet/photos, Vaccine and Medical Records with confirmed deletion.
+- In-app Reminders with editing/completion and Notification unread dot; no push/email claim.
+- Optional private attachments with retry.
+- Owner-only Health Log create/edit/delete, Enter guard, per-Pet weekly/monthly statistics.
+- Password recovery.
 
-* Ưu tiên các ứng dụng đơn giản, thao tác nhanh.  
-* Chỉ mở ứng dụng khi thực sự có nhu cầu.  
-* Phụ thuộc nhiều vào hệ thống thông báo chủ động.  
-* Thường xuyên trao đổi với người chăm sóc hộ thông qua các ứng dụng nhắn tin.  
-  **Mục tiêu**  
-* Quản lý lịch chăm sóc của nhiều thú cưng trên cùng một hệ thống.  
-* Tránh nhầm lẫn lịch tiêm hoặc lịch tái khám giữa các cá thể.  
-* Theo dõi tình trạng thú cưng từ xa khi đi công tác hoặc vắng nhà.  
-* Có đầy đủ lịch sử chăm sóc khi cần đưa thú cưng đi khám.  
-  **Pain Points**  
-* Dễ nhầm lẫn lịch chăm sóc giữa nhiều thú cưng.  
-* Thông tin sức khỏe của từng con bị lưu ở nhiều nơi khác nhau.  
-* Không có cái nhìn tổng quan về tình trạng sức khỏe của tất cả thú cưng.  
-* Khó theo dõi tình trạng thực tế khi giao thú cưng cho người khác chăm sóc.  
-  **Emotional Pain**  
-* Lo lắng bỏ sót một vấn đề sức khỏe vì quá bận rộn.  
-* Cảm thấy thiếu kiểm soát khi phải giao thú cưng cho người khác chăm sóc.  
-* Áy náy nếu thú cưng gặp vấn đề sức khỏe do mình quên lịch hoặc bỏ sót thông tin.  
-* Không yên tâm trong các chuyến công tác dài ngày.  
-  **Hành vi đặc trưng**  
-* Ghi nhớ lịch chăm sóc bằng lịch cá nhân hoặc ứng dụng nhắc việc.  
-* Quản lý nhiều nguồn thông tin khác nhau cho từng thú cưng.  
-* Thường chỉ kiểm tra tình trạng thú cưng khi có thông báo hoặc sự cố.  
-* Trao đổi với người chăm sóc hộ chủ yếu qua tin nhắn.  
-  Câu nói đại diện
+### Illustrative quote (not an interview citation)
 
-"Đi công tác về mới biết mèo bỏ ăn hai ngày mà người trông không báo, nhưng mình cũng không có cách nào kiểm tra lại."
+> “Mình muốn mở một nơi là thấy lịch sử của mèo và những việc sắp tới, thay vì phải tìm lại ảnh và tin nhắn cũ.”
 
-**MMinCare mang lại giá trị gì cho Quốc Huy**
+## 3. Secondary Persona — Trần Quốc Huy
 
-* Theo dõi toàn bộ thú cưng trên một màn hình quản lý tập trung.  
-* Nhận cảnh báo kịp thời khi có lịch chăm sóc hoặc vaccine sắp đến hạn.  
-* Dễ dàng xem lại lịch sử chăm sóc của từng thú cưng.  
-* Yên tâm hơn khi cần theo dõi tình trạng thú cưng từ xa.
+**Priority:** Secondary product persona; Caretaker collaboration is Phase 2.
 
+**Profile:** Office worker, owns multiple pets and is frequently away.
 
+### Goals
+
+- Avoid mixing up records and schedules among pets.
+- Review each Pet's current condition remotely.
+- Eventually let an authorized Caretaker view and add selected records.
+- Eventually see a multi-Pet overview.
+
+### Pain points
+
+- Information is split across people and chat threads.
+- No reliable audit of who recorded an event.
+- Difficult to know whether a report relates to the correct Pet and date.
+
+### Current value
+
+- Manages multiple Owner-owned Pet profiles.
+- Opens each Pet's Health Dashboard and Reminder list.
+- Uses in-app records and reminders when accessing MMinCare.
+
+### Future value
+
+- Caretaker sharing and multi-Pet aggregate dashboard after the Phase 2 authorization flow is implemented and tested.
+- External proactive notification only after a separate product and technical decision.
+
+## 4. Design implications
+
+- Keep the Owner's current actions visible and do not expose inactive Caretaker controls.
+- Always distinguish the business date from the entry timestamp in health records.
+- Show loading, empty and error states for lists and charts.
+- Do not imply that an in-app Reminder sends push/email alerts.
+- Preserve keyboard and touch accessibility for chart detail interactions.
+- Explain attachment failure without implying that the Medical Record was lost.
+
+## 5. Feedback-driven UX and portfolio viewer
+
+Reported feedback (not persona interview results): use a file picker instead of URL, distinguish information labels, compact summary/cards, prevent accidental Enter save, offer log corrections and preserve mobile labels. Current code implements these responses; real-device visual/IME QA remains pending.
+
+A **Public Demo Visitor** is a portfolio viewing context, not a third clinical/caretaker persona: they use public `/demo`, same screens/flows with3 synthetic Pets,2 supplied photos and1 fallback, browser-local changes/reset. The demo must explain its boundary and return to the main site; it does not prove real security, email or storage behavior.
+
+## 6. Changelog
+
+| Version | Date | Change |
+|---|---|---|
+| 2.0 | 2026-10-11 | Đồng bộ code đã triển khai, CRUD/ảnh/thông báo, request lifecycle/idempotency và demo cùng UI; tách phạm vi kiểm chứng và kế hoạch. |
+| 1.1 | 2026-09-22 | Distinguished Current Owner capability from Phase 2 Caretaker capability; replaced proactive-notification claims with in-app Reminder wording; added Health Dashboard and recovery needs. |
+| 1.0 | 2026-06-29 | Initial personas. |

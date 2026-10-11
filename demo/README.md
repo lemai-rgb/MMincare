@@ -1,5 +1,10 @@
 # Bộ dữ liệu mẫu MMinCare
 
+**Cập nhật:** 2026-10-11 (VN) · **Application baseline:** `main` `bcd14b51f4b70cd3d418bd10638f7a996713fdcf`  
+**Đã triển khai:** PR #26 đã merge, [Vercel Production success](https://vercel.com/lemai-rgbs-projects/m-mincare/E3bmui2BdzU7iAzkP2kNtnM4XSLD).  
+[Ứng dụng](https://m-mincare.vercel.app/) · [Trải nghiệm thử](https://m-mincare.vercel.app/demo)
+
+
 Đây là dữ liệu nghiệp vụ hoàn toàn giả lập cho **portfolio demo**, không lấy từ Supabase hoặc tài khoản thật. Hai ảnh đại diện được người dùng cung cấp riêng để dùng cho demo. Không import bộ này vào production. Không có password, email, token, Auth user, object Storage hay rule tiêm phòng.
 
 ## Nội dung

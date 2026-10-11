@@ -1,222 +1,158 @@
-# MMinCare — Business Rules Document
+# MMinCare — Business Rules
 
-**Scope:** MVP  
-**Version:** 1.3 — current-scope alignment, 07/10/2026  
-**Source:** 14 User Stories, Acceptance Criteria, Data Dictionary và các quyết định sản phẩm đã chốt
+**Phiên bản:** 2.0 · **Cập nhật:** 2026-10-11 (Asia/Ho_Chi_Minh)  
+**Baseline ứng dụng:** `main` `bcd14b51f4b70cd3d418bd10638f7a996713fdcf` — PR #26 đã merge, Vercel Production thành công.  
+**Ứng dụng:** https://m-mincare.vercel.app/ · **Trải nghiệm thử:** https://m-mincare.vercel.app/demo
 
-> **Phạm vi hiện tại:** Owner-only. Các rule Caretaker/Sharing mô tả thiết kế tương lai, chưa có quyền/flow production. Health Log và thống kê theo Pet đã triển khai; Google OAuth chưa triển khai. Xem [trạng thái delivery](docs/PROJECT_STATUS.md). Những rule/đặc tả cũ không thay thế contract route và migration đã triển khai.
+> Current = code đã triển khai tại baseline trên. Trạng thái này không có nghĩa mọi kịch bản đã kiểm thử thực tế. Demo dùng dữ liệu giả lập ở trình duyệt; không chứng minh Auth, Owner A/B, Storage hoặc hiệu năng backend.
 
-## 1. Mục đích
+## 1. Rule conventions
 
-Tài liệu này là nguồn tham chiếu nghiệp vụ thống nhất cho MMinCare. Business Rules được dùng để:
+- `Current` means implemented in the production baseline.
+- `Planned` means approved but not yet available.
+- `Phase 2` means outside the current runtime scope.
+- Current runtime users are **Authenticated Owner** and **Public Demo Visitor**. System processing is internal, not a user actor.
 
-- Thiết kế giao diện, API và database.
-- Triển khai validation và authorization.
-- Viết test case và RTM.
-- Kiểm soát sự nhất quán giữa User Story, API, ERD và source code.
+## 2. Authentication
 
-## 2. Quy ước
+| ID | Rule | Status |
+|---|---|---|
+| BR-AUTH-01 | Email/password registration uses Supabase Auth and Email Confirmation. A user is not sent into a protected area until a valid session exists. | Current |
+| BR-AUTH-02 | Email is trimmed and normalized to lowercase before validation or matching. | Current |
+| BR-AUTH-03 | Password validation follows the active Supabase/project configuration; the documentation does not hard-code an unverified length or composition rule. | Current |
+| BR-AUTH-04 | Login failure uses a generic message and must not disclose whether the email or password was incorrect. | Current |
+| BR-AUTH-05 | Protected pages and APIs require a valid server-side session. | Current |
+| BR-AUTH-06 | Logout invalidates the active session and returns the user to an unauthenticated route. | Current |
+| BR-AUTH-07 | A forgot-password request returns a generic response whether or not the email exists. | Current |
+| BR-AUTH-08 | A recovery link is processed through the Auth callback using PKCE `code` or a supported `token_hash`; the callback must establish a valid recovery session before redirecting. | Current |
+| BR-AUTH-09 | Recovery redirect accepts only the internal `/reset-password` destination; unsafe or external destinations are rejected/fallback safely. | Current |
+| BR-AUTH-10 | A user may submit a new password only while a valid recovery/authenticated session exists. The new password follows BR-AUTH-03. | Current |
+| BR-AUTH-11 | Google OAuth is not shown as available until provider configuration, redirect allowlist and runtime verification are complete. | Planned — Phase 1 |
+| BR-AUTH-12 | `public.users` is synchronized from `auth.users`; clients may not write identity fields or use a service-role secret. | Current |
 
-Mã rule có cấu trúc `BR-[NHÓM]-[STT]`, ví dụ `BR-VAC-03`.
+## 3. Pet profile
 
-| Rule Type | Ý nghĩa |
-|---|---|
-| Validation | Điều kiện hợp lệ của dữ liệu đầu vào |
-| Authorization | Quyền truy cập hoặc hành động theo vai trò |
-| Process | Trình tự và trạng thái của luồng nghiệp vụ |
-| Data Integrity | Tính nhất quán giữa các entity |
-| Computation / Derivation | Giá trị do hệ thống tính hoặc suy ra |
-| Constraint | Giới hạn số lượng, dung lượng hoặc phạm vi |
-| Security | Quy tắc bảo mật |
-| Data Definition | Dữ liệu bắt buộc, tùy chọn hoặc tập giá trị |
-| Data Standardization | Chuẩn hóa dữ liệu trước khi lưu/so khớp |
-| Display | Quy tắc hiển thị |
-| Audit | Lưu dấu người tạo hoặc hành động |
-| Default Value | Giá trị mặc định |
+| ID | Rule | Status |
+|---|---|---|
+| BR-PET-01 | Pet creation requires name, species (`Dog|Cat`), gender (`Male|Female|Unknown`) and POST idempotency key; ownership comes from the session. | Current |
+| BR-PET-02 | Breed/date_of_birth/image are optional. Date of birth must be valid and not future. Weight is a Health Log field, not a pets column. | Current |
+| BR-PET-03 | An Owner may read only Pets they own. | Current |
+| BR-PET-04 | Only the Owner may create or update the Pet profile in the current runtime. | Current |
+| BR-PET-05 | Optional JPG/JPEG/PNG/WebP ≤5 MiB; select/change/remove with preview. Private pet-photos object access is Owner-scoped; real photo cover fills a square, species fallback uses contain. | Current |
+| BR-PET-06 | Pet card shows latest Health Log business date, status, weight and link to Health; hides food/amount. Missing values are explicit; latest order follows BR-HLOG-06. | Current |
+| BR-PET-07 | Pet deletion is not part of the current API. | Current constraint |
 
-## 3. Danh mục Business Rules
+## 4. Vaccine Record
 
-### 3.1. Tài khoản và xác thực (AUTH)
+| ID | Rule | Status |
+|---|---|---|
+| BR-VAC-01 | A Vaccine Record represents a vaccination that already occurred. `vaccine_name` and `vaccine_date` are required. | Current |
+| BR-VAC-02 | `vaccine_date` must not be later than the current business date; client and server both reject a future value. | Current |
+| BR-VAC-03 | `dose_number`, `clinic_name` and `note` are optional. | Current |
+| BR-VAC-04 | The backend may calculate `suggested_next_due_date = vaccine_date + standard_interval_days` when a matching schedule exists. | Current |
+| BR-VAC-05 | `suggested_next_due_date` is a transient suggestion and is never persisted in `vaccine_records`. | Current |
+| BR-VAC-06 | Suggestion distinguishes matched/no_match/unavailable/not_checked. No-match and rule-query failure differ; no guessed interval. CR-08 access/dataset is not complete, so manual Reminder date remains available. | Current |
+| BR-VAC-07 | Saving a Vaccine Record does not automatically create a Reminder. The Owner must confirm or edit the proposed date. | Current |
+| BR-VAC-08 | Owner may hard-delete a Vaccine Record after confirmation; linked Reminders remain with null source FK. No PATCH/edit endpoint for Vaccine Records. | Current |
 
-Nguồn: US-01, US-02 và quyết định xác thực đã chốt.
+## 5. Medical Record and Attachment
 
-| Mã BR | Business Rule | Loại Rule | Nguồn |
-|---|---|---|---|
-| BR-AUTH-01 | Email phải là duy nhất trong toàn hệ thống. | Data Integrity | US-01 |
-| BR-AUTH-02 | Mật khẩu phải có tối thiểu 8 ký tự và chứa ít nhất 1 chữ số. | Validation | US-01 |
-| BR-AUTH-03 | Email được trim khoảng trắng đầu/cuối và chuẩn hóa về chữ thường trước khi validate, lưu hoặc so khớp. | Data Standardization | US-01 |
-| BR-AUTH-04 | Hệ thống chặn submit khi còn trường bắt buộc trống hoặc dữ liệu sai định dạng; lỗi được hiển thị tại trường liên quan. | Validation | US-01, US-03 |
-| BR-AUTH-05 | Khi đăng nhập thất bại, hệ thống chỉ trả thông báo chung “Email hoặc mật khẩu không đúng”, không tiết lộ thông tin nào sai. | Security | US-02 |
-| BR-AUTH-06 | Phiên đăng nhập được duy trì cho đến khi người dùng chủ động đăng xuất hoặc phiên hết hiệu lực theo cơ chế bảo mật của hệ thống. | Process / Security | US-02 |
-| BR-AUTH-07 | `name` là dữ liệu bắt buộc của hồ sơ nhưng không bắt buộc người dùng nhập trên form đăng ký. Với email/password, hệ thống tạo `name` từ phần trước ký tự `@`. Với Google OAuth, hệ thống ưu tiên tên do Google cung cấp; nếu không có thì dùng phần trước `@` của email. | Computation / Default Value | US-01, US-02; Product Decision |
-| BR-AUTH-08 | [Dự kiến, chưa triển khai] Hệ thống sẽ cho phép đăng nhập bằng Google OAuth. Sau khi Google xác thực thành công, hệ thống tạo hoặc truy xuất hồ sơ theo email đã được provider xác minh và áp dụng BR-AUTH-07 để xác định `name`. | Process / Security | US-02; Product Decision |
-| BR-AUTH-09 | Supabase Email Confirmation được bật. Sau đăng ký, nếu chưa có session, hệ thống yêu cầu người dùng kiểm tra email; chỉ điều hướng vào khu vực đã xác thực sau khi callback hoàn tất và session hợp lệ. | Process / Security | Product Decision; ADL-002 |
-| BR-AUTH-10 | Callback hiện tại là `/auth/confirm`: xác nhận email/recovery bằng token hoặc exchange code, chỉ chấp nhận `next` nội bộ an toàn. Google OAuth callback chưa triển khai. | Process / Security | Product Decision; ADL-003 |
-| BR-AUTH-11 | MVP không hỗ trợ hard-delete tài khoản. Không cascade xóa pet hoặc lịch sử chăm sóc; nhu cầu vô hiệu hóa/xóa về sau dùng soft delete hoặc trạng thái inactive. | Data Integrity / Security | Product Decision; ADL-001 |
-| BR-AUTH-12 | Sau đăng nhập email/password thành công, hệ thống điều hướng đến `/dashboard`. Đây là landing/pet-list; thống kê tuần/tháng theo Pet đã triển khai, tổng hợp nhiều Pet vẫn là dự kiến. | Process / Display | Product Decision; ADL-004 |
-| BR-AUTH-13 | Lựa chọn onboarding chỉ chấp nhận `species=cat|dog`, phải được bảo toàn qua Email Confirmation và ánh xạ `cat → Cat`, `dog → Dog` khi tạo pet. Giá trị khác bị từ chối và không được ghi database. | Validation / Process | Product Decision; ADL-005 |
-| BR-AUTH-14 | Hồ sơ `public.users` được tạo/đồng bộ từ `auth.users` bằng cơ chế tin cậy phía server hoặc trigger. Client chỉ được sửa `name` và `phone_number`; không được sửa `user_id`, `email`, `created_at`. | Authorization / Data Integrity | Product Decision; ADL-007 |
+| ID | Rule | Status |
+|---|---|---|
+| BR-MED-01 | `visit_date` is required and must pass the server validation implemented by the current route. | Current |
+| BR-MED-02 | Clinic, symptoms, diagnosis, medication and note are optional. | Current |
+| BR-MED-03 | A Medical Record may be saved without an attachment. | Current |
+| BR-MED-04 | Attachment upload is a separate operation. Upload failure does not roll back the Medical Record or create false attachment metadata. | Current |
+| BR-MED-05 | The user may retry an attachment upload against the same Medical Record. | Current |
+| BR-MED-06 | Accepted attachment formats are the image/PDF MIME types allowed by the route; the effective maximum size is 5 MiB per file. | Current |
+| BR-MED-07 | Medical attachments are private and stored in bucket `medical-record-attachments`. Access uses authorization checks and time-limited signed URLs. | Current |
+| BR-MED-08 | Medical Records and attachments are Owner-only under the current runtime policies. | Current |
+| BR-MED-09 | Owner may hard-delete a Medical Record after confirmation; attachment metadata cascades, Storage cleanup may return pending/warnings, Reminders remain with null source FK. No PATCH/edit endpoint. | Current |
 
-### 3.2. Hồ sơ thú cưng (PET)
+## 6. Reminder
 
-Nguồn: US-03, US-04, US-05.
+| ID | Rule | Status |
+|---|---|---|
+| BR-REM-01 | A Reminder requires a Pet, type and `due_date`; note is optional. A past due date is permitted. | Current |
+| BR-REM-02 | A Reminder may be manual, linked to one Vaccine Record, or linked to one Medical Record. | Current |
+| BR-REM-03 | At most one source field is populated: `source_vaccine_record_id` XOR `source_medical_record_id`, or both are null for a manual Reminder. | Current |
+| BR-REM-04 | A source record must belong to the same Pet as the Reminder. | Current |
+| BR-REM-05 | `source_vaccine_record_id` is nullable and non-unique; one Vaccine Record may therefore be referenced by zero or more Reminders. Any duplicate-handling beyond database constraints follows the current route behavior. | Current |
+| BR-REM-06 | Submit controls use a loading/disabled state to reduce accidental double-click creation. | Current |
+| BR-REM-07 | Stored status is `Upcoming` or `Completed`. `Overdue` is derived when an Upcoming Reminder has `due_date` before the current date. | Current |
+| BR-REM-08 | Only Owner may list/create/edit/complete Reminders. Edit accepts due_date and note only, for stored Upcoming status; derived Overdue remains Upcoming in storage. | Current |
+| BR-REM-09 | Complete sets status=Completed and completed_at through its dedicated endpoint; edit uses separate allowlist due_date/note. API, RLS and grants enforce operation scope. | Current |
+| BR-REM-10 | Anonymous users have no Reminder privileges; authenticated users receive only the grants required by Owner policies. | Current |
+| BR-REM-11 | Current Reminders are in-app only; no push/email delivery is implied. | Current constraint |
 
-| Mã BR | Business Rule | Loại Rule | Nguồn |
-|---|---|---|---|
-| BR-PET-01 | Trường bắt buộc khi tạo hồ sơ thú cưng gồm tên, loài và giới tính. Loài chỉ nhận Dog hoặc Cat. | Validation | US-03 |
-| BR-PET-02 | Giống, ngày sinh và ảnh đại diện là các trường tùy chọn. | Data Definition | US-03 |
-| BR-PET-03 | Một tài khoản được tạo không giới hạn số hồ sơ thú cưng trong MVP. | Constraint | US-03 |
-| BR-PET-04 | Nếu không có ảnh đại diện, hệ thống hiển thị avatar mặc định theo loài chó/mèo. | Computation / Default Value | US-03 AC-03 |
-| BR-PET-05 | Owner chỉ thấy pet do mình sở hữu; Caretaker chỉ thấy pet được chia sẻ riêng cho mình và quyền vẫn còn hiệu lực. | Authorization | US-04, US-14 |
-| BR-PET-06 | Chỉ Owner được chỉnh sửa thông tin hồ sơ cơ bản của pet; Caretaker không có quyền chỉnh sửa. | Authorization | US-05 |
-| BR-PET-07 | Ảnh pet tùy chọn, hỗ trợ JPEG/PNG/WebP tối đa 5 MB, lưu private Storage; ảnh thật phủ khung vuông, bỏ ảnh trở về avatar theo loài. | Constraint | US-03 |
+## 7. Health Log and Dashboard
 
-### 3.3. Tiêm phòng (VAC)
+| ID | Rule | Status |
+|---|---|---|
+| BR-HLOG-01 | Health Log GET/POST/PATCH/DELETE is Owner-only; Pet membership and creator/ownership are checked in API/RLS. | Current |
+| BR-HLOG-02 | `recorded_on` is required and represents the business date selected by the Owner. | Current |
+| BR-HLOG-03 | `logged_at` is the system entry timestamp and is not accepted from the client. | Current |
+| BR-HLOG-04 | `recorded_on` cannot be later than the current date in `Asia/Ho_Chi_Minh`. | Current |
+| BR-HLOG-05 | Weight is optional positive numeric up to 9999.99 with at most two decimals; food_amount/food_type/status/note optional text. At least one business value required; clearing all values is rejected. | Current |
+| BR-HLOG-06 | The latest Health Log is selected by `recorded_on DESC`, then `logged_at DESC`, then `health_log_id DESC`. | Current |
+| BR-HLOG-07 | Owner may edit business fields and recorded_on, or delete after confirmation. health_log_id/pet_id/created_by/logged_at are immutable; no soft-delete/audit history is claimed. | Current |
+| BR-HLOG-08 | The per-Pet dashboard accepts `period=week|month`; all period filtering uses `recorded_on`. | Current |
+| BR-HLOG-09 | Weight trend uses available weight values in the selected period. Loading, error, empty and insufficient-data states must be explicit. | Current |
+| BR-HLOG-10 | Status frequency displays Bình thường, Mệt mỏi, Ăn kém/Bỏ ăn, Nôn, Tiêu chảy and Khác. Any value outside the five named standard groups is aggregated into Khác. | Current |
+| BR-HLOG-11 | Status tooltip supports hover, keyboard focus, Enter/Space and tap; it shows at most three recent records plus the remaining count. Khác may show the original status breakdown. | Current |
+| BR-HLOG-12 | Tooltip interaction uses data already returned by the dashboard request and must not trigger a new fetch. | Current |
+| BR-HLOG-13 | A dashboard aggregating all Pets is not current. | Phase 2 |
 
-Nguồn: US-06.
+## 8. Sharing and Caretaker
 
-| Mã BR | Business Rule | Loại Rule | Nguồn |
-|---|---|---|---|
-| BR-VAC-01 | Trường bắt buộc khi thêm Vaccine Record gồm tên vaccine và ngày tiêm. | Validation | US-06 |
-| BR-VAC-02 | Số liều, tên phòng khám và ghi chú là các trường tùy chọn. | Data Definition | US-06 |
-| BR-VAC-03 | Chu kỳ tiêm chuẩn được xác định dựa trên ba yếu tố: loài, loại vaccine và độ tuổi của pet tại ngày tiêm. | Computation / Derivation | US-06 |
-| BR-VAC-04 | Ngày tiêm tiếp theo do hệ thống gợi ý có thể được người dùng chỉnh sửa trước khi xác nhận tạo Reminder. | Process | US-06 |
-| BR-VAC-05 | Vaccine Record không lưu `next_due_date`; ngày nhắc tiêm tiếp theo được quản lý tại Reminder. | Data Integrity | US-06 |
-| BR-VAC-06 | Backend lấy `species` và `date_of_birth` từ Pet, tính độ tuổi tại `vaccine_date`, chọn chu kỳ chuẩn theo `species + vaccine_name + age_at_vaccination`, sau đó tính `suggested_next_due_date = vaccine_date + standard_interval`. `dose_number` là thông tin tùy chọn, không phải tiêu chí chính để chọn chu kỳ. | Computation / Derivation | US-06 |
-| BR-VAC-07 | Ngày tiêm trong tương lai bị từ chối: Vaccine Record là sự kiện đã diễn ra. Lịch tương lai thuộc Reminder. Quyết định này thay thế soft warning ở đặc tả cũ. | Validation | Production route `/api/pets/{petId}/vaccines`; 07/10/2026 |
-| BR-VAC-08 | Nếu Pet chưa có `date_of_birth` hoặc không tìm thấy chu kỳ phù hợp, backend không tự đoán và trả `suggested_next_due_date = null`; người dùng vẫn có thể tự nhập ngày để tạo Reminder. | Process / Fallback | US-06; Product Decision |
+| ID | Rule | Status |
+|---|---|---|
+| BR-SHARE-01 | `pet_access` may remain in the schema as reserved data design but does not make Caretaker a current runtime actor. | Phase 2/reserved |
+| BR-SHARE-02 | Target Caretaker permission is View + Add Vaccine/Medical for an explicitly shared Pet; Caretaker cannot create, edit or complete Reminders. | Phase 2 |
+| BR-SHARE-03 | Caretaker cannot edit/delete existing medical history or share a Pet onward. | Phase 2 |
+| BR-SHARE-04 | Caretaker Health Log access requires a separate approved implementation; current Health Log remains Owner-only. | Phase 2 |
 
-### 3.4. Hồ sơ khám bệnh (MED)
+## 9. Security and deployment
 
-Nguồn: US-07.
+| ID | Rule | Status |
+|---|---|---|
+| BR-SEC-01 | RLS is enabled on user-data tables and access is enforced server-side/database-side, not only in UI. | Current |
+| BR-SEC-02 | `rls_auto_enable()` is not executable by `anon` or `authenticated`. | Current hardening |
+| BR-SEC-03 | Migrations are the repository source of truth, but detected remote migration-history drift must be reconciled before automated replay. | Current operational rule |
+| BR-SEC-04 | Portable configuration uses production-origin settings; public app/demo links are recorded explicitly as release evidence, not secrets. | Current |
+| BR-SEC-05 | A new host must provide Node.js `>=20.9.0`, run `npm ci` and `npm run build`, and configure the public Supabase URL/publishable key. | Current portability rule |
+| BR-SEC-06 | A host migration must verify SSR cookies, Auth Site URL/redirect allowlist, signed URLs, RLS, grants, constraints and indexes. | Current portability rule |
 
-| Mã BR | Business Rule | Loại Rule | Nguồn |
-|---|---|---|---|
-| BR-MED-01 | Ngày khám là trường bắt buộc khi thêm Medical Record. | Validation | US-07 |
-| BR-MED-02 | Tên phòng khám, triệu chứng, chẩn đoán, thuốc kê, ghi chú và file đính kèm là tùy chọn. | Data Definition | US-07 |
-| BR-MED-03 | Mỗi file đính kèm tối đa 5MB; file vượt giới hạn hoặc sai định dạng bị từ chối. | Constraint | US-07 |
+## 10. Change requests and delivery
 
-### 3.5. Lịch sử y tế và kiểm soát truy cập (MEDHIST)
+- **CR-DELETE-001:** delivered — Vaccine/Medical hard-delete with confirmation, retained source-free Reminders and attachment cleanup reporting.
+- **CR-CHART-001:** delivered — full-period weight axis and point tooltip.
+- **CR-01/CR-02/CR-03:** PR #22 delivered request timeout/lifecycle, stale GET protection, literal `invalid` validation, immutable POST retry and idempotency. Automated regression evidence does not establish runtime A/B/retry tests.
+- **CR-08:** status contract fixed, production rule access/dataset still incomplete; no rule/interval fabricated for demo.
 
-Nguồn: US-08, US-09.
+### Additional current rules
 
-| Mã BR | Business Rule | Loại Rule | Nguồn |
-|---|---|---|---|
-| BR-MEDHIST-01 | Lịch sử y tế gồm Vaccine Record và Medical Record, hiển thị mới nhất trước và có thể lọc theo loại bản ghi. | Process / Display | US-08 |
-| BR-MEDHIST-02 | Mỗi Vaccine Record và Medical Record phải lưu người tạo là Owner hoặc Caretaker. | Data Integrity / Audit | US-09 |
-| BR-MEDHIST-03 | Caretaker không được xóa bất kỳ bản ghi y tế nào. | Authorization | US-09 |
-| BR-MEDHIST-04 | Caretaker không được chỉnh sửa bản ghi y tế đã tồn tại, kể cả bản ghi do chính Caretaker tạo. | Authorization | US-09 |
-| BR-MEDHIST-05 | Caretaker chỉ được truy cập hồ sơ y tế của pet đã được chia sẻ và quyền còn hiệu lực. | Authorization | US-09 |
+| ID | Rule | Status |
+|---|---|---|
+| BR-HLOG-14 | POST requires idempotency_key ≤128 characters; same Owner/Pet/key and normalized payload returns canonical row. A different payload returns 409 with recovery=canonical and existing row. | Current |
+| BR-HLOG-15 | Unknown POST result keeps immutable payload/key and locks fields until resolved; retry does not start a new logical creation. Cancel/error invalidates old requests and revalidates history. | Current |
+| BR-HLOG-16 | DELETE timeout/network/malformed response is ambiguous; retry 404 is not automatic success. Cancel revalidates canonical GET; stale GET cannot undo mutations. | Current |
+| BR-UX-01 | Enter in weight/food_type/food_amount never implicitly saves; textarea newline, date/select native action, Save button keyboard activation and IME preserved. | Current |
+| BR-UX-02 | Mobile Pet tabs form 2 × 2; group age metadata, wrap long content, use positive spacing; compact attribution/actions footer and 44px touch targets. | Current |
+| BR-NOTIF-01 | Notification events are due_soon/overdue for eligible current Upcoming Reminders; opening panel does not mark read. | Current |
+| BR-NOTIF-02 | Only a red dot shows unread visually; accessible label may contain count. Successful read updates dot and navigates to linked Reminder highlight; errors retain unread with retry. | Current |
+| BR-NOTIF-03 | Revalidate on panel open and invalidate after Reminder mutations; abort/stale-response safeguards prevent obsolete reads or navigation. Escape/outside closes and restores focus; panel and mobile menu are exclusive. | Current |
+| BR-PHOTO-01 | pet-photos private from creation, size/MIME restrictions and Owner folder policies; files validated server-side. No service-role in client; photo GET streams authorized object. | Current |
+| BR-DEMO-01 | /demo is public and uses existing application components/forms/styles through a scoped local transport; no real Auth/production API/DB/Storage operations. | Current |
+| BR-DEMO-02 | Meo/Min photos, Sushi fallback/basic records; fixtures fixed, date anchored to Vietnam on start/reset; no random reshuffle or forced equal status frequencies. | Current |
+| BR-DEMO-03 | Changes live in per-tab sessionStorage with in-memory fallback; reload retains state if storage works; reset confirms then replaces demo key only. Browser duplicated/opened tabs may start from copied browser state, then remain independent. | Current |
+| BR-DEMO-04 | Sample observations illustrate UI/data only, no diagnosis, dose or vaccine interval guidance; demo success is not Owner isolation/backend performance evidence. | Current |
 
-### 3.6. Nhắc hẹn (REM)
 
-Nguồn: US-10, US-11.
+## 11. Changelog
 
-| Mã BR | Business Rule | Loại Rule | Nguồn |
-|---|---|---|---|
-| BR-REM-01 | Trường bắt buộc khi tạo Reminder gồm pet, loại nhắc hẹn và ngày hẹn. | Validation | US-10 |
-| BR-REM-02 | Reminder có ngày hẹn đã qua vẫn được phép lưu để ghi nhận lịch sử. | Process | US-10 |
-| BR-REM-03 | Khi Reminder được tạo từ gợi ý sau tiêm, ngày hẹn được lưu tại `Reminder.due_date`, không lưu trong Vaccine Record. | Data Integrity | US-10 |
-| BR-REM-04 | Hệ thống cho phép nhiều Reminder cùng ngày cho cùng một pet, không chặn trùng. | Constraint | US-10 |
-| BR-REM-05 | Caretaker chỉ được xem Reminder của pet đã được chia sẻ và quyền còn hiệu lực. | Authorization | US-11 |
-| BR-REM-06 | Caretaker không được tạo, sửa, hoàn thành hoặc xóa Reminder. | Authorization | US-11 |
-| BR-REM-07 | Sau khi lưu Vaccine Record, hệ thống chỉ tạo Reminder khi Owner xác nhận ngày gợi ý hoặc ngày đã chỉnh sửa. | Process | US-06, US-10 |
-| BR-REM-08 | Chỉ Owner được đánh dấu Reminder là Completed. Khi hoàn thành, hệ thống cập nhật trạng thái lưu trữ thành `Completed`. | Authorization / Process | US-10 AC-03 |
-| BR-REM-11 | Owner chỉ được sửa ngày hẹn và ghi chú khi Reminder còn `Upcoming`; Caretaker không được sửa. | Authorization / Process | Notification Phase 1 |
-| BR-NOT-01 | Mỗi Reminder `Upcoming` có hai event hoạt động: `due_soon` tại D-2 và `overdue` tại D+2, đều lúc 08:00 `Asia/Ho_Chi_Minh`. | Process | Notification Phase 1 |
-| BR-NOT-02 | Đổi ngày hẹn hủy event lịch cũ và tạo lịch mới; hoàn thành Reminder hủy các event còn hoạt động. | Audit / Data Integrity | Notification Phase 1 |
-| BR-NOT-03 | Notification hiện hành chỉ trả tối đa một event cho mỗi Reminder; `overdue` thay thế `due_soon` từ D+2. | Presentation / Process | Notification Phase 1 |
-| BR-NOT-04 | Web Notification Center chỉ hiển thị event hiện hành từ API; chọn event chưa đọc đánh dấu đúng event một lần rồi mở Reminder tương ứng. | Presentation / Process | Notification Center |
-| BR-REM-10 | Database từ chối trộn transition Edit và Complete trong cùng update; `updated_at` do database quản lý. | Data Integrity | Notification Phase 1 |
-| BR-REM-09 | Trạng thái lưu trữ gồm `Upcoming` và `Completed`. `display_status` được suy ra khi đọc dữ liệu: Completed nếu trạng thái lưu trữ là Completed; Overdue nếu chưa hoàn thành và `due_date < current_date`; Upcoming trong các trường hợp còn lại. | Computation / Display | US-10; Product Decision |
-
-### 3.7. Chỉ số sức khỏe (HLOG)
-
-Nguồn: US-12, US-13.
-
-| Mã BR | Business Rule | Loại Rule | Nguồn |
-|---|---|---|---|
-| BR-HLOG-01 | Mỗi lần nhập Health Log tạo một bản ghi mới có timestamp. Khi chỉnh sửa, chỉ cập nhật các trường nghiệp vụ được cho phép; không thay đổi `health_log_id`, `pet_id`, `created_by` hoặc `logged_at`. | Data Integrity | US-12 |
-| BR-HLOG-02 | Health Log phải có ít nhất một trong các trường: weight, food_amount, food_type, status hoặc note. | Validation | US-12 |
-| BR-HLOG-03 | Biểu đồ xu hướng cân nặng hiển thị theo tuần hoặc tháng tùy lựa chọn của người dùng. | Display / Computation | US-13 |
-| BR-HLOG-04 | Nếu pet có dưới hai bản ghi cân nặng, Dashboard hiển thị “Chưa đủ dữ liệu” thay vì biểu đồ trống. | Data Sufficiency | US-13 AC-03 |
-| BR-HLOG-05 | Caretaker được thêm Health Log cho pet được chia sẻ, nhưng không được sửa hoặc xóa Health Log đã tồn tại. | Authorization | US-12, US-14 |
-| BR-HLOG-06 | Chỉ Owner của Pet được chỉnh sửa hoặc xóa Health Log; thao tác xóa cần xác nhận và không thể hoàn tác. | Authorization / Process | US-12 |
-
-### 3.8. Phân quyền và chia sẻ (SHARE)
-
-Nguồn: US-14.
-
-| Mã BR | Business Rule | Loại Rule | Nguồn |
-|---|---|---|---|
-| BR-SHARE-01 | Chỉ Owner được cấp hoặc thu hồi quyền Caretaker. | Authorization | US-14 |
-| BR-SHARE-02 | Một pet có thể được chia sẻ cho nhiều Caretaker cùng lúc. | Constraint | US-14 |
-| BR-SHARE-03 | Caretaker không được chia sẻ tiếp quyền truy cập cho người khác. | Authorization | US-14 |
-| BR-SHARE-04 | Caretaker chỉ thấy pet được Owner chỉ định chia sẻ. | Authorization | US-14 |
-| BR-SHARE-05 | Mỗi quyền Caretaker phải có ngày hết hiệu lực. | Constraint | US-14 |
-| BR-SHARE-06 | Nếu email đã có tài khoản, quyền được cấp ngay; nếu email chưa có tài khoản, hệ thống gửi lời mời và chỉ kích hoạt quyền sau khi người được mời đăng ký. | Process | US-14 |
-| BR-SHARE-07 | Thu hồi quyền có hiệu lực ngay lập tức; request tiếp theo của Caretaker phải bị chặn và giao diện phải rời khỏi dữ liệu vừa bị thu hồi. | Process / Security | US-14 |
-| BR-SHARE-08 | Owner không được chia sẻ pet cho chính email của mình. | Validation | US-14 |
-
-## 4. Cross-cutting Rules
-
-### CC-01. Vaccine Record → Reminder
-
-Backend lưu Vaccine Record trước, sau đó:
-
-1. Lấy `species` và `date_of_birth` từ Pet.
-2. Tính độ tuổi tại `vaccine_date`.
-3. Chọn chu kỳ chuẩn theo loài, loại vaccine và độ tuổi.
-4. Trả `suggested_next_due_date` nhưng không lưu vào Vaccine Record.
-5. Chỉ tạo Reminder khi Owner xác nhận; ngày được lưu tại `Reminder.due_date` và liên kết nguồn bằng `source_vaccine_record_id`.
-
-### CC-02. Chuẩn hóa email
-
-BR-AUTH-03 áp dụng tại mọi điểm so khớp email, bao gồm đăng ký, đăng nhập, Google OAuth, mời Caretaker và kiểm tra Owner tự chia sẻ cho chính mình.
-
-Email lưu trong `public.users` phải thỏa `email = lower(trim(email))` và dùng một UNIQUE constraint trên giá trị đã chuẩn hóa. Không tạo thêm expression unique index trùng chức năng.
-
-### CC-03. Lộ trình Google OAuth
-
-BR-AUTH-08 vẫn là Business Rule đã chốt. Tuy nhiên, Google OAuth được triển khai ở checkpoint riêng sau email/password Auth. Trước khi hoàn tất checkpoint đó, giao diện không được trình bày nút Google như một chức năng khả dụng.
-
-### CC-04. Quyền cố định của Caretaker
-
-Trong MVP, Caretaker có quyền **View + Add only** trên đúng pet được chia sẻ và còn hiệu lực:
-
-- Được xem hồ sơ pet, lịch sử y tế và Reminder.
-- Được thêm Vaccine Record, Medical Record và Health Log.
-- Không được sửa/xóa dữ liệu đã tồn tại.
-- Không được tạo, sửa, hoàn thành hoặc xóa Reminder.
-- Không được cấp quyền cho người khác.
-
-### CC-05. Reminder status
-
-Database chỉ cần lưu `Upcoming` hoặc `Completed`. API suy ra `display_status` dựa trên `status`, `due_date` và ngày hiện tại; không cần tiến trình cập nhật trạng thái mỗi ngày.
-
-## 5. Thống kê
-
-| Nhóm | Tiền tố | Số rule |
-|---|---:|---:|
-| Authentication | AUTH | 14 |
-| Pet | PET | 7 |
-| Vaccine | VAC | 8 |
-| Medical Record | MED | 3 |
-| Medical History | MEDHIST | 5 |
-| Reminder | REM | 9 |
-| Health Log | HLOG | 6 |
-| Sharing | SHARE | 8 |
-| **Tổng cộng** |  | **59** |
-
-## 6. Quyết định phạm vi triển khai
-
-- Core MVP: Authentication, Pet Profile, Vaccine Record, Reminder và Medical Record.
-- Core MVP: `/dashboard` làm landing/pet-list cơ bản sau đăng nhập.
-- Đã triển khai thêm: Health Log tạo/sửa/xóa Owner-only, thống kê tuần/tháng theo Pet, Notification Center và private Pet photo upload.
-- Dự kiến: Caretaker Sharing và Dashboard tổng hợp nhiều Pet.
-- Google OAuth là thiết kế checkpoint tương lai; BR-AUTH-08 chưa phải capability production.
-- Không hỗ trợ hard-delete tài khoản trong MVP; phương án tương lai là soft delete hoặc trạng thái inactive.
-- Health Log hỗ trợ Owner chỉnh sửa các trường nghiệp vụ được phép và xóa có xác nhận; Caretaker không được sửa/xóa.
-- Không đưa Pet Delete vào MVP khi chưa có User Story và Business Rule riêng.
-- Không tích hợp AI, clinic-side system, booking hoặc payment trong MVP.
-
+| Version | Date | Change |
+|---|---|---|
+| 2.0 | 2026-10-11 | Đồng bộ code đã triển khai, CRUD/ảnh/thông báo, request lifecycle/idempotency và demo cùng UI; tách phạm vi kiểm chứng và kế hoạch. |
+| 1.6 | 2026-09-22 | Rebuilt rules for password recovery, current Owner-only Health Log/dashboard, Medical-source Reminder, completion hardening, private attachment bucket, deployment portability and pending changes. |
+| 1.5 | 2026-09-16 | Added initial Health Log date semantics. |

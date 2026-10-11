@@ -1,106 +1,91 @@
-> **Cập nhật phạm vi — 07/10/2026:** Đây là tài liệu ưu tiên MVP ban đầu. Owner MVP đã triển khai Notification Center, private Pet photo upload, Health Log tạo/sửa/xóa và thống kê theo thú cưng. Caretaker Sharing, OAuth và email/push vẫn là dự kiến. MoSCoW bên dưới giữ vai trò lịch sử quyết định, không phải danh sách trạng thái release. Xem [tiến độ hiện tại](../docs/PROJECT_STATUS.md) và [bằng chứng BA/PM/Tester](../docs/PORTFOLIO_EVIDENCE.md).
+# MMinCare — MVP Document
 
-## 1\. Mục tiêu MVP
+**Phiên bản:** 2.0 · **Cập nhật:** 2026-10-11 (Asia/Ho_Chi_Minh)  
+**Baseline ứng dụng:** `main` `bcd14b51f4b70cd3d418bd10638f7a996713fdcf` — PR #26 đã merge, Vercel Production thành công.  
+**Ứng dụng:** https://m-mincare.vercel.app/ · **Trải nghiệm thử:** https://m-mincare.vercel.app/demo
 
-MVP của MminCare hướng đến việc giải quyết hai vấn đề cốt lõi của người nuôi thú cưng đó là thiếu công cụ lưu trữ thông tin sức khỏe tập trung và không có cơ chế nhắc lịch chăm sóc sức khỏe cho thú cưng. Khi giải quyết được các vấn đề này, người nuôi chủ động hơn trong việc theo dõi tình hình sức khỏe thú cưng
+> Current = code đã triển khai tại baseline trên. Trạng thái này không có nghĩa mọi kịch bản đã kiểm thử thực tế. Demo dùng dữ liệu giả lập ở trình duyệt; không chứng minh Auth, Owner A/B, Storage hoặc hiệu năng backend.
 
-#### Nguyên tắc ưu tiên MVP
+## 1. Product goal
 
-MVP ưu tiên giải quyết các pain point của Primary Persona trước nhằm kiểm chứng giá trị cốt lõi của sản phẩm. Các nhu cầu thuộc Secondary Persona sẽ được xem xét sau khi các chức năng cốt lõi đã được hoàn thiện.
+MMinCare helps pet owners keep pet profiles, vaccination history, medical records, attachments, health observations and care reminders in one place. The MVP validates whether an owner can maintain a usable longitudinal record without relying on paper records, chat messages or memory.
 
-### 2\. Định nghĩa MVP
+MMinCare is not a veterinary diagnostic system and does not replace professional advice.
 
-   → Build đến đâu thì đủ để test với người dùng thực  
-MVP được xem là hoàn chỉnh khi một người nuôi có thể: Tạo hồ sơ thú cưng với thông tin cơ bản (tên, độ tuổi, giới tính, loài); Ghi nhận và xem lịch sử tiêm phòng; Nhận nhắc lịch tiêm và tái khám; Ghi nhận lịch sử khám bệnh
+## 2. Người dùng và phạm vi hiện tại
 
-### 3\. Assumptions & Constraints 
+Owner đăng nhập dùng sản phẩm thật. Người xem CV mở public `/demo` để trải nghiệm nghiệp vụ với mẫu browser-local; không cần account. MMinCare/Supabase là thành phần hệ thống, không phải actor người dùng của Use Case. Caretaker sharing reserved Phase 2, chưa runtime.
 
-3.1 Assumptions
+## 3. Owner MVP đã triển khai
 
-AS-01: Người dùng có thiết bị di động truy cập web để sử dụng hệ thống.
+1. Email/password signup/confirm/resend, login/logout, protected session và recovery an toàn.
+2. Tạo/xem/sửa Pet, chọn/đổi/bỏ ảnh JPEG/PNG/WebP ≤5 MiB; ảnh private, fallback theo loài, ảnh thật phủ khung vuông.
+3. Pet card gọn: ngày nhật ký gần nhất, tình trạng/cân nặng và Xem nhật ký; thiếu dữ liệu được ghi rõ.
+4. Vaccine event không tương lai, create/read/delete có xác nhận; chưa edit. Suggestion contract phân biệt trạng thái nhưng CR-08 quyền/dataset chưa hoàn tất, có thể tự nhập Reminder.
+5. Medical create/read/delete, attachment private tùy chọn/retry/signed access; xóa xử lý phụ thuộc và cleanup warning, chưa edit.
+6. Reminder manual hoặc một nguồn Vaccine/Medical cùng Pet; view/filter Upcoming/Overdue/Completed, sửa ngày/ghi chú Upcoming, complete riêng.
+7. Notification Center in-app, unread red dot/read/retry/deep link, Escape/outside/focus, invalidation theo Reminder.
+8. Health Log Owner CRUD, date nghiệp vụ và timestamp bất biến, confirmation delete; POST idempotency/canonical retry, chống stale GET/mutation.
+9. Keyboard UX: Enter trong ba ô đo/ăn không lưu; textarea, native control, Save keyboard và IME được giữ.
+10. Thống kê tuần/tháng cho một Pet, weight trend/status frequency và tooltips; sửa contract timestamp/range.
+11. Request timeout 15s/body, abort/cleanup/retry và giảm summary query theo tab; không có số đo chứng minh tăng tốc production.
+12. Responsive Pet tabs2 × 2 mobile, metadata wrap, compact journal footer/actions; chưa kiểm thử visual đủ thiết bị.
 
-AS-02: Người dùng tự nhập thông tin sức khỏe thú cưng như hồ sơ tiêm phòng, lịch khám, cân nặng và ghi chú chăm sóc.
+## 4. Demo đã triển khai
 
-AS-03: MVP chưa tích hợp trực tiếp với hệ thống của phòng khám thú y; dữ liệu y tế được nhập thủ công bởi người dùng.
+[Trải nghiệm thử](https://m-mincare.vercel.app/demo) dùng cùng component/form/CSS app thật, nhãn Trải nghiệm thử/reset có xác nhận và Về trang chủ. Ba bé Meo/Min/Sushi, ảnh thật và fallback, lịch sử/tình trạng không giống nhau;31 Health Logs và các hồ sơ chăm sóc/reminder/notification.
 
-AS-04: Người dùng có kết nối internet khi truy cập hệ thống.
+Các thao tác chạy browser-local qua scoped adapter, reload giữ state từng tab nếu sessionStorage có sẵn. Reset chỉ thay key demo và neo ngày hiện tại Việt Nam. Không ghi backend, không mô phỏng bằng chứng real Auth/email/Owner A/B/Storage/performance. Sushi có dữ liệu cơ bản nhưng không có Medical Record để thể hiện empty state. Export JSON/CSV dùng portfolio, không seed Supabase.
 
-AS-05: Lịch nhắc vaccine trong MVP dựa trên ngày đến hạn do người dùng nhập hoặc ngày được hệ thống gợi ý theo logic đơn giản.
+## 5. Implemented beyond original prioritization
 
-AS-06: MMinCare không thay thế tư vấn chuyên môn của bác sĩ thú y.
+Health Log/dashboard/tooltips, recovery, photo upload, Notification và correction/deletion đã được triển khai. Giữ MoSCoW gốc cho truy vết; Should Have không đồng nghĩa chưa làm. Feedback người dùng được thuật lại đã dẫn đến bỏ URL ảnh, tránh Enter vô tình lưu, card ngắn và chỉnh responsive; không gọi đây là nghiên cứu định lượng hoặc UAT sign-off.
 
-3.2 Constraints
+## 6. Giới hạn và tồn đọng
 
-CT-01: MVP chỉ hỗ trợ quản lý thú cưng là chó và mèo.
+- Không có Pet/account delete, Vaccine/Medical edit, Caretaker sharing, Google OAuth, push/email hay aggregate đa-Pet.
+- CR-08 chỉ sửa contract trạng thái; rule access/dataset production chưa hoàn tất, demo không bịa interval.
+- Real email/callback, upload/change/remove/reload, Owner A/B, real retry/cleanup và full desktop/mobile QA chưa đủ bằng chứng.
+- Đã có public demo smoke; build/deploy/test PASS không là SLA, security certification hoặc measured speedup.
+- Migration trong repository đồng bộ version remote; cần inventory trước promotion, không replay/repair lịch sử tùy tiện.
 
-CT-02: MVP không bao gồm hệ thống quản lý dành cho phòng khám thú y.
 
-CT-03: MVP không bao gồm AI tư vấn sức khỏe thú cưng.
+## 7. MoSCoW baseline
 
-CT-04: MVP không xử lý đặt lịch khám, thanh toán hoặc kết nối marketplace dịch vụ thú cưng.
+| Capability | Priority | Current status |
+|---|---|---|
+| Authentication and recovery | Must Have | Implemented |
+| Pet profile | Must Have | Implemented |
+| Vaccine Record | Must Have | Implemented |
+| Medical Record and attachment | Must Have | Implemented |
+| In-app Reminder | Must Have | Implemented |
+| Health Log | Should Have | Implemented early for Owner |
+| Per-Pet Health Dashboard | Should Have | Implemented early for Owner |
+| Caretaker sharing | Should Have | Phase 2 |
+| Aggregate multi-Pet dashboard | Should Have | Phase 2 |
+| Google OAuth | Phase 1 planned | Pending configuration |
+| Push/email reminders | Future | Not implemented |
+| AI health advice | Won't Have for MVP | Excluded |
 
-CT-05: Reminder trong MVP tập trung vào việc hiển thị nhắc hẹn trong hệ thống; push notification/email notification có thể được mô phỏng hoặc để ở phiên bản sau.
+## 8. Acceptance checklist và trạng thái kiểm chứng
 
-Notification Phase 1 chỉ chuẩn bị event trong hệ thống: Owner có thể sửa Reminder `Upcoming`; event D-2/D+2 được lưu để truy vấn sau này. Notification Center đã triển khai ở checkpoint sau; email và browser push chưa triển khai.
+| Nhóm | Mong đợi | Bằng chứng hiện có / còn thiếu |
+|---|---|---|
+| Public demo |3 Pet, same UI, thử CRUD/reminder/notification/reset/reload | Automated31 demo tests; production smoke3 cards, Min history/month/status detail và return-home; không phải full UAT |
+| Real Owner flows |Auth, Pet photo, care-record CRUD, Health CRUD, Reminder/read | Code/CI/regression có; real authenticated manual matrix chưa hoàn tất |
+| Quyền |Owner A không truy cập/chỉnh dữ liệu B | API/RLS/policy review và CI assertions; hai session live chưa kiểm thử |
+| Keyboard/mobile |Không Enter lưu nhầm, không cắt chữ/control | Regression và CSS responsive; IME/device/fullvisual manual pending |
+| Hiệu năng |Không loading vô hạn, lấy canonical data | Timeout/race tests; TTFB/production before-after chưa đo |
 
-Trong dữ liệu truy vấn, mỗi Reminder chỉ có tối đa một notification hiện hành; `overdue` thay thế `due_soon` từ D+2.
+## 9. Success measures (mục tiêu, chưa công bố đạt)
 
-CT-06: Caretaker Portal chưa phải trọng tâm kiểm chứng giá trị cốt lõi của MVP, nên chỉ được xem là Should Have hoặc Future Enhancement tùy scope cuối cùng.
+Người dùng hoàn tất flow không trợ giúp, tìm đúng lịch sử/Pet, sửa lỗi nhập mà không tạo trùng, attachment failure không mất Medical Record, Reminder/Notification nhất quán khi reload. Đo completion/error/time bằng kịch bản và dữ liệu giả lập, ghi rõ môi trường/commit. Chưa có user count, speed percentage, uptime hoặc formal UAT để dùng trên CV.
 
-### 4\. Persona Prioritization
 
-| Persona | Priority | Lý do |
-| ----- | ----- | ----- |
-| Minh Anh (Người nuôi thú cưng lần đầu) | Primary Persona | Đại diện cho nhóm người dùng gặp các pain point cốt lõi của sản phẩm: quản lý hồ sơ sức khỏe và theo dõi lịch chăm sóc. |
-| Quốc Huy (Người nuôi nhiều thú cưng, thường xuyên đi công tác) | Secondary Persona | Có thêm nhu cầu phối hợp chăm sóc và theo dõi từ xa, tuy nhiên đây là nhu cầu mở rộng sau khi giải quyết được các pain point cốt lõi. |
+## 10. Changelog
 
-### 5\. MoSCoW Feature Matrix    
-
-   → Must Have / Should Have / Won't Have (for now)  
-   → Mỗi feature link rõ về Persona nào được giải quyết
-
-| Tính năng | Mô tả | Persona | Ưu tiên |
-| :---- | :---- | :---- | :---- |
-| Kiểm soát cân nặng | Ghi nhận lịch sử cân nặng theo thời gian | Minh Anh  | Should have |
-| Hồ sơ thông tin thú cưng | Ghi nhận thông tin cơ bản của thú cưng | Cả hai  | Must have |
-| Nhắc lịch tiêm phòng | Nhắc lịch tiêm phòng theo chu kỳ y tế  | Cả hai | Must have |
-| Quyền truy cập cho người chăm hộ | Chia sẻ quyền cập nhật cho người chăm hộ  | Quốc Huy  | Should have |
-| Authentication | Xác nhận người dùng hệ thống | Cả hai | Must have |
-| Theo dõi tiêm phòng | Ghi nhận lịch sử vắc xin đã sử dụng của thú cưng | Cả hai | Must have |
-| Lịch sử khám bệnh  | Ghi nhận lịch sử khám bệnh của thú cưng | Cả hai | Must have |
-| Dashboard dữ liệu sức khỏe tổng quan định kỳ | Tổng hợp số liệu sức khỏe thú cưng theo chu kỳ  | Quốc Huy | Should have |
-| Thực đơn của thú cưng | Ghi nhận thực đơn thú cưng định kỳ | Minh Anh | Should have |
-| Đề xuất lời khuyên của Al | Al đề xuất thêm các cách chăm sóc hiệu quả | Minh Anh | Won’t have |
-
-### 6\. Lý do ra quyết định (Rationale)
-
-| Tính năng | Xếp loại | Lý do |
-| :---- | :---- | :---- |
-| Kiểm soát cân nặng | Should have | Biết tình trạng cân nặng của thú cưng để điều chỉnh phù hợp. Có giá trị theo dõi sức khỏe nhưng không trực tiếp giải quyết pain point cốt lõi là quản lý hồ sơ và nhắc lịch chăm sóc.  |
-| Hồ sơ thông tin thú cưng | Must have | Đây là data foundation của toàn hệ thống, không có hồ sơ thú cưng thì không có context để gắn lịch tiêm, lịch khám hay quyền Caretaker  |
-| Nhắc lịch tiêm phòng | Must have | Pain point số 1 của cả hai persona: Minh Anh không biết lịch, Quốc Huy biết nhưng quên. Đây là lý do MminCare tồn tại  |
-| Quyền truy cập cho người chăm hộ | Should have | Feature này giải quyết nhu cầu theo dõi và phối hợp chăm sóc từ xa của Secondary Persona (Quốc Huy). Tuy nhiên sản phẩm vẫn có thể giải quyết các pain point cốt lõi về quản lý hồ sơ sức khỏe và nhắc lịch chăm sóc nếu chưa triển khai chức năng này. Do đó feature được ưu tiên ở mức Should Have trong giai đoạn MVP  |
-| Authentication | Must have | Bắt buộc để quản lý dữ liệu người dùng  |
-| Theo dõi tiêm phòng | Must have | Giải quyết vấn đề theo dõi lượng vaccines đã tiêm phòng |
-| Lịch sử khám bệnh  | Must have | Giải quyết vấn đề theo dõi lịch sử khám, dùng thuốc của thú cưng |
-| Dashboard dữ liệu sức khỏe tổng quan định kỳ | Should have | Theo dõi tổng quan sức khỏe trong thời kỳ nhất định. Cung cấp góc nhìn tổng quan nhưng hệ thống vẫn giải quyết được bài toán chính nếu chưa có dashboard  |
-| Thực đơn của thú cưng | Should have | Hỗ trợ chăm sóc thú cưng, theo dõi nguồn thức ăn để đảm bảo sức khỏe |
-| Đề xuất lời khuyên của Al | Won’t have | Ngoài phạm vi MVP |
-
-### 7\. Tiêu chí thành công (Success Metrics)
-
-   → Người dùng làm được gì sau khi dùng MVP
-
-- Người dùng hoàn thành việc tạo hồ sơ và ghi nhận ít nhất 1 lần khám bệnh mà không cần hỗ trợ kỹ thuật  
-- Người dùng nhận được thông báo nhắc lịch tiêm trước ngày đến hạn 
-
-### 8\. Out of Scope
-
-   → Danh sách rõ ràng kèm lý do loại trừ
-
-- Đề xuất Al được loại trừ vì không phải yếu tố chính xử lý các pain point, cấu trúc dữ liệu phức tạp, cần tích hợp với bên thứ 3, có thể thêm trong các phiên bản mới của hệ thống  
-- Hỗ trợ loài khác ngoài chó và mèo: Chưa có vaccination schedule chuẩn để model  
-- Hệ thống quản lý phía phòng khám (Clinic-side): Domain riêng biệt, đã loại trừ trong WHO   
-- Tính năng cộng đồng / mạng xã hội: Nằm ngoài core value của MminCare   
-- Tích hợp đặt lịch phòng khám trực tuyến: Phụ thuộc third-party, tăng complexity không cần thiết ở MVP
-
+| Version | Date | Change |
+|---|---|---|
+| 2.0 | 2026-10-11 | Đồng bộ code đã triển khai, CRUD/ảnh/thông báo, request lifecycle/idempotency và demo cùng UI; tách phạm vi kiểm chứng và kế hoạch. |
+| 1.1 | 2026-09-22 | Rebuilt Current/Implemented Beyond Initial MVP/Phase 2 scope from deployed baseline; added recovery, Health Log/dashboard, current limitations and pending PR #7 boundary. |
+| 1.0 | 2026-07-23 | Initial MVP definition and prioritization. |
