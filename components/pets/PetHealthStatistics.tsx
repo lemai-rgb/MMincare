@@ -18,8 +18,8 @@ import { getReminderTypeLabel, type ReminderType } from "@/lib/reminders";
 import styles from "@/styles/petDetail.module.css";
 
 // Reserve separate rows for the unit, date ticks, and horizontal-axis title.
-const WEIGHT_CHART_DIMENSIONS = { width: 600, height: 288, left: 72, right: 40, top: 40, bottom: 72 };
-const STATUS_CHART_DIMENSIONS = { width: 600, height: 252, left: 48, right: 24, top: 20, bottom: 58 };
+const WEIGHT_CHART_DIMENSIONS = { width: 600, height: 288, left: 56, right: 24, top: 24, bottom: 64 };
+const STATUS_CHART_DIMENSIONS = { width: 600, height: 288, left: 40, right: 20, top: 24, bottom: 64 };
 
 function formatDate(value: string) {
   const date = /^\d{4}-\d{2}-\d{2}$/.test(value)
@@ -200,7 +200,7 @@ function WeightTrendChart({
   }
 
   return (
-    <div className={styles.healthChartGraphic}>
+    <div className={styles.healthChartGraphic} ref={chartRef}>
       <svg
         aria-describedby={descriptionId}
         aria-labelledby={titleId}
@@ -216,6 +216,7 @@ function WeightTrendChart({
           const y = dimensions.top + ((yTicks[0] - tick) / range) * plotHeight;
           return (
             <g key={tick}>
+              <line className={styles.healthChartGridline} x1={dimensions.left} x2={dimensions.width - dimensions.right} y1={y} y2={y} />
               <line className={styles.healthChartTick} x1={dimensions.left - 7} x2={dimensions.left} y1={y} y2={y} />
               <text className={styles.healthChartText} textAnchor="end" x={dimensions.left - 12} y={y + 5}>
                 {new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(tick)}
@@ -224,12 +225,16 @@ function WeightTrendChart({
           );
         })}
         <text className={styles.healthChartLabel} x={dimensions.left} y={dimensions.top - 22}>kg</text>
-        <text className={styles.healthChartLabel} textAnchor="start" x={dimensions.left} y={dimensions.height - dimensions.bottom + 25}>
-          {formatDate(periodStartDate).slice(0, 5)}
-        </text>
-        <text className={styles.healthChartLabel} textAnchor="end" x={dimensions.width - dimensions.right} y={dimensions.height - dimensions.bottom + 25}>
-          {formatDate(periodEndDate).slice(0, 5)}
-        </text>
+        {Array.from({ length: 4 }, (_, index) => {
+          const start = Date.parse(`${periodStartDate}T00:00:00Z`);
+          const days = Math.round((Date.parse(`${periodEndDate}T00:00:00Z`) - start) / 86_400_000);
+          const offset = Math.round(days * index / 3);
+          const day = new Date(start + offset * 86_400_000).toISOString().slice(0, 10);
+          return <text className={styles.healthChartText} key={day} textAnchor={index === 0 ? "start" : index === 3 ? "end" : "middle"}
+            x={dimensions.left + offset / Math.max(1, days) * plotWidth} y={dimensions.height - dimensions.bottom + 25}>
+            {formatDate(day).slice(0, 5)}
+          </text>;
+        })}
         <text className={styles.healthChartLabel} textAnchor="middle" x={dimensions.left + plotWidth / 2} y={dimensions.height - 12}>Ngày ghi nhận</text>
         <polyline className={styles.healthTrendLine} fill="none" points={polyline} />
         {pointsWithCoordinates.map((point) => (
@@ -291,7 +296,7 @@ function StatusFrequencyChart({
   const plotHeight = dimensions.height - dimensions.top - dimensions.bottom;
   const maxCount = Math.max(...counts.map((count) => count.count), 1);
   const yMax = Math.max(4, Math.ceil(maxCount / 4) * 4);
-  const barWidth = Math.min(118, (plotWidth / counts.length) * 0.72);
+  const barWidth = Math.min(56, (plotWidth / counts.length) * 0.56);
   const activeCount = counts.find((count) => count.status === activeStatus) ?? null;
   const activeIndex = activeCount ? counts.findIndex((count) => count.status === activeCount.status) : -1;
   const activeCenter = activeIndex >= 0
@@ -381,6 +386,7 @@ function StatusFrequencyChart({
           const y = dimensions.top + ((yMax - tick) / yMax) * plotHeight;
           return (
             <g key={tick}>
+              <line className={styles.healthChartGridline} x1={dimensions.left} x2={dimensions.width - dimensions.right} y1={y} y2={y} />
               <line className={styles.healthChartTick} x1={dimensions.left - 7} x2={dimensions.left} y1={y} y2={y} />
               <text className={styles.healthChartText} textAnchor="end" x={dimensions.left - 12} y={y + 5}>{tick}</text>
             </g>
@@ -412,7 +418,7 @@ function StatusFrequencyChart({
               <rect
                 className={`${styles.healthStatusBar} ${canOpenOther ? styles.healthStatusBarInteractive : ""} ${isActive ? styles.healthStatusBarActive : ""}`}
                 height={height}
-                rx={2}
+                rx={5}
                 width={barWidth}
                 x={center - barWidth / 2}
                 y={y}
@@ -658,7 +664,8 @@ export function PetHealthStatistics({
 
           <div className={styles.healthChartGrid}>
             <section className={styles.healthChartPanel} aria-labelledby="weight-trend-title">
-              <h3 id="weight-trend-title">XU HƯỚNG CÂN NẶNG</h3>
+              <h3 id="weight-trend-title">Xu hướng cân nặng</h3>
+              <p className={styles.healthChartSubtitle}>Cân nặng theo ngày ghi nhận</p>
               {data.weight_trend.length >= 2 ? (
                 <WeightTrendChart
                   period={data.period}

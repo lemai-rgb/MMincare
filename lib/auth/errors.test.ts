@@ -31,7 +31,7 @@ assert.equal(
 );
 assert.equal(
   mapAuthError({ name: "AuthRetryableFetchError", message: "network details" }, { operation: "login" }).message,
-  "Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.",
+  "Chưa thể kết nối dịch vụ xác thực. Vui lòng thử lại sau; nếu vẫn lỗi, hãy kiểm tra kết nối mạng.",
 );
 
 const unknown = mapAuthError({ code: "future_code", message: "password=secret" }, { operation: "signup" });
@@ -45,3 +45,8 @@ assert.equal(
 assert.equal(getCooldownLabel(59), "Gửi lại sau 59 giây");
 
 console.log("Auth error mapping tests passed.");
+
+assert.equal(
+  mapAuthError({ name: "AuthRetryableFetchError", status: 503 }, { operation: "login" }).message,
+  "Dịch vụ xác thực đang tạm thời gặp sự cố. Vui lòng thử lại sau.",
+);
