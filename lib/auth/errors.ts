@@ -119,9 +119,13 @@ export function mapAuthError(
         code,
       };
     case "request_timeout":
-      return { message: "Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.", retryable: true, code };
+      return { message: "Chưa thể kết nối dịch vụ xác thực. Vui lòng thử lại sau; nếu vẫn lỗi, hãy kiểm tra kết nối mạng.", retryable: true, code };
     case "recovery_session_missing":
       return { message: "Liên kết đặt lại mật khẩu đã hết hạn hoặc không hợp lệ. Vui lòng yêu cầu liên kết mới.", retryable: true, code };
+  }
+
+  if (status !== undefined && status >= 500 && status <= 599) {
+    return { message: "Dịch vụ xác thực đang tạm thời gặp sự cố. Vui lòng thử lại sau.", retryable: true, code };
   }
 
   if (
@@ -129,11 +133,7 @@ export function mapAuthError(
     || details.name === "NetworkError"
     || details.name === "AuthRetryableFetchError"
   ) {
-    return { message: "Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.", retryable: true, code };
-  }
-
-  if (status !== undefined && status >= 500 && status <= 599) {
-    return { message: "Dịch vụ xác thực đang tạm thời gặp sự cố. Vui lòng thử lại sau.", retryable: true, code };
+    return { message: "Chưa thể kết nối dịch vụ xác thực. Vui lòng thử lại sau; nếu vẫn lỗi, hãy kiểm tra kết nối mạng.", retryable: true, code };
   }
 
   return { ...unknownResult(), code };

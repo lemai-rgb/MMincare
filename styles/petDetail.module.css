@@ -1218,28 +1218,29 @@
 
 .healthStatistics {
   width: 100%;
-  margin-top: 40px;
+  margin-top: 24px;
 }
 
 .healthStatsCards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  width: min(100%, 1094px);
-  gap: 20px;
+  width: 100%;
+  gap: 16px;
 }
 
 .healthStatsCard {
   display: flex;
   min-width: 0;
-  min-height: 223px;
+  min-height: 144px;
   box-sizing: border-box;
   flex-direction: column;
-  padding: 26px 14px 20px;
-  overflow: hidden;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 20px;
   background: #fff;
-  border: 1px solid #e8e2da;
-  border-radius: 28px;
-  text-align: center;
+  border: 1px solid #e4e9e1;
+  border-radius: 16px;
+  text-align: left;
 }
 
 .healthStatsCard h3,
@@ -1250,72 +1251,68 @@
 }
 
 .healthStatsCard h3 {
-  color: #111;
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 1.2;
-  text-align: left;
+  color: #626c61;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .healthStatsMetric {
-  margin: auto 0 0 !important;
-  color: #4f6f52;
-  font-size: clamp(30px, 3vw, 48px);
-  font-weight: 500;
-  line-height: 1.05;
+  color: #36583b;
+  font-size: clamp(24px, 2vw, 30px);
+  font-weight: 600;
+  line-height: 1.2;
   overflow-wrap: anywhere;
 }
 
 .healthStatsCard > span {
-  margin-top: auto;
-  color: #111;
-  font-size: 20px;
-  line-height: 1.25;
+  color: #626c61;
+  font-size: 14px;
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
 .healthStatsCard > small {
-  margin-top: 6px;
   color: #4f6f52;
-  font-size: 16px;
-  line-height: 1.25;
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .healthStatsEmpty {
-  margin: auto 0 !important;
   color: var(--mm-text-secondary);
-  font-size: 18px;
-  line-height: 1.4;
+  font-size: 15px;
+  line-height: 1.5;
 }
 
 .healthChartGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 56px;
-  margin-top: 84px;
+  gap: 20px;
+  margin-top: 24px;
+  align-items: start;
 }
 
 .healthChartPanel {
   min-width: 0;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e4e9e1;
+  border-radius: 16px;
 }
 
 .healthChartPanel h3 {
   margin: 0;
-  color: #111;
-  font-size: 24px;
+  color: #243b2a;
+  font-size: 18px;
   font-weight: 600;
-  line-height: 1.25;
-}
-
-.healthChartSubtitle {
-  margin: 8px 0 22px;
-  color: #686962;
-  font-size: 14px;
   line-height: 1.4;
 }
 
-.healthChartPanel h3 + .healthChartGraphic {
-  margin-top: 30px;
+.healthChartSubtitle {
+  margin: 4px 0 16px;
+  color: #687568;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .healthChartGraphic {
@@ -1330,7 +1327,6 @@
 .healthChartSvg {
   display: block;
   width: 100%;
-  min-height: 240px;
   height: auto;
   overflow: visible;
 }
@@ -1338,30 +1334,38 @@
 .healthChartAxis,
 .healthChartTick {
   stroke: #1f1f1f;
-  stroke-width: 1.25;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.healthChartGridline {
+  stroke: #e0e8de;
+  stroke-width: 1;
+  stroke-dasharray: 3 5;
+  vector-effect: non-scaling-stroke;
 }
 
 .healthChartText,
 .healthChartLabel {
-  fill: #20211f;
+  fill: #626f62;
   font-family: var(--font-inter), Arial, sans-serif;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .healthChartLabel {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .healthTrendLine {
-  stroke: #6e8b6b;
-  stroke-width: 2;
+  stroke: #5f835e;
+  stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .healthTrendPoint {
   fill: #fff;
-  stroke: #6e8b6b;
+  stroke: #5f835e;
   stroke-width: 2;
   cursor: default;
 }
@@ -2889,8 +2893,8 @@
 
   .healthChartGrid {
     grid-template-columns: 1fr;
-    gap: 46px;
-    margin-top: 58px;
+    gap: 20px;
+    margin-top: 24px;
   }
 }
 
@@ -2942,7 +2946,9 @@
   }
 
   .healthStatsCard {
-    min-height: 170px;
+    min-height: 0;
+    padding: 16px;
+    gap: 8px;
   }
 }
 
@@ -3028,16 +3034,26 @@
     margin-top: 28px;
   }
 
+  .healthChartPanel {
+    padding: 16px;
+  }
+
   .healthChartPanel h3 {
-    font-size: 20px;
+    font-size: 17px;
   }
 
-  .healthChartSvg {
-    min-height: 190px;
+  .healthChartText,
+  .healthChartLabel {
+    font-size: 18px;
   }
 
-  .healthChartText {
-    font-size: 12px;
+  .healthChartPanel > .healthChartGraphic {
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+
+  .healthChartPanel > .healthChartGraphic .healthChartSvg {
+    min-width: 420px;
   }
 
   .healthStatusChartViewport {
@@ -3046,12 +3062,12 @@
   }
 
   .healthStatusChartStage {
-    width: 600px;
-    min-width: 600px;
+    width: max(100%, 520px);
+    min-width: 520px;
   }
 
   .healthStatusChartStage .healthChartSvg {
-    min-width: 600px;
+    min-width: 520px;
   }
 
   .healthOtherBreakdownHeader,
