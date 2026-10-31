@@ -15,6 +15,7 @@ on:
       - 'demo/**'
       - 'scripts/export-demo.ts'
       - 'styles/demo.module.css'
+      - 'styles/petDetail.module.css'
       - 'proxy.ts'
       - 'package.json'
       - 'package-lock.json'
