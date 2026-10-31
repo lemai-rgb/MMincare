@@ -216,7 +216,7 @@ function WeightTrendChart({
           const y = dimensions.top + ((yTicks[0] - tick) / range) * plotHeight;
           return (
             <g key={tick}>
-              <line className={styles.healthChartGridline} x1={dimensions.left} x2={dimensions.width - dimensions.right} y1={y} y2={y} />
+              {tick !== yTicks.at(-1) && <line className={styles.healthChartGridline} x1={dimensions.left} x2={dimensions.width - dimensions.right} y1={y} y2={y} />}
               <line className={styles.healthChartTick} x1={dimensions.left - 7} x2={dimensions.left} y1={y} y2={y} />
               <text className={styles.healthChartText} textAnchor="end" x={dimensions.left - 12} y={y + 5}>
                 {new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(tick)}
@@ -386,7 +386,7 @@ function StatusFrequencyChart({
           const y = dimensions.top + ((yMax - tick) / yMax) * plotHeight;
           return (
             <g key={tick}>
-              <line className={styles.healthChartGridline} x1={dimensions.left} x2={dimensions.width - dimensions.right} y1={y} y2={y} />
+              {tick !== 0 && <line className={styles.healthChartGridline} x1={dimensions.left} x2={dimensions.width - dimensions.right} y1={y} y2={y} />}
               <line className={styles.healthChartTick} x1={dimensions.left - 7} x2={dimensions.left} y1={y} y2={y} />
               <text className={styles.healthChartText} textAnchor="end" x={dimensions.left - 12} y={y + 5}>{tick}</text>
             </g>

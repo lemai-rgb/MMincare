@@ -3042,6 +3042,11 @@
     font-size: 17px;
   }
 
+  .healthChartText,
+  .healthChartLabel {
+    font-size: 18px;
+  }
+
   .healthChartPanel > .healthChartGraphic {
     overflow-x: auto;
     overscroll-behavior-inline: contain;
