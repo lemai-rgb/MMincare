@@ -1,6 +1,7 @@
 "use client";
+import { useRuntimeRequest } from "@/lib/appRuntime";
 
-import Link from "next/link";
+import { AppLink as Link } from "@/lib/appRuntime";
 import { useEffect, useMemo, useState } from "react";
 
 import type { LatestMedicalRecordSummary, MedicalHistoryEntry } from "@/lib/medicalHistory";
@@ -39,6 +40,7 @@ function formatDate(value: string) {
 }
 
 export function PetOverview({ nextReminder, petId, readOnly = false, reminderLoadError }: PetOverviewProps) {
+  const request = useRuntimeRequest();
   const [overviewData, setOverviewData] = useState<OverviewData>({
     petId,
     entries: [],
@@ -52,7 +54,7 @@ export function PetOverview({ nextReminder, petId, readOnly = false, reminderLoa
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`/api/pets/${encodeURIComponent(petId)}/medical-history`, {
+    request(`/api/pets/${encodeURIComponent(petId)}/medical-history`, {
       cache: "no-store",
       signal: controller.signal,
     })
@@ -77,7 +79,7 @@ export function PetOverview({ nextReminder, petId, readOnly = false, reminderLoa
         }
       });
     return () => controller.abort();
-  }, [petId]);
+  }, [petId, request]);
 
   const vaccineEntries = useMemo(() => entries.filter((entry) => entry.type === "vaccine"), [entries]);
   const latestVaccine = vaccineEntries[0];

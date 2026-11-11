@@ -1188,25 +1188,10 @@
   .primaryAction, .secondaryAction, .logoutButton { transition: none; }
 }
 
-.sharedAccessSection {
-  width: min(100%, 1223px);
-  margin: 24px auto 0;
-  padding: 22px 24px;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid #e5e1da;
-  border-radius: 18px;
-}
-
-.sharedAccessHeading,
-.sharedInvitationRow,
-.sharedPetCard {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
+.sharedAccessSection { width: min(100%, 1223px); margin: 24px auto 0; padding: 22px 24px; background: rgb(255 255 255 / 94%); border: 1px solid #e5e1da; border-radius: 18px; }
+.sharedAccessHeading, .sharedInvitationRow, .sharedPetCard { display: flex; align-items: center; gap: 16px; }
 .sharedAccessHeading { justify-content: space-between; }
-.sharedAccessEyebrow { margin: 0 0 4px; color: #708473; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.sharedAccessEyebrow { margin: 0 0 4px; color: #708473; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
 .sharedAccessHeading h2 { margin: 0; color: #2d2d2d; font-size: 24px; }
 .readOnlyLabel { padding: 8px 12px; color: #36583b; background: #eef6ed; border: 1px solid #cfe1ce; border-radius: 999px; font-size: 14px; font-weight: 600; }
 .sharedAccessError { color: #a4423b; }
@@ -1222,7 +1207,6 @@
 .sharedPetCard h3 { margin: 0; color: #2d2d2d; font-size: 18px; }
 .sharedPetCard p { margin-bottom: 0; }
 .sharedPetLink { margin-left: auto; color: #426b49; font-weight: 700; text-decoration: none; white-space: nowrap; }
-
 @media (max-width: 600px) {
   .sharedAccessSection { padding: 18px 16px; }
   .sharedAccessHeading, .sharedInvitationRow, .sharedPetCard { align-items: flex-start; flex-direction: column; }

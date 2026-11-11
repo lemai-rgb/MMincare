@@ -1,26 +1,28 @@
-# US-16 â€” Caretaker xem há»“ sÆ¡ thÃº cÆ°ng (Phase 2.1)
+# US-16 Ã¢â‚¬â€ Caretaker xem hÃ¡Â»â€œ sÃ†Â¡ thÃƒÂº cÃ†Â°ng (Phase 2.1)
 
-**Tráº¡ng thÃ¡i:** Ready for review, chÆ°a Ã¡p dá»¥ng production.
+**TrÃ¡ÂºÂ¡ng thÃƒÂ¡i:** Ready for review, chÃ†Â°a ÃƒÂ¡p dÃ¡Â»Â¥ng production.
 
-LÃ  Owner, tÃ´i cÃ³ thá»ƒ má»i má»™t email xem Ä‘Ãºng há»“ sÆ¡ thÃº cÆ°ng cá»§a mÃ¬nh Ä‘áº¿n má»™t
-ngÃ y háº¿t háº¡n. NgÆ°á»i nháº­n pháº£i Ä‘Äƒng nháº­p báº±ng Ä‘Ãºng email Ä‘Ã£ xÃ¡c minh vÃ  tá»±
-cháº¥p nháº­n lá»i má»i trÆ°á»›c khi nhÃ¬n tháº¥y há»“ sÆ¡.
+LÃƒÂ  Owner, tÃƒÂ´i cÃƒÂ³ thÃ¡Â»Æ’ mÃ¡Â»Âi mÃ¡Â»â„¢t email xem Ã„â€˜ÃƒÂºng hÃ¡Â»â€œ sÃ†Â¡ thÃƒÂº cÃ†Â°ng cÃ¡Â»Â§a mÃƒÂ¬nh Ã„â€˜Ã¡ÂºÂ¿n mÃ¡Â»â„¢t
+ngÃƒÂ y hÃ¡ÂºÂ¿t hÃ¡ÂºÂ¡n. NgÃ†Â°Ã¡Â»Âi nhÃ¡ÂºÂ­n phÃ¡ÂºÂ£i Ã„â€˜Ã„Æ’ng nhÃ¡ÂºÂ­p bÃ¡ÂºÂ±ng Ã„â€˜ÃƒÂºng email Ã„â€˜ÃƒÂ£ xÃƒÂ¡c minh vÃƒÂ  tÃ¡Â»Â±
+chÃ¡ÂºÂ¥p nhÃ¡ÂºÂ­n lÃ¡Â»Âi mÃ¡Â»Âi trÃ†Â°Ã¡Â»â€ºc khi nhÃƒÂ¬n thÃ¡ÂºÂ¥y hÃ¡Â»â€œ sÃ†Â¡.
 
 Acceptance criteria:
 
-- Lá»i má»i lÆ°u á»Ÿ tráº¡ng thÃ¡i `Pending`; email Ä‘Æ°á»£c trim/lowercase vÃ  khÃ´ng lÃ m
-  lá»™ viá»‡c tÃ i khoáº£n Ä‘Ã£ tá»“n táº¡i.
-- Owner chá»‰ Ä‘Æ°á»£c táº¡o, xem vÃ  thu há»“i lá»i má»i cho pet mÃ¬nh sá»Ÿ há»¯u. Lá»i má»i
-  trÃ¹ng cÃ²n `Pending`/`Active` bá»‹ cháº·n bá»Ÿi unique index.
-- Caretaker chá»‰ tháº¥y lá»i má»i cá»§a chÃ­nh email trong phiÃªn, cháº¥p nháº­n má»™t láº§n
-  khi cÃ²n háº¡n, rá»“i nháº­n quyá»n `Active` cho Ä‘Ãºng `pet_id`.
-- Caretaker chá»‰ Ä‘á»c thÃ´ng tin cÆ¡ báº£n vÃ  lá»‹ch sá»­ Vaccine/Medical dáº¡ng vÄƒn báº£n;
-  khÃ´ng Ä‘Æ°á»£c Ä‘á»c áº£nh riÃªng tÆ°, attachment, Health Log, Reminder, Notification
-  hay thÃ´ng tin tÃ i khoáº£n Owner.
-- Caretaker khÃ´ng Ä‘Æ°á»£c thÃªm/sá»­a/xÃ³a dá»¯ liá»‡u hoáº·c chia sáº» tiáº¿p. Thu há»“i vÃ  háº¿t
-  háº¡n cÃ³ hiá»‡u lá»±c á»Ÿ request Ä‘á»c tiáº¿p theo, ká»ƒ cáº£ khi URL cÅ© cÃ²n má»Ÿ.
-- Account cÃ³ thá»ƒ vá»«a sá»Ÿ há»¯u pet cá»§a mÃ¬nh vá»«a lÃ  Caretaker cá»§a pet khÃ¡c.
+- LÃ¡Â»Âi mÃ¡Â»Âi lÃ†Â°u Ã¡Â»Å¸ trÃ¡ÂºÂ¡ng thÃƒÂ¡i `Pending`; email Ã„â€˜Ã†Â°Ã¡Â»Â£c trim/lowercase vÃƒÂ  khÃƒÂ´ng lÃƒÂ m
+  lÃ¡Â»â„¢ viÃ¡Â»â€¡c tÃƒÂ i khoÃ¡ÂºÂ£n Ã„â€˜ÃƒÂ£ tÃ¡Â»â€œn tÃ¡ÂºÂ¡i.
+- Owner chÃ¡Â»â€° Ã„â€˜Ã†Â°Ã¡Â»Â£c tÃ¡ÂºÂ¡o, xem vÃƒÂ  thu hÃ¡Â»â€œi lÃ¡Â»Âi mÃ¡Â»Âi cho pet mÃƒÂ¬nh sÃ¡Â»Å¸ hÃ¡Â»Â¯u. LÃ¡Â»Âi mÃ¡Â»Âi
+  trÃƒÂ¹ng cÃƒÂ²n `Pending`/`Active` bÃ¡Â»â€¹ chÃ¡ÂºÂ·n bÃ¡Â»Å¸i unique index.
+- Caretaker chÃ¡Â»â€° thÃ¡ÂºÂ¥y lÃ¡Â»Âi mÃ¡Â»Âi cÃ¡Â»Â§a chÃƒÂ­nh email trong phiÃƒÂªn, chÃ¡ÂºÂ¥p nhÃ¡ÂºÂ­n mÃ¡Â»â„¢t lÃ¡ÂºÂ§n
+  khi cÃƒÂ²n hÃ¡ÂºÂ¡n, rÃ¡Â»â€œi nhÃ¡ÂºÂ­n quyÃ¡Â»Ân `Active` cho Ã„â€˜ÃƒÂºng `pet_id`.
+- Caretaker chÃ¡Â»â€° Ã„â€˜Ã¡Â»Âc thÃƒÂ´ng tin cÃ†Â¡ bÃ¡ÂºÂ£n vÃƒÂ  lÃ¡Â»â€¹ch sÃ¡Â»Â­ Vaccine/Medical dÃ¡ÂºÂ¡ng vÃ„Æ’n bÃ¡ÂºÂ£n;
+  khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Âc Ã¡ÂºÂ£nh riÃƒÂªng tÃ†Â°, attachment, Health Log, Reminder, Notification
+  hay thÃƒÂ´ng tin tÃƒÂ i khoÃ¡ÂºÂ£n Owner.
+- Caretaker khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c thÃƒÂªm/sÃ¡Â»Â­a/xÃƒÂ³a dÃ¡Â»Â¯ liÃ¡Â»â€¡u hoÃ¡ÂºÂ·c chia sÃ¡ÂºÂ» tiÃ¡ÂºÂ¿p. Thu hÃ¡Â»â€œi vÃƒÂ  hÃ¡ÂºÂ¿t
+  hÃ¡ÂºÂ¡n cÃƒÂ³ hiÃ¡Â»â€¡u lÃ¡Â»Â±c Ã¡Â»Å¸ request Ã„â€˜Ã¡Â»Âc tiÃ¡ÂºÂ¿p theo, kÃ¡Â»Æ’ cÃ¡ÂºÂ£ khi URL cÃ…Â© cÃƒÂ²n mÃ¡Â»Å¸.
+- Account cÃƒÂ³ thÃ¡Â»Æ’ vÃ¡Â»Â«a sÃ¡Â»Å¸ hÃ¡Â»Â¯u pet cÃ¡Â»Â§a mÃƒÂ¬nh vÃ¡Â»Â«a lÃƒÂ  Caretaker cÃ¡Â»Â§a pet khÃƒÂ¡c.
 
-Phase nÃ y khÃ´ng cáº¥p quyá»n ghi há»“ sÆ¡ tiÃªm/khÃ¡m. Quyá»n thÃªm dá»¯ liá»‡u Caretaker
-Ä‘Æ°á»£c xem xÃ©t á»Ÿ Phase sau vá»›i acceptance criteria riÃªng.
+Phase nÃƒÂ y khÃƒÂ´ng cÃ¡ÂºÂ¥p quyÃ¡Â»Ân ghi hÃ¡Â»â€œ sÃ†Â¡ tiÃƒÂªm/khÃƒÂ¡m. QuyÃ¡Â»Ân thÃƒÂªm dÃ¡Â»Â¯ liÃ¡Â»â€¡u Caretaker
+Ã„â€˜Ã†Â°Ã¡Â»Â£c xem xÃƒÂ©t Ã¡Â»Å¸ Phase sau vÃ¡Â»â€ºi acceptance criteria riÃƒÂªng.
+
+
 

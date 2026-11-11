@@ -321,9 +321,6 @@ jobs:
                 ('health_logs', 'health_logs_owner_update', 'w'::"char"),
                 ('health_logs', 'health_logs_owner_delete', 'd'::"char"),
                 ('vaccine_records', 'vaccine_records_owner_delete', 'd'::"char"),
-                ('pets', 'pets_caretaker_select', 'r'::"char"),
-                ('vaccine_records', 'vaccine_records_caretaker_select', 'r'::"char"),
-                ('medical_records', 'medical_records_caretaker_select', 'r'::"char"),
                 ('reminders', 'reminders_owner_select', 'r'::"char"),
                 ('reminders', 'reminders_owner_insert', 'a'::"char"),
                 ('reminders', 'reminders_owner_update', 'w'::"char")
@@ -346,38 +343,6 @@ jobs:
                or not exists (select 1 from pg_catalog.pg_policy where polrelid = 'public.notification_events'::regclass and polname = 'notification_events_owner_read_update') then
               raise exception 'Notification Owner policies are missing';
             end if;
-            if not exists (select 1 from pg_catalog.pg_policy where polrelid = 'public.pet_access'::regclass and polname = 'pet_access_owner_select')
-               or not exists (select 1 from pg_catalog.pg_policy where polrelid = 'public.pet_access'::regclass and polname = 'pet_access_caretaker_select')
-               or not exists (select 1 from pg_catalog.pg_policy where polrelid = 'public.pet_access'::regclass and polname = 'pet_access_owner_insert')
-               or not exists (select 1 from pg_catalog.pg_policy where polrelid = 'public.pet_access'::regclass and polname = 'pet_access_owner_update')
-               or not exists (select 1 from pg_catalog.pg_policy where polrelid = 'public.pet_access'::regclass and polname = 'pet_access_caretaker_update') then
-              raise exception 'Pet access RLS policies are missing';
-            end if;
-            if not has_table_privilege('authenticated', 'public.pet_access', 'SELECT')
-               or not has_table_privilege('authenticated', 'public.pet_access', 'INSERT')
-               or has_table_privilege('authenticated', 'public.pet_access', 'UPDATE')
-               or has_table_privilege('authenticated', 'public.pet_access', 'DELETE') then
-              raise exception 'Unexpected authenticated pet_access table privileges';
-            end if;
-            if has_table_privilege('anon', 'public.pet_access', 'SELECT')
-               or has_table_privilege('anon', 'public.pet_access', 'INSERT')
-               or has_table_privilege('anon', 'public.pet_access', 'UPDATE')
-               or has_table_privilege('anon', 'public.pet_access', 'DELETE') then
-              raise exception 'anon unexpectedly has pet_access privileges';
-            end if;
-            if not has_column_privilege('authenticated', 'public.pet_access', 'status', 'UPDATE')
-               or not has_column_privilege('authenticated', 'public.pet_access', 'caretaker_id', 'UPDATE')
-               or not has_column_privilege('authenticated', 'public.pet_access', 'activated_at', 'UPDATE')
-               or not has_column_privilege('authenticated', 'public.pet_access', 'revoked_at', 'UPDATE') then
-              raise exception 'Pet access transition columns are missing UPDATE';
-            end if;
-            if has_column_privilege('authenticated', 'public.pet_access', 'pet_id', 'UPDATE')
-               or has_column_privilege('authenticated', 'public.pet_access', 'granted_by', 'UPDATE')
-               or has_column_privilege('authenticated', 'public.pet_access', 'caretaker_email', 'UPDATE')
-               or has_column_privilege('authenticated', 'public.pet_access', 'valid_until', 'UPDATE') then
-              raise exception 'Pet access identity columns are writable';
-            end if;
-
             if not has_table_privilege('authenticated', 'public.notification_events', 'SELECT')
                or has_table_privilege('authenticated', 'public.notification_events', 'INSERT')
                or has_table_privilege('authenticated', 'public.notification_events', 'DELETE') then
@@ -434,8 +399,60 @@ jobs:
             ) then
               raise exception 'Pet idempotency columns are missing';
             end if;
+            if not exists (
+              select 1 from information_schema.columns
+              where table_schema = 'public'
+                and table_name = 'health_logs'
+                and column_name = 'creation_key'
+            ) or not exists (
+              select 1 from information_schema.columns
+              where table_schema = 'public'
+                and table_name = 'health_logs'
+                and column_name = 'creation_payload_hash'
+            ) then
+              raise exception 'Health Log idempotency columns are missing';
+            end if;
+            if not exists (
+              select 1
+              from pg_catalog.pg_indexes
+              where schemaname = 'public'
+                and tablename = 'health_logs'
+                and indexname = 'health_logs_owner_pet_creation_key_uidx'
+            ) then
+              raise exception 'Health Log idempotency index is missing';
+            end if;
           end
           $$;
+          SQL
+
+      - name: Verify Phase 2.1 pet access privileges and policies
+        shell: bash
+        env:
+          LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: |
+          set -euo pipefail
+          psql "$LOCAL_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+          do $$
+          begin
+            if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'pet_access' and policyname in ('pet_access_owner_select','pet_access_caretaker_select','pet_access_owner_insert','pet_access_owner_update','pet_access_caretaker_update')) then
+              raise exception 'Pet access policies are missing';
+            end if;
+            if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'pets' and policyname = 'pets_caretaker_select') then
+              raise exception 'Caretaker pet policy is missing';
+            end if;
+            if not has_table_privilege('authenticated', 'public.pet_access', 'SELECT') or not has_table_privilege('authenticated', 'public.pet_access', 'INSERT') then
+              raise exception 'authenticated pet_access grants are missing';
+            end if;
+            if has_table_privilege('authenticated', 'public.pet_access', 'UPDATE') or has_table_privilege('authenticated', 'public.pet_access', 'DELETE') then
+              raise exception 'pet_access exposes unexpected table mutation privileges';
+            end if;
+            if has_table_privilege('anon', 'public.pet_access', 'SELECT') or has_table_privilege('anon', 'public.pet_access', 'INSERT') then
+              raise exception 'anon has pet_access privileges';
+            end if;
+            if has_column_privilege('authenticated', 'public.pet_access', 'pet_id', 'UPDATE') or has_column_privilege('authenticated', 'public.pet_access', 'granted_by', 'UPDATE') or has_column_privilege('authenticated', 'public.pet_access', 'caretaker_email', 'UPDATE') or has_column_privilege('authenticated', 'public.pet_access', 'valid_until', 'UPDATE') then
+              raise exception 'pet_access identity columns are writable';
+            end if;
+          end $$;
           SQL
 
       - name: Verify notification database behavior

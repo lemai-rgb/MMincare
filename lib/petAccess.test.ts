@@ -14,3 +14,5 @@ assert.equal(isAccessCurrentlyActive("2026-01-01", "Active", today), false);
 
 console.log("pet access helper tests passed");
 
+
+

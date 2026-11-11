@@ -2,12 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/layout/AppHeader";
-import { PetAvatar } from "@/components/pets/PetAvatar";
+import { PetListView } from "@/components/pets/PetListView";
 import { SharedPetAccessSection } from "@/components/pets/SharedPetAccessSection";
-import { PetListCardDecorations, PetListPanelDecorations } from "@/components/pets/PetListDecorations";
 import { parseSpecies } from "@/lib/authRedirect";
-import { getPetGenderLabel, getPetSpeciesLabel, type Pet } from "@/lib/pets";
-import { getPetHealthHref, getPetHealthSummary, type PetListHealthLog } from "@/lib/petHealthSummary";
+import { type Pet } from "@/lib/pets";
+import { type PetListHealthLog } from "@/lib/petHealthSummary";
 import { createClient } from "@/lib/supabase/server";
 import styles from "@/styles/dashboard.module.css";
 
@@ -16,27 +15,6 @@ export const dynamic = "force-dynamic";
 type DashboardPageProps = {
   searchParams: Promise<{ species?: string | string[] }>;
 };
-
-function getPetAgeLabel(dateOfBirth: string | null) {
-  if (!dateOfBirth) return undefined;
-
-  const birthDate = new Date(`${dateOfBirth}T00:00:00`);
-  if (Number.isNaN(birthDate.getTime())) return undefined;
-
-  const now = new Date();
-  let age = now.getFullYear() - birthDate.getFullYear();
-  const hasHadBirthday = now.getMonth() > birthDate.getMonth()
-    || (now.getMonth() === birthDate.getMonth() && now.getDate() >= birthDate.getDate());
-  if (!hasHadBirthday) age -= 1;
-
-  return age < 1 ? "DÆ°á»›i 1 tuá»•i" : `${age} tuá»•i`;
-}
-
-function formatUpdatedAt(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return undefined;
-  return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
-}
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const supabase = await createClient();
@@ -84,70 +62,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const hasPets = pets.length > 0;
 
   if (hasPets) {
-    return (
-      <main className={`${styles.page} ${styles.populatedPage}`}>
-        <AppHeader activeNav="pets" />
-
-        <section className={styles.petListShell} aria-labelledby="dashboard-title">
-          <PetListPanelDecorations />
-          <div className={styles.petListToolbar}>
-            <h1 id="dashboard-title">ThÃº cÆ°ng cá»§a báº¡n</h1>
-            <p>Chá»n má»™t bÃ© Ä‘á»ƒ xem há»“ sÆ¡ sá»©c khá»e, lá»‹ch tiÃªm vÃ  nháº¯c háº¹n chÄƒm sÃ³c.</p>
-            <Link className={styles.addPetAction} href="/pets/new">+ ThÃªm há»“ sÆ¡ thÃº cÆ°ng</Link>
-          </div>
-
-          <section className={styles.petListGrid} aria-label="Danh sÃ¡ch thÃº cÆ°ng">
-            {pets.map((pet) => {
-              const age = getPetAgeLabel(pet.date_of_birth);
-              const updatedAt = formatUpdatedAt(pet.updated_at ?? pet.created_at);
-              const latestHealthLog = latestHealthLogs.get(pet.pet_id);
-              const healthSummary = getPetHealthSummary(latestHealthLog);
-
-              return (
-                <article className={styles.petListCard} key={pet.pet_id}>
-                  <PetListCardDecorations species={pet.species} />
-                  <div className={styles.petListAvatar}>
-                    <PetAvatar className={styles.petListAvatarImage} petId={pet.pet_id} species={pet.species} pictureUrl={pet.picture_url} />
-                  </div>
-                  <div className={styles.petListDetails}>
-                    <h2>{pet.name}</h2>
-                    <ul className={styles.petListMetadata} aria-label={`ThÃ´ng tin cá»§a ${pet.name}`}>
-                      <li>{getPetSpeciesLabel(pet.species)}</li>
-                      {pet.breed && <li>{pet.breed}</li>}
-                      <li>{getPetGenderLabel(pet.gender)}</li>
-                      {age && <li>{age}</li>}
-                    </ul>
-                    {healthLogsError ? (
-                      <p className={styles.petListHealthStatus} role="alert">KhÃ´ng thá»ƒ táº£i thÃ´ng tin sá»©c khá»e</p>
-                    ) : latestHealthLog ? (
-                      <div className={styles.petListHealthSummary} aria-label="TÃ³m táº¯t nháº­t kÃ½ sá»©c khá»e">
-                        <p className={styles.petListHealthLatest}>
-                          Nháº­t kÃ½ gáº§n nháº¥t Â· {healthSummary?.date ?? "ChÆ°a ghi nháº­n"}
-                        </p>
-                        <p><span>TÃ¬nh tráº¡ng:</span> {healthSummary?.status}</p>
-                        <p><span>CÃ¢n náº·ng:</span> {healthSummary?.weight}</p>
-                        <Link className={styles.petListHealthLink} href={getPetHealthHref(pet.pet_id)}>
-                          Xem nháº­t kÃ½ â†’
-                        </Link>
-                      </div>
-                    ) : (
-                      <p className={styles.petListHealthStatus}>ChÆ°a cÃ³ nháº­t kÃ½ sá»©c khá»e</p>
-                    )}
-                  </div>
-                  <div className={styles.petListActions}>
-                    <Link className={styles.petListPreviewButton} href={`/pets/${pet.pet_id}`}>
-                      Xem há»“ sÆ¡ â†’
-                    </Link>
-                    {updatedAt && <p className={styles.petListUpdatedAt}>Cáº­p nháº­t gáº§n nháº¥t: {updatedAt}</p>}
-                  </div>
-                </article>
-              );
-            })}
-          </section>
-        </section>
-        <SharedPetAccessSection />
-      </main>
-    );
+    return <>
+      <PetListView pets={pets} latestHealthLogs={latestHealthLogs} healthLogsError={Boolean(healthLogsError)} />
+      <SharedPetAccessSection />
+    </>;
   }
 
   return (

@@ -1,9 +1,9 @@
 "use client";
+import { useRuntimeRouter, useRuntimeRequest, useRuntimeJson, useAppRuntime } from "@/lib/appRuntime";
 
 import Image from "next/image";
-import Link from "next/link";
+import { AppLink as Link } from "@/lib/appRuntime";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { MedicalRecordCreateForm } from "@/components/pets/MedicalRecordCreateForm";
 import { VaccineCreateForm, type VaccineSavedResult } from "@/components/pets/VaccineCreateForm";
@@ -11,7 +11,6 @@ import type { MedicalHistoryAttachment, MedicalHistoryEntry } from "@/lib/medica
 import { parseMedicalHistoryRecords } from "@/lib/medicalHistoryValidation";
 import type { PetSpecies } from "@/lib/pets";
 import { invalidateNotificationCenter } from "@/lib/notifications/events";
-import { fetchJsonWithTimeout } from "@/lib/http/fetchJsonWithTimeout";
 import styles from "@/styles/petDetail.module.css";
 
 type MedicalHistoryFilter = "all" | "vaccines" | "visits";
@@ -55,7 +54,9 @@ function validDate(value: string) {
 }
 
 export function PetMedicalHistory({ form, isOwner = false, petId, species }: { form?: string; isOwner?: boolean; petId: string; species: PetSpecies }) {
-  const router = useRouter();
+  const requestJson = useRuntimeJson();
+  const request = useRuntimeRequest();
+  const router = useRuntimeRouter();
   const [filter, setFilter] = useState<MedicalHistoryFilter>(form === "medical-record" ? "visits" : "all");
   const [view, setView] = useState<MedicalView>(
     form === "vaccine"
@@ -107,7 +108,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
       && activeRequestId === requestId.current
       && !controller.signal.aborted;
 
-    void fetchJsonWithTimeout(`/api/pets/${encodeURIComponent(petId)}/${endpoint}`, { signal: controller.signal })
+    void requestJson(`/api/pets/${encodeURIComponent(petId)}/${endpoint}`, { signal: controller.signal })
       .then(({ response, payload }) => {
         if (!response.ok) throw new Error("Medical history request failed");
         const records = parseMedicalHistoryRecords(payload);
@@ -128,7 +129,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
       });
 
     return controller;
-  }, [form, petId]);
+  }, [form, petId, requestJson]);
 
   useEffect(() => {
     let active = true;
@@ -283,7 +284,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
     setDeleteError(null);
     const { entry } = deleteTarget;
     const resource = entry.type === "vaccine" ? "vaccines" : "medical-records";
-    const response = await fetch(
+    const response = await request(
       `/api/pets/${encodeURIComponent(petId)}/${resource}/${encodeURIComponent(entry.id)}`,
       { method: "DELETE" },
     ).catch(() => null);
@@ -343,7 +344,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
             due_date: reminderDate,
             source_vaccine_record_id: view.entry.id,
           };
-      const response = await fetch(`/api/pets/${encodeURIComponent(petId)}/reminders`, {
+      const response = await request(`/api/pets/${encodeURIComponent(petId)}/reminders`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(requestBody),
@@ -677,6 +678,8 @@ function MedicalAttachmentRow({
   attachment: MedicalHistoryAttachment;
   recordId: string;
 }) {
+  const runtime = useAppRuntime();
+  const request = useRuntimeRequest();
   const [isOpening, setIsOpening] = useState(false);
   const [openError, setOpenError] = useState<string | null>(null);
   const openingGuard = useRef(false);
@@ -694,7 +697,13 @@ function MedicalAttachmentRow({
     }
 
     try {
-      const response = await fetch(
+      if (runtime) {
+        const localUrl = runtime.attachmentUrl(attachment.attachment_id);
+        if (!localUrl || !fileTab) throw new Error("KhÃ´ng thá»ƒ má»Ÿ file trong tráº£i nghiá»‡m thá»­.");
+        fileTab.location.replace(localUrl);
+        return;
+      }
+      const response = await request(
         `/api/medical-records/${encodeURIComponent(recordId)}/attachments?attachmentId=${encodeURIComponent(attachment.attachment_id)}`,
       );
       const payload = (await response.json()) as SignedUrlResponse;

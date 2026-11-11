@@ -27,7 +27,6 @@ export async function GET(_request: Request, { params }: RouteContext) {
     .maybeSingle();
 
   if (petError || !pet) return jsonError("KhÃ´ng tÃ¬m tháº¥y thÃº cÆ°ng.", 404);
-  const isOwner = pet.owner_id === userId;
 
   const [vaccinesResult, medicalResult] = await Promise.all([
     supabase
@@ -47,6 +46,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     return jsonError("KhÃ´ng thá»ƒ táº£i há»“ sÆ¡ y táº¿ lÃºc nÃ y.", 500);
   }
 
+  const isOwner = pet.owner_id === userId;
   const medicalRecordIds = isOwner ? (medicalResult.data ?? []).map((record) => record.record_id) : [];
   const attachmentsByRecord = new Map<string, Array<{
     attachment_id: string;

@@ -45,17 +45,20 @@ export function SharedPetAccessSection() {
       ]);
       const petsPayload = await petsResponse.json() as { pets?: SharedPet[]; error?: string };
       const invitationsPayload = await invitationsResponse.json() as { invitations?: Invitation[]; error?: string };
-      if (!petsResponse.ok || !invitationsResponse.ok) throw new Error(petsPayload.error || invitationsPayload.error || "KhÃ´ng thá»ƒ táº£i chia sáº».");
+      if (!petsResponse.ok || !invitationsResponse.ok) throw new Error(petsPayload.error || invitationsPayload.error || "KhÃƒÂ´ng thÃ¡Â»Æ’ tÃ¡ÂºÂ£i chia sÃ¡ÂºÂ».");
       setPets(Array.isArray(petsPayload.pets) ? petsPayload.pets : []);
       setInvitations(Array.isArray(invitationsPayload.invitations) ? invitationsPayload.invitations : []);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "KhÃ´ng thá»ƒ táº£i chia sáº».");
+      setError(requestError instanceof Error ? requestError.message : "KhÃƒÂ´ng thÃ¡Â»Æ’ tÃ¡ÂºÂ£i chia sÃ¡ÂºÂ».");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void load(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   async function accept(accessId: string) {
     if (isBusy) return;
@@ -64,17 +67,17 @@ export function SharedPetAccessSection() {
     try {
       const response = await fetch(`/api/pet-access/${encodeURIComponent(accessId)}/accept`, { method: "POST" });
       const payload = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(payload.error || "KhÃ´ng thá»ƒ cháº¥p nháº­n lá»i má»i.");
+      if (!response.ok) throw new Error(payload.error || "KhÃƒÂ´ng thÃ¡Â»Æ’ chÃ¡ÂºÂ¥p nhÃ¡ÂºÂ­n lÃ¡Â»Âi mÃ¡Â»Âi.");
       await load();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "KhÃ´ng thá»ƒ cháº¥p nháº­n lá»i má»i.");
+      setError(requestError instanceof Error ? requestError.message : "KhÃƒÂ´ng thÃ¡Â»Æ’ chÃ¡ÂºÂ¥p nhÃ¡ÂºÂ­n lÃ¡Â»Âi mÃ¡Â»Âi.");
     } finally {
       setIsBusy(null);
     }
   }
 
-  if (isLoading) return <section className={styles.sharedAccessSection}><p>Äang táº£i há»“ sÆ¡ Ä‘Æ°á»£c chia sáº»â€¦</p></section>;
-  if (error && pets.length === 0 && invitations.length === 0) return <section className={styles.sharedAccessSection} role="alert"><p>{error}</p><button onClick={() => void load()} type="button">Thá»­ láº¡i</button></section>;
+  if (isLoading) return <section className={styles.sharedAccessSection}><p>Ã„Âang tÃ¡ÂºÂ£i hÃ¡Â»â€œ sÃ†Â¡ Ã„â€˜Ã†Â°Ã¡Â»Â£c chia sÃ¡ÂºÂ»Ã¢â‚¬Â¦</p></section>;
+  if (error && pets.length === 0 && invitations.length === 0) return <section className={styles.sharedAccessSection} role="alert"><p>{error}</p><button onClick={() => void load()} type="button">ThÃ¡Â»Â­ lÃ¡ÂºÂ¡i</button></section>;
   if (pets.length === 0 && invitations.length === 0) return null;
 
   return (
@@ -82,22 +85,22 @@ export function SharedPetAccessSection() {
       <div className={styles.sharedAccessHeading}>
         <div>
           <p className={styles.sharedAccessEyebrow}>Caretaker</p>
-          <h2 id="shared-pets-title">ÄÆ°á»£c chia sáº» vá»›i tÃ´i</h2>
+          <h2 id="shared-pets-title">Ã„ÂÃ†Â°Ã¡Â»Â£c chia sÃ¡ÂºÂ» vÃ¡Â»â€ºi tÃƒÂ´i</h2>
         </div>
-        <span className={styles.readOnlyLabel}>Chá»‰ xem</span>
+        <span className={styles.readOnlyLabel}>ChÃ¡Â»â€° xem</span>
       </div>
       {error && <p className={styles.sharedAccessError} role="alert">{error}</p>}
       {invitations.length > 0 && (
         <div className={styles.sharedInvitationList}>
-          <h3>Lá»i má»i chia sáº»</h3>
+          <h3>LÃ¡Â»Âi mÃ¡Â»Âi chia sÃ¡ÂºÂ»</h3>
           {invitations.map((invitation) => (
             <div className={styles.sharedInvitationRow} key={invitation.access_id}>
               <div>
-                <strong>{invitation.pet_name_snapshot || "Má»™t há»“ sÆ¡ thÃº cÆ°ng"}</strong>
-                <span>ÄÆ°á»£c xem Ä‘áº¿n {formatDate(invitation.valid_until)}</span>
+                <strong>{invitation.pet_name_snapshot || "MÃ¡Â»â„¢t hÃ¡Â»â€œ sÃ†Â¡ thÃƒÂº cÃ†Â°ng"}</strong>
+                <span>Ã„ÂÃ†Â°Ã¡Â»Â£c xem Ã„â€˜Ã¡ÂºÂ¿n {formatDate(invitation.valid_until)}</span>
               </div>
               <button disabled={isBusy !== null} onClick={() => void accept(invitation.access_id)} type="button">
-                {isBusy === invitation.access_id ? "Äang cháº¥p nháº­nâ€¦" : "Cháº¥p nháº­n"}
+                {isBusy === invitation.access_id ? "Ã„Âang chÃ¡ÂºÂ¥p nhÃ¡ÂºÂ­nÃ¢â‚¬Â¦" : "ChÃ¡ÂºÂ¥p nhÃ¡ÂºÂ­n"}
               </button>
             </div>
           ))}
@@ -110,9 +113,9 @@ export function SharedPetAccessSection() {
               <PetAvatar className={styles.sharedPetAvatar} petId={pet.pet_id} pictureUrl={null} species={pet.species} />
               <div>
                 <h3>{pet.name}</h3>
-                <p>{getPetSpeciesLabel(pet.species)} Â· {pet.breed || "ChÆ°a rÃµ giá»‘ng"} Â· {getPetGenderLabel(pet.gender)}</p>
+                <p>{getPetSpeciesLabel(pet.species)} Ã‚Â· {pet.breed || "ChÃ†Â°a rÃƒÂµ giÃ¡Â»â€˜ng"} Ã‚Â· {getPetGenderLabel(pet.gender)}</p>
               </div>
-              <Link href={`/pets/${encodeURIComponent(pet.pet_id)}`} className={styles.sharedPetLink}>Xem há»“ sÆ¡ â†’</Link>
+              <Link href={`/pets/${encodeURIComponent(pet.pet_id)}`} className={styles.sharedPetLink}>Xem hÃ¡Â»â€œ sÃ†Â¡ Ã¢â€ â€™</Link>
             </article>
           ))}
         </div>
@@ -120,4 +123,6 @@ export function SharedPetAccessSection() {
     </section>
   );
 }
+
+
 
