@@ -125,6 +125,45 @@
   transform: translateY(-2px) rotate(45deg);
 }
 
+.accountRoleMenu { position: relative; }
+.accountRoleMenu > button { border: 0; background: transparent; font: inherit; cursor: pointer; }
+.accountRolePopover {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 40;
+  display: grid;
+  width: min(320px, calc(100vw - 32px));
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--mm-border);
+  border-radius: 14px;
+  background: var(--mm-surface);
+  box-shadow: 0 14px 32px rgb(44 73 48 / 18%);
+}
+.accountRoleOptions { display: flex; flex-wrap: wrap; gap: 6px; }
+.accountRoleOption,
+.accountRoleOptionActive {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--mm-text);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.accountRoleOption:hover,
+.accountRoleOptionActive { border-color: #cfe1ce; background: #f0f6ef; color: var(--mm-primary-dark); }
+.accountRoleOption,
+.accountRoleOptionActive { flex: 1 1 140px; }
+.accountRolePanel { display: grid; gap: 4px; padding: 12px; border-top: 1px solid #edf1eb; color: var(--mm-text-secondary); }
+.accountRolePanelLabel { margin: 0 0 4px; color: var(--mm-primary-dark); font-size: 13px; font-weight: 700; }
+.accountRolePanel strong { color: var(--mm-text); font-size: 16px; }
+.accountRolePanel span { font-size: 14px; }
+.accountNoRole { margin: 0; color: var(--mm-text-secondary); font-size: 14px; }
+
 .headerActions {
   position: relative;
   z-index: 1;
@@ -226,6 +265,9 @@
 .mobileMenuLink[aria-current="page"] { background: #f0f6ef; color: var(--mm-primary-dark); }
 
 .mobileMenuLogout { padding: 4px 0 0; border-top: 1px solid #edf1eb; }
+.mobileMenuAccount { padding: 4px 0; }
+.mobileMenuAccount .accountRoleMenu > button { width: 100%; justify-content: flex-start; padding: 9px 12px; }
+.mobileMenuAccount .accountRolePopover { position: static; width: auto; margin-top: 8px; box-shadow: none; }
 .mobileMenuLogout .logoutArea { display: block; text-align: left; }
 .mobileMenuLogout .logoutButton { width: 100%; min-height: 44px; justify-content: flex-start; padding: 9px 12px; color: var(--mm-text); font-size: 16px; }
 
@@ -679,7 +721,7 @@
 .petListMetadata li + li::before {
   margin-right: 10px;
   color: var(--mm-text);
-  content: "•";
+  content: "â€¢";
 }
 
 .petListHealthStatus {

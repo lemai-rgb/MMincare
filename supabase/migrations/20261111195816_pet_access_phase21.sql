@@ -24,8 +24,6 @@ set search_path = ''
 as $$
 declare
   actor_id uuid := (select auth.uid());
-  actor_email text := lower(btrim(coalesce((select auth.jwt() ->> 'email'), '')));
-  today_vietnam date := ((now() at time zone 'Asia/Ho_Chi_Minh')::date);
 begin
   if old.pet_id is distinct from new.pet_id
     or old.granted_by is distinct from new.granted_by
@@ -36,12 +34,8 @@ begin
   end if;
 
   if old.status = 'Pending' and new.status = 'Active' then
-    if actor_id is null
-      or actor_id is distinct from new.caretaker_id
-      or actor_email <> old.caretaker_email
-      or old.valid_until < today_vietnam
-      or new.activated_at is null then
-      raise exception 'Pet access invitation cannot be accepted by this session';
+    if current_setting('app.pet_access_accepting', true) is distinct from old.access_id::text then
+      raise exception 'Pet access invitation must be accepted through the verified flow';
     end if;
   elsif old.status in ('Pending', 'Active') and new.status = 'Revoked' then
     if actor_id is null or actor_id is distinct from old.granted_by
@@ -61,6 +55,52 @@ end;
 $$;
 
 revoke execute on function public.guard_pet_access_update() from public, anon, authenticated;
+
+create or replace function public.accept_pet_access(p_access_id uuid)
+returns public.pet_access
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  actor_id uuid := (select auth.uid());
+  actor_email text;
+  confirmed_at timestamptz;
+  accepted public.pet_access;
+begin
+  if actor_id is null then
+    raise exception 'Authentication required';
+  end if;
+
+  select lower(btrim(email)), email_confirmed_at
+    into actor_email, confirmed_at
+  from auth.users
+  where id = actor_id;
+
+  if actor_email is null or confirmed_at is null then
+    raise exception 'Confirmed email required';
+  end if;
+
+  perform set_config('app.pet_access_accepting', p_access_id::text, true);
+  update public.pet_access
+  set caretaker_id = actor_id,
+      status = 'Active',
+      activated_at = now()
+  where access_id = p_access_id
+    and caretaker_email = actor_email
+    and status = 'Pending'
+    and valid_until >= ((now() at time zone 'Asia/Ho_Chi_Minh')::date)
+  returning * into accepted;
+
+  if accepted.access_id is null then
+    raise exception 'Invitation is unavailable';
+  end if;
+  return accepted;
+end;
+$$;
+
+revoke execute on function public.accept_pet_access(uuid) from public, anon;
+grant execute on function public.accept_pet_access(uuid) to authenticated;
 
 drop trigger if exists pet_access_guard_update on public.pet_access;
 create trigger pet_access_guard_update
@@ -120,19 +160,6 @@ with check (
 );
 
 drop policy if exists pet_access_caretaker_update on public.pet_access;
-create policy pet_access_caretaker_update
-on public.pet_access
-for update to authenticated
-using (
-  caretaker_email = lower(btrim(coalesce((select auth.jwt() ->> 'email'), '')))
-  and status = 'Pending'
-  and valid_until >= ((now() at time zone 'Asia/Ho_Chi_Minh')::date)
-)
-with check (
-  caretaker_id = (select auth.uid())
-  and status = 'Active'
-  and activated_at is not null
-);
 
 drop policy if exists pets_caretaker_select on public.pets;
 create policy pets_caretaker_select
@@ -174,7 +201,7 @@ revoke all on table public.pet_access from public, anon;
 revoke insert, update, delete, truncate, references, trigger on table public.pet_access from anon;
 grant select, insert on table public.pet_access to authenticated;
 revoke update, delete, truncate, references, trigger on table public.pet_access from authenticated;
-grant update (status, caretaker_id, activated_at, revoked_at) on table public.pet_access to authenticated;
+grant update (status, revoked_at) on table public.pet_access to authenticated;
 
 commit;
 

@@ -434,8 +434,14 @@ jobs:
           psql "$LOCAL_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
           do $$
           begin
-            if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'pet_access' and policyname in ('pet_access_owner_select','pet_access_caretaker_select','pet_access_owner_insert','pet_access_owner_update','pet_access_caretaker_update')) then
+            if exists (
+              select 1 from unnest(array['pet_access_owner_select','pet_access_caretaker_select','pet_access_owner_insert','pet_access_owner_update']) required(name)
+              where not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'pet_access' and policyname = required.name)
+            ) then
               raise exception 'Pet access policies are missing';
+            end if;
+            if exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'pet_access' and policyname = 'pet_access_caretaker_update') then
+              raise exception 'Caretaker must accept through the verified RPC';
             end if;
             if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'pets' and policyname = 'pets_caretaker_select') then
               raise exception 'Caretaker pet policy is missing';
@@ -451,6 +457,12 @@ jobs:
             end if;
             if has_column_privilege('authenticated', 'public.pet_access', 'pet_id', 'UPDATE') or has_column_privilege('authenticated', 'public.pet_access', 'granted_by', 'UPDATE') or has_column_privilege('authenticated', 'public.pet_access', 'caretaker_email', 'UPDATE') or has_column_privilege('authenticated', 'public.pet_access', 'valid_until', 'UPDATE') then
               raise exception 'pet_access identity columns are writable';
+            end if;
+            if not has_function_privilege('authenticated', 'public.accept_pet_access(uuid)', 'EXECUTE') then
+              raise exception 'Verified accept RPC is not executable by authenticated';
+            end if;
+            if has_function_privilege('anon', 'public.accept_pet_access(uuid)', 'EXECUTE') then
+              raise exception 'anon can execute verified accept RPC';
             end if;
           end $$;
           SQL

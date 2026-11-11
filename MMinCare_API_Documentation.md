@@ -1,10 +1,10 @@
-# MMinCare — API Documentation
+# MMinCare â€” API Documentation
 
-**Phiên bản:** 2.0 · **Cập nhật:** 2026-10-11 (Asia/Ho_Chi_Minh)  
-**Baseline ứng dụng:** `main` `bcd14b51f4b70cd3d418bd10638f7a996713fdcf` — PR #26 đã merge, Vercel Production thành công.  
-**Ứng dụng:** https://m-mincare.vercel.app/ · **Trải nghiệm thử:** https://m-mincare.vercel.app/demo
+**PhiÃªn báº£n:** 2.0 Â· **Cáº­p nháº­t:** 2026-10-11 (Asia/Ho_Chi_Minh)  
+**Baseline á»©ng dá»¥ng:** `main` `bcd14b51f4b70cd3d418bd10638f7a996713fdcf` â€” PR #26 Ä‘Ã£ merge, Vercel Production thÃ nh cÃ´ng.  
+**á»¨ng dá»¥ng:** https://m-mincare.vercel.app/ Â· **Tráº£i nghiá»‡m thá»­:** https://m-mincare.vercel.app/demo
 
-> Current = code đã triển khai tại baseline trên. Trạng thái này không có nghĩa mọi kịch bản đã kiểm thử thực tế. Demo dùng dữ liệu giả lập ở trình duyệt; không chứng minh Auth, Owner A/B, Storage hoặc hiệu năng backend.
+> Current = code Ä‘Ã£ triá»ƒn khai táº¡i baseline trÃªn. Tráº¡ng thÃ¡i nÃ y khÃ´ng cÃ³ nghÄ©a má»i ká»‹ch báº£n Ä‘Ã£ kiá»ƒm thá»­ thá»±c táº¿. Demo dÃ¹ng dá»¯ liá»‡u giáº£ láº­p á»Ÿ trÃ¬nh duyá»‡t; khÃ´ng chá»©ng minh Auth, Owner A/B, Storage hoáº·c hiá»‡u nÄƒng backend.
 
 ## 1. Contract and boundary
 
@@ -46,11 +46,11 @@ Dates are `YYYY-MM-DD`, timestamps ISO timestamptz. Stored Reminder enum values 
 
 ## 3. Pet and photo
 
-POST `/api/pets` accepts `multipart/form-data`: required `name`, `species` (`Dog|Cat`), `gender` (`Male|Female|Unknown`), `idempotency_key` (non-empty ≤128 characters); optional `breed`, `date_of_birth`, `image` (File). Valid date of birth must not be future. Owner is derived from session; weight belongs in Health Log, not Pet payload.
+POST `/api/pets` accepts `multipart/form-data`: required `name`, `species` (`Dog|Cat`), `gender` (`Male|Female|Unknown`), `idempotency_key` (non-empty â‰¤128 characters); optional `breed`, `date_of_birth`, `image` (File). Valid date of birth must not be future. Owner is derived from session; weight belongs in Health Log, not Pet payload.
 
 Same Owner/key + identical normalized payload/file hash returns existing Pet (200); different payload returns 409. This prevents retry from creating a second Pet, but is not a general idempotency guarantee for all API POSTs.
 
-PATCH accepts current fields `name,species,gender,breed,date_of_birth,image,remove_picture`; multipart is used for images and `remove_picture="true"`. The route also retains compatible JSON-to-form handling for legacy callers. Owner/ID are not client-editable. Photo selection is optional. JPEG/PNG/WebP only, ≤5,242,880 bytes; client size/type checks plus server file-signature validation. Private unique user-folder objects are saved, reference committed, and obsolete managed object cleanup reported. `picture_cleanup="pending"`/warnings means profile save succeeded but cleanup needs attention.
+PATCH accepts current fields `name,species,gender,breed,date_of_birth,image,remove_picture`; multipart is used for images and `remove_picture="true"`. The route also retains compatible JSON-to-form handling for legacy callers. Owner/ID are not client-editable. Photo selection is optional. JPEG/PNG/WebP only, â‰¤5,242,880 bytes; client size/type checks plus server file-signature validation. Private unique user-folder objects are saved, reference committed, and obsolete managed object cleanup reported. `picture_cleanup="pending"`/warnings means profile save succeeded but cleanup needs attention.
 
 GET with `photo=1` returns Owner-authorized binary object with private cache handling. Without `photo=1` it returns 405; invalid UUID/missing object/no access may return 404, unauthenticated 401. It is not an endpoint returning a signed URL or Pet JSON. Legacy external pictures can still be displayed; new uploads use managed private paths.
 
@@ -58,11 +58,11 @@ GET with `photo=1` returns Owner-authorized binary object with private cache han
 
 Vaccine POST JSON: required `vaccine_name` (trimmed, max 100), `vaccine_date` (valid, not future); optional positive integer `dose_number`, `clinic_name`, `note`. Date future check currently compares UTC date in the handler; Health Log business date uses Vietnam. Do not silently claim every API has identical timezone behavior.
 
-Suggestion states: `matched` (date calculated from approved matching rule), `no_match` (query succeeded, no match), `unavailable` (rule query failed), `not_checked` (age/date-of-birth prerequisites absent). `suggested_next_due_date` may be null; it is never a persisted vaccine column or an automatically created Reminder. CR-08 still needs approved rule read access/dataset. The UTF-8 UI warning is “Chưa thể tải quy tắc gợi ý. Bạn có thể tự nhập ngày nhắc.” `warning` exists for compatibility; future dates are rejected before insert.
+Suggestion states: `matched` (date calculated from approved matching rule), `no_match` (query succeeded, no match), `unavailable` (rule query failed), `not_checked` (age/date-of-birth prerequisites absent). `suggested_next_due_date` may be null; it is never a persisted vaccine column or an automatically created Reminder. CR-08 still needs approved rule read access/dataset. The UTF-8 UI warning is â€œChÆ°a thá»ƒ táº£i quy táº¯c gá»£i Ã½. Báº¡n cÃ³ thá»ƒ tá»± nháº­p ngÃ y nháº¯c.â€ `warning` exists for compatibility; future dates are rejected before insert.
 
 Medical POST JSON: required valid `visit_date`; optional `symptoms,diagnosis,medication,clinic_name,note`, normalized/limited by route. Attachment is a subsequent independent request; its failure does not undo the Medical Record.
 
-Attachment POST uses multipart `file` (JPG/JPEG/PNG/PDF, ≤5 MiB). Metadata includes `attachment_id,record_id,file_url,file_type,file_size,uploaded_at`; `file_url` contains Storage object path, not permanent public URL. GET requires `attachmentId`, verifies record/Pet access and returns a signed URL valid for 60 seconds. Histories provide UI descriptors, not the raw table shape. No independent attachment DELETE is currently exposed.
+Attachment POST uses multipart `file` (JPG/JPEG/PNG/PDF, â‰¤5 MiB). Metadata includes `attachment_id,record_id,file_url,file_type,file_size,uploaded_at`; `file_url` contains Storage object path, not permanent public URL. GET requires `attachmentId`, verifies record/Pet access and returns a signed URL valid for 60 seconds. Histories provide UI descriptors, not the raw table shape. No independent attachment DELETE is currently exposed.
 
 Vaccine/Medical DELETE confirms in UI and hard-deletes the record. Linked Reminders survive with source FK null. Medical deletes attachment metadata through FK cascade and attempts private-object cleanup; `attachment_cleanup` plus warnings reports the outcome. Unknown network outcome is not inferred from a visual state alone.
 
@@ -82,15 +82,15 @@ Read PATCH is Owner-only and idempotently returns canonical read_at for an alrea
 
 ## 7. Health Log CRUD and idempotency
 
-GET returns Owner logs ordered `recorded_on DESC, logged_at DESC, health_log_id DESC`. POST JSON requires `recorded_on` and `idempotency_key` (non-empty max 128); business fields `weight,food_amount,food_type,status,note` may be null/omitted, but at least one value is required. Weight is a positive number ≤ 9999.99, at most 2 decimals. Non-string text is rejected; literal string `invalid` is accepted. Dates cannot be future in Asia/Ho_Chi_Minh.
+GET returns Owner logs ordered `recorded_on DESC, logged_at DESC, health_log_id DESC`. POST JSON requires `recorded_on` and `idempotency_key` (non-empty max 128); business fields `weight,food_amount,food_type,status,note` may be null/omitted, but at least one value is required. Weight is a positive number â‰¤ 9999.99, at most 2 decimals. Non-string text is rejected; literal string `invalid` is accepted. Dates cannot be future in Asia/Ho_Chi_Minh.
 
 ```json
 {
   "recorded_on": "2026-10-10",
   "weight": 2.1,
-  "food_type": "Thức ăn mẫu",
-  "food_amount": "100 g/ngày",
-  "status": "Bình thường",
+  "food_type": "Thá»©c Äƒn máº«u",
+  "food_amount": "100 g/ngÃ y",
+  "status": "BÃ¬nh thÆ°á»ng",
   "note": null,
   "idempotency_key": "new-log-operation-key"
 }
@@ -100,7 +100,7 @@ The key is scoped to Owner/Pet and normalized payload hash. New insert 201; same
 
 ```json
 {
-  "error": "Mã tạo đã được dùng cho dữ liệu khác.",
+  "error": "MÃ£ táº¡o Ä‘Ã£ Ä‘Æ°á»£c dÃ¹ng cho dá»¯ liá»‡u khÃ¡c.",
   "recovery": "canonical",
   "health_log": { "health_log_id": "<existing UUID>", "recorded_on": "2026-10-10" }
 }
@@ -114,14 +114,14 @@ The form keeps immutable payload/key on timeout/network uncertainty and locks fi
 
 ## 8. Dashboard statistics
 
-Query `period=week|month`; week Monday–Sunday, month first–last day using Asia/Ho_Chi_Minh. Response:
+Query `period=week|month`; week Mondayâ€“Sunday, month firstâ€“last day using Asia/Ho_Chi_Minh. Response:
 
 - `period,period_start,period_end`.
 - `summary`: health_log_count, latest_health_log_at, latest_weight, upcoming_reminder, latest_medical_record.
 - `weight_trend`: points `{health_log_id,weight,recorded_on,logged_at}`.
 - `status_counts`: six groups with `status,label,count,records`; records retain original status and business/entry dates.
 
-Counts/trends use Health Log recorded_on in selected period. Summary latest_weight may use the latest eligible value through period end; upcoming Reminder/latest Medical have their own query scope, not necessarily only selected-period records. Dashboard queries run in parallel; valid timestamp/range contracts are checked client-side. Loading/error/retry/empty/insufficient data are separate states. Outside standard status groups is aggregated into Khác; missing status is not fabricated as Bình thường. No aggregate multi-Pet endpoint exists.
+Counts/trends use Health Log recorded_on in selected period. Summary latest_weight may use the latest eligible value through period end; upcoming Reminder/latest Medical have their own query scope, not necessarily only selected-period records. Dashboard queries run in parallel; valid timestamp/range contracts are checked client-side. Loading/error/retry/empty/insufficient data are separate states. Outside standard status groups is aggregated into KhÃ¡c; missing status is not fabricated as BÃ¬nh thÆ°á»ng. No aggregate multi-Pet endpoint exists.
 
 ## 9. Waiting, abort and demo boundary
 
@@ -146,4 +146,11 @@ Source: all `app/api/**/route.ts`, `lib/healthLogs/dashboard.ts`, migrations and
 |---|---|---|
 | 2.0 | 2026-10-11 | Replace conflicting original-design API examples with actual routes, payloads, idempotency, deletions, private photos, Notification and demo boundaries. |
 | 1.6 | 2026-09-22 | Earlier Owner API baseline; retained in version history, superseded here. |
+
+### Account role menu
+
+`GET /api/account/roles` returns only the signed-in profile name/email and
+server-derived Owner/Caretaker flags. Pending, expired and revoked invitations
+do not create a Caretaker role; no Pet ownership IDs, photo paths or attachment
+metadata are returned.
 

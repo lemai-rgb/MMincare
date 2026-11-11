@@ -190,6 +190,6 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
     profileSummaryError={profileSummaryError} profileRecordCount={profileRecordCount}
     latestHealthUpdate={latestHealthUpdate} upcomingReminder={upcomingReminder}
     reminderLoadError={Boolean(upcomingReminderResult.error)} currentUserId={claimsData.claims.sub}
-    isOwner />;
+    isOwner={isOwner} />;
 }
 
