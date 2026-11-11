@@ -1,9 +1,9 @@
 "use client";
-import { useRuntimeRouter, useRuntimeRequest, useRuntimeJson, useAppRuntime } from "@/lib/appRuntime";
 
 import Image from "next/image";
-import { AppLink as Link } from "@/lib/appRuntime";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { MedicalRecordCreateForm } from "@/components/pets/MedicalRecordCreateForm";
 import { VaccineCreateForm, type VaccineSavedResult } from "@/components/pets/VaccineCreateForm";
@@ -11,6 +11,7 @@ import type { MedicalHistoryAttachment, MedicalHistoryEntry } from "@/lib/medica
 import { parseMedicalHistoryRecords } from "@/lib/medicalHistoryValidation";
 import type { PetSpecies } from "@/lib/pets";
 import { invalidateNotificationCenter } from "@/lib/notifications/events";
+import { fetchJsonWithTimeout } from "@/lib/http/fetchJsonWithTimeout";
 import styles from "@/styles/petDetail.module.css";
 
 type MedicalHistoryFilter = "all" | "vaccines" | "visits";
@@ -30,9 +31,9 @@ type DeleteResponse = {
   warnings?: string[];
 };
 const filters: Array<{ id: MedicalHistoryFilter; label: string }> = [
-  { id: "all", label: "Tất cả" },
-  { id: "vaccines", label: "Tiêm phòng" },
-  { id: "visits", label: "Khám bệnh" },
+  { id: "all", label: "Táº¥t cáº£" },
+  { id: "vaccines", label: "TiÃªm phÃ²ng" },
+  { id: "visits", label: "KhÃ¡m bá»‡nh" },
 ];
 
 function formatDate(value: string) {
@@ -43,7 +44,7 @@ function formatDate(value: string) {
 
 function groupLabel(value: string) {
   const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return "Lịch sử";
+  if (Number.isNaN(date.getTime())) return "Lá»‹ch sá»­";
   return new Intl.DateTimeFormat("vi-VN", { month: "long", year: "numeric" }).format(date);
 }
 
@@ -54,9 +55,7 @@ function validDate(value: string) {
 }
 
 export function PetMedicalHistory({ form, isOwner = false, petId, species }: { form?: string; isOwner?: boolean; petId: string; species: PetSpecies }) {
-  const requestJson = useRuntimeJson();
-  const request = useRuntimeRequest();
-  const router = useRuntimeRouter();
+  const router = useRouter();
   const [filter, setFilter] = useState<MedicalHistoryFilter>(form === "medical-record" ? "visits" : "all");
   const [view, setView] = useState<MedicalView>(
     form === "vaccine"
@@ -108,7 +107,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
       && activeRequestId === requestId.current
       && !controller.signal.aborted;
 
-    void requestJson(`/api/pets/${encodeURIComponent(petId)}/${endpoint}`, { signal: controller.signal })
+    void fetchJsonWithTimeout(`/api/pets/${encodeURIComponent(petId)}/${endpoint}`, { signal: controller.signal })
       .then(({ response, payload }) => {
         if (!response.ok) throw new Error("Medical history request failed");
         const records = parseMedicalHistoryRecords(payload);
@@ -120,7 +119,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
       .catch(() => {
         if (!isCurrent()) return;
         setLoadedHistoryKey(historyKey);
-        setError("Không thể tải hồ sơ y tế lúc này. Vui lòng thử lại.");
+        setError("KhÃ´ng thá»ƒ táº£i há»“ sÆ¡ y táº¿ lÃºc nÃ y. Vui lÃ²ng thá»­ láº¡i.");
       })
       .finally(() => {
         if (!isCurrent()) return;
@@ -129,7 +128,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
       });
 
     return controller;
-  }, [form, petId, requestJson]);
+  }, [form, petId]);
 
   useEffect(() => {
     let active = true;
@@ -284,7 +283,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
     setDeleteError(null);
     const { entry } = deleteTarget;
     const resource = entry.type === "vaccine" ? "vaccines" : "medical-records";
-    const response = await request(
+    const response = await fetch(
       `/api/pets/${encodeURIComponent(petId)}/${resource}/${encodeURIComponent(entry.id)}`,
       { method: "DELETE" },
     ).catch(() => null);
@@ -293,23 +292,23 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
       const payload = response ? await response.json() as DeleteResponse : null;
       if (!response || !response.ok) {
         const message = response?.status === 401
-          ? "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
+          ? "PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i."
           : response?.status === 403 || response?.status === 404
-            ? "Không tìm thấy bản ghi hoặc bạn không có quyền xóa."
+            ? "KhÃ´ng tÃ¬m tháº¥y báº£n ghi hoáº·c báº¡n khÃ´ng cÃ³ quyá»n xÃ³a."
             : response?.status === 409
-              ? "Bản ghi còn dữ liệu liên quan chưa thể xóa."
-              : payload?.error || "Không thể xóa bản ghi lúc này. Vui lòng thử lại.";
+              ? "Báº£n ghi cÃ²n dá»¯ liá»‡u liÃªn quan chÆ°a thá»ƒ xÃ³a."
+              : payload?.error || "KhÃ´ng thá»ƒ xÃ³a báº£n ghi lÃºc nÃ y. Vui lÃ²ng thá»­ láº¡i.";
         throw new Error(message);
       }
 
       setEntries((current) => current.filter((item) => item.id !== entry.id));
       setDeleteTarget(null);
       setNotice(payload?.attachment_cleanup === "pending"
-        ? "Hồ sơ đã được xóa. Một số tệp đang chờ hệ thống dọn dẹp."
-        : entry.type === "vaccine" ? "Đã xóa bản ghi tiêm phòng." : "Đã xóa hồ sơ khám bệnh.");
+        ? "Há»“ sÆ¡ Ä‘Ã£ Ä‘Æ°á»£c xÃ³a. Má»™t sá»‘ tá»‡p Ä‘ang chá» há»‡ thá»‘ng dá»n dáº¹p."
+        : entry.type === "vaccine" ? "ÄÃ£ xÃ³a báº£n ghi tiÃªm phÃ²ng." : "ÄÃ£ xÃ³a há»“ sÆ¡ khÃ¡m bá»‡nh.");
       router.refresh();
     } catch (requestError) {
-      setDeleteError(requestError instanceof Error ? requestError.message : "Không thể xóa bản ghi lúc này. Vui lòng thử lại.");
+      setDeleteError(requestError instanceof Error ? requestError.message : "KhÃ´ng thá»ƒ xÃ³a báº£n ghi lÃºc nÃ y. Vui lÃ²ng thá»­ láº¡i.");
     } finally {
       deleteSubmissionGuard.current = false;
       setIsDeleting(false);
@@ -322,7 +321,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
     if (!isVaccineSource && !isMedicalSource) return;
     if (reminderSubmissionGuard.current) return;
     if (!validDate(reminderDate)) {
-      setError("Hãy chọn ngày nhắc hẹn trước khi tiếp tục.");
+      setError("HÃ£y chá»n ngÃ y nháº¯c háº¹n trÆ°á»›c khi tiáº¿p tá»¥c.");
       return;
     }
     reminderSubmissionGuard.current = true;
@@ -344,21 +343,21 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
             due_date: reminderDate,
             source_vaccine_record_id: view.entry.id,
           };
-      const response = await request(`/api/pets/${encodeURIComponent(petId)}/reminders`, {
+      const response = await fetch(`/api/pets/${encodeURIComponent(petId)}/reminders`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(requestBody),
         signal: controller.signal,
       });
       const payload = (await response.json()) as { reminder?: { reminder_id: string }; error?: string };
-      if (!response.ok || !payload.reminder?.reminder_id) throw new Error(payload.error || "Không thể tạo nhắc hẹn.");
+      if (!response.ok || !payload.reminder?.reminder_id) throw new Error(payload.error || "KhÃ´ng thá»ƒ táº¡o nháº¯c háº¹n.");
       invalidateNotificationCenter();
-      goToHistory(isMedicalSource ? "Đã tạo nhắc tái khám." : "Đã tạo nhắc hẹn thành công", payload.reminder.reminder_id);
+      goToHistory(isMedicalSource ? "ÄÃ£ táº¡o nháº¯c tÃ¡i khÃ¡m." : "ÄÃ£ táº¡o nháº¯c háº¹n thÃ nh cÃ´ng", payload.reminder.reminder_id);
     } catch {
       if (!controller.signal.aborted) {
         setError(isMedicalSource
-          ? "Lần khám đã được lưu nhưng chưa thể tạo nhắc hẹn."
-          : "Mũi tiêm đã được lưu nhưng chưa thể tạo nhắc hẹn.");
+          ? "Láº§n khÃ¡m Ä‘Ã£ Ä‘Æ°á»£c lÆ°u nhÆ°ng chÆ°a thá»ƒ táº¡o nháº¯c háº¹n."
+          : "MÅ©i tiÃªm Ä‘Ã£ Ä‘Æ°á»£c lÆ°u nhÆ°ng chÆ°a thá»ƒ táº¡o nháº¯c háº¹n.");
       }
     } finally {
       reminderSubmissionGuard.current = false;
@@ -371,7 +370,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
 
   function deferReminder() {
     if (reminderSubmissionGuard.current) return;
-    goToHistory(view.kind === "medical-reminder" ? "Đã lưu lần khám." : "Đã lưu mũi tiêm.");
+    goToHistory(view.kind === "medical-reminder" ? "ÄÃ£ lÆ°u láº§n khÃ¡m." : "ÄÃ£ lÆ°u mÅ©i tiÃªm.");
   }
 
   return (
@@ -379,44 +378,44 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
       {view.kind === "history" && (
         <>
           <div className={styles.medicalToolbar}>
-            <div className={styles.filterChips} role="group" aria-label="Lọc hồ sơ y tế">
+            <div className={styles.filterChips} role="group" aria-label="Lá»c há»“ sÆ¡ y táº¿">
               {filters.map((item) => (
                 <button className={filter === item.id ? styles.activeFilterChip : styles.filterChip} key={item.id} onClick={() => setFilter(item.id)} type="button">
                   {item.label}
                 </button>
               ))}
             </div>
-            <div className={styles.addRecordMenu}>
+            {isOwner && <div className={styles.addRecordMenu}>
               <button aria-expanded={isAddMenuOpen} aria-haspopup="menu" className={styles.addRecordButton} onClick={() => setIsAddMenuOpen((open) => !open)} type="button">
-                <span aria-hidden="true">+</span>Thêm bản ghi
+                <span aria-hidden="true">+</span>ThÃªm báº£n ghi
               </button>
               {isAddMenuOpen && (
                 <div className={styles.addRecordPopover} role="menu">
-                  <button onClick={openAddVaccine} role="menuitem" type="button">Thêm mũi tiêm</button>
-                  <button onClick={openAddMedicalRecord} role="menuitem" type="button">Thêm lần khám</button>
+                  <button onClick={openAddVaccine} role="menuitem" type="button">ThÃªm mÅ©i tiÃªm</button>
+                  <button onClick={openAddMedicalRecord} role="menuitem" type="button">ThÃªm láº§n khÃ¡m</button>
                 </div>
               )}
-            </div>
+            </div>}
           </div>
 
           {notice && (
             <p className={styles.medicalNotice} role="status">
               {notice}
-              {createdReminderId && <Link className={styles.medicalNoticeLink} href={`/reminders?highlight=${encodeURIComponent(createdReminderId)}`}>Xem nhắc hẹn</Link>}
+              {createdReminderId && <Link className={styles.medicalNoticeLink} href={`/reminders?highlight=${encodeURIComponent(createdReminderId)}`}>Xem nháº¯c háº¹n</Link>}
             </p>
           )}
           {historyError && (
             <div className={styles.medicalError} role="alert">
               <p>{historyError}</p>
-              <button className={styles.medicalRetryButton} disabled={historyLoading} onClick={retryHistory} type="button">Thử lại</button>
+              <button className={styles.medicalRetryButton} disabled={historyLoading} onClick={retryHistory} type="button">Thá»­ láº¡i</button>
             </div>
           )}
-          {historyLoading && <p className={styles.medicalLoading}>Đang tải hồ sơ y tế…</p>}
+          {historyLoading && <p className={styles.medicalLoading}>Äang táº£i há»“ sÆ¡ y táº¿â€¦</p>}
           {!historyLoading && !historyError && groupedEntries.length === 0 && (
             <section className={styles.medicalEmptyState}>
               <span className={styles.medicalEmptyMark} aria-hidden="true" />
-              <h2 id="medical-history-title">Chưa có hồ sơ y tế</h2>
-              <p>Thông tin tiêm phòng và các lần khám của bé sẽ xuất hiện tại đây.</p>
+              <h2 id="medical-history-title">ChÆ°a cÃ³ há»“ sÆ¡ y táº¿</h2>
+              <p>ThÃ´ng tin tiÃªm phÃ²ng vÃ  cÃ¡c láº§n khÃ¡m cá»§a bÃ© sáº½ xuáº¥t hiá»‡n táº¡i Ä‘Ã¢y.</p>
             </section>
           )}
           {!historyLoading && !historyError && groupedEntries.length > 0 && (
@@ -519,25 +518,25 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
           >
             <div className={styles.dialogHeader}>
               <h2 id="delete-record-title">
-                {deleteTarget.entry.type === "vaccine" ? "Xóa bản ghi tiêm phòng?" : "Xóa hồ sơ khám bệnh?"}
+                {deleteTarget.entry.type === "vaccine" ? "XÃ³a báº£n ghi tiÃªm phÃ²ng?" : "XÃ³a há»“ sÆ¡ khÃ¡m bá»‡nh?"}
               </h2>
-              <button aria-label="Đóng" className={styles.dialogClose} disabled={isDeleting} onClick={closeDeleteDialog} type="button">×</button>
+              <button aria-label="ÄÃ³ng" className={styles.dialogClose} disabled={isDeleting} onClick={closeDeleteDialog} type="button">Ã—</button>
             </div>
             <div className={styles.deleteDialogBody}>
               <p>
-                Bạn sắp xóa vĩnh viễn {deleteTarget.entry.type === "vaccine" ? "bản ghi" : "hồ sơ"} “{deleteTarget.entry.title}” ngày {formatDate(deleteTarget.entry.eventDate)}.
+                Báº¡n sáº¯p xÃ³a vÄ©nh viá»…n {deleteTarget.entry.type === "vaccine" ? "báº£n ghi" : "há»“ sÆ¡"} â€œ{deleteTarget.entry.title}â€ ngÃ y {formatDate(deleteTarget.entry.eventDate)}.
               </p>
               <p>
                 {deleteTarget.entry.type === "medical"
-                  ? "Các tệp đính kèm cũng sẽ bị xóa. Nhắc hẹn liên quan sẽ được giữ lại nhưng không còn liên kết với hồ sơ."
-                  : "Nhắc hẹn được tạo từ bản ghi này sẽ được giữ lại nhưng không còn liên kết với bản ghi tiêm phòng."}
+                  ? "CÃ¡c tá»‡p Ä‘Ã­nh kÃ¨m cÅ©ng sáº½ bá»‹ xÃ³a. Nháº¯c háº¹n liÃªn quan sáº½ Ä‘Æ°á»£c giá»¯ láº¡i nhÆ°ng khÃ´ng cÃ²n liÃªn káº¿t vá»›i há»“ sÆ¡."
+                  : "Nháº¯c háº¹n Ä‘Æ°á»£c táº¡o tá»« báº£n ghi nÃ y sáº½ Ä‘Æ°á»£c giá»¯ láº¡i nhÆ°ng khÃ´ng cÃ²n liÃªn káº¿t vá»›i báº£n ghi tiÃªm phÃ²ng."}
               </p>
-              <p className={styles.deleteDialogWarning}>Thao tác này không thể hoàn tác.</p>
+              <p className={styles.deleteDialogWarning}>Thao tÃ¡c nÃ y khÃ´ng thá»ƒ hoÃ n tÃ¡c.</p>
               {deleteError && <p className={styles.medicalError} role="alert">{deleteError}</p>}
               <div className={styles.dialogActions}>
-                <button disabled={isDeleting} onClick={closeDeleteDialog} type="button">Hủy</button>
+                <button disabled={isDeleting} onClick={closeDeleteDialog} type="button">Há»§y</button>
                 <button className={styles.deleteRecordConfirm} disabled={isDeleting} onClick={() => void deleteEntry()} type="button">
-                  {isDeleting ? "Đang xóa…" : "Xóa bản ghi"}
+                  {isDeleting ? "Äang xÃ³aâ€¦" : "XÃ³a báº£n ghi"}
                 </button>
               </div>
             </div>
@@ -579,33 +578,33 @@ function PostSaveReminderForm({
 
   return (
     <section className={styles.reminderSuggestion} aria-live="polite">
-      <h2>{isMedical ? "Tạo nhắc tái khám" : "Đã lưu mũi tiêm"}</h2>
+      <h2>{isMedical ? "Táº¡o nháº¯c tÃ¡i khÃ¡m" : "ÄÃ£ lÆ°u mÅ©i tiÃªm"}</h2>
       {isMedical ? (
         <>
-          <p>Đã lưu lần khám.</p>
-          <p className={styles.suggestionMuted}>Tạo từ lần khám ngày {formatDate(entry.eventDate)}</p>
-          {entry.title !== "Lần khám bệnh" && <p className={styles.suggestionWarning}>{entry.title}</p>}
+          <p>ÄÃ£ lÆ°u láº§n khÃ¡m.</p>
+          <p className={styles.suggestionMuted}>Táº¡o tá»« láº§n khÃ¡m ngÃ y {formatDate(entry.eventDate)}</p>
+          {entry.title !== "Láº§n khÃ¡m bá»‡nh" && <p className={styles.suggestionWarning}>{entry.title}</p>}
         </>
       ) : (
-        <p>Hệ thống chỉ gợi ý ngày khi có đủ thông tin và quy tắc phù hợp. Bạn có thể chỉnh sửa ngày trước khi tạo nhắc hẹn.</p>
+        <p>Há»‡ thá»‘ng chá»‰ gá»£i Ã½ ngÃ y khi cÃ³ Ä‘á»§ thÃ´ng tin vÃ  quy táº¯c phÃ¹ há»£p. Báº¡n cÃ³ thá»ƒ chá»‰nh sá»­a ngÃ y trÆ°á»›c khi táº¡o nháº¯c háº¹n.</p>
       )}
-      {!isMedical && noSuggestion && <p className={styles.suggestionMuted}>Chưa thể gợi ý lịch tiêm tiếp theo. Bạn có thể tự nhập ngày nhắc.</p>}
+      {!isMedical && noSuggestion && <p className={styles.suggestionMuted}>ChÆ°a thá»ƒ gá»£i Ã½ lá»‹ch tiÃªm tiáº¿p theo. Báº¡n cÃ³ thá»ƒ tá»± nháº­p ngÃ y nháº¯c.</p>}
       <label>
-        {isMedical ? "Ngày tái khám" : "Ngày nhắc hẹn"}
+        {isMedical ? "NgÃ y tÃ¡i khÃ¡m" : "NgÃ y nháº¯c háº¹n"}
         <input onChange={(event) => onDateChange(event.target.value)} required type="date" value={reminderDate} />
       </label>
       {isMedical && onNoteChange && (
         <label className={styles.reminderNoteField}>
-          Ghi chú
-          <textarea maxLength={500} onChange={(event) => onNoteChange(event.target.value)} placeholder="Ghi chú cho lần tái khám" value={reminderNote} />
+          Ghi chÃº
+          <textarea maxLength={500} onChange={(event) => onNoteChange(event.target.value)} placeholder="Ghi chÃº cho láº§n tÃ¡i khÃ¡m" value={reminderNote} />
         </label>
       )}
       {!isMedical && warning && <p className={styles.suggestionWarning}>{warning}</p>}
       {error && <p className={styles.medicalError} role="alert">{error}</p>}
       <div className={styles.suggestionActions}>
-        <button disabled={isSaving} onClick={onDefer} type="button">Để sau</button>
+        <button disabled={isSaving} onClick={onDefer} type="button">Äá»ƒ sau</button>
         <button disabled={isSaving || !reminderDate} onClick={onSubmit} type="button">
-          {isSaving ? "Đang lưu…" : "Tạo nhắc hẹn"}
+          {isSaving ? "Äang lÆ°uâ€¦" : "Táº¡o nháº¯c háº¹n"}
         </button>
       </div>
     </section>
@@ -622,18 +621,18 @@ function MedicalRecordPreview({ entries, medicalOnly = false }: { entries: Medic
       .map((entry, index) => [entry.id, index + 1]),
   );
   return (
-    <section className={styles.medicalRecordPreview} aria-label="Lịch sử gần đây">
-      <h2>{medicalOnly ? "Lịch sử khám bệnh" : "Lịch sử gần đây"}</h2>
+    <section className={styles.medicalRecordPreview} aria-label="Lá»‹ch sá»­ gáº§n Ä‘Ã¢y">
+      <h2>{medicalOnly ? "Lá»‹ch sá»­ khÃ¡m bá»‡nh" : "Lá»‹ch sá»­ gáº§n Ä‘Ã¢y"}</h2>
       {recentEntries.length > 0
         ? recentEntries.map((entry) => <MedicalEntryCard entry={entry} key={entry.id} visitNumber={visitNumbers.get(entry.id)} />)
-        : <p>{medicalOnly ? "Chưa có lần khám nào" : "Chưa có hồ sơ y tế"}</p>}
+        : <p>{medicalOnly ? "ChÆ°a cÃ³ láº§n khÃ¡m nÃ o" : "ChÆ°a cÃ³ há»“ sÆ¡ y táº¿"}</p>}
     </section>
   );
 }
 
 function MedicalEntryCard({ canDelete = false, entry, onDelete, visitNumber }: { canDelete?: boolean; entry: MedicalHistoryEntry; onDelete?: (entry: MedicalHistoryEntry, trigger: HTMLButtonElement | null) => void; visitNumber?: number }) {
-  const title = entry.type === "medical" && entry.title === "Lần khám bệnh"
-    ? `Lần khám ngày ${formatDate(entry.eventDate)}`
+  const title = entry.type === "medical" && entry.title === "Láº§n khÃ¡m bá»‡nh"
+    ? `Láº§n khÃ¡m ngÃ y ${formatDate(entry.eventDate)}`
     : entry.title;
   return (
     <article className={`${styles.medicalEntryCard} ${canDelete ? styles.medicalEntryCardWithActions : ""}`}>
@@ -641,12 +640,12 @@ function MedicalEntryCard({ canDelete = false, entry, onDelete, visitNumber }: {
         ? <span className={styles.vaccineIcon}><Image alt="" aria-hidden="true" height={27} src="/icons/vaccine-syringe.svg" width={41} /></span>
         : <span className={styles.medicalIcon}><Image alt="" aria-hidden="true" height={34} src="/icons/medical-briefcase.svg" width={34} /></span>}
       <div className={styles.medicalEntryContent}>
-        {entry.type === "medical" && <span>KHÁM BỆNH</span>}
+        {entry.type === "medical" && <span>KHÃM Bá»†NH</span>}
         <h3>{title}</h3>
-        <p>{formatDate(entry.eventDate)}{entry.clinicName ? ` • ${entry.clinicName}` : ""}</p>
-        {entry.type === "medical" && visitNumber && <span>{`Lần ${visitNumber}`}</span>}
+        <p>{formatDate(entry.eventDate)}{entry.clinicName ? ` â€¢ ${entry.clinicName}` : ""}</p>
+        {entry.type === "medical" && visitNumber && <span>{`Láº§n ${visitNumber}`}</span>}
         {entry.description && <span>{entry.description}</span>}
-        {entry.type === "medical" && entry.addedByCurrentUser && <span>Thêm bởi bạn</span>}
+        {entry.type === "medical" && entry.addedByCurrentUser && <span>ThÃªm bá»Ÿi báº¡n</span>}
         {entry.type === "medical" && entry.attachments && entry.attachments.length > 0 && (
           <div className={styles.medicalAttachmentList}>
             {entry.attachments.map((attachment) => (
@@ -658,12 +657,12 @@ function MedicalEntryCard({ canDelete = false, entry, onDelete, visitNumber }: {
       {canDelete && onDelete && (
         <div className={styles.medicalEntryActions}>
           <button
-            aria-label={entry.type === "vaccine" ? "Xóa bản ghi tiêm phòng" : "Xóa hồ sơ khám bệnh"}
+            aria-label={entry.type === "vaccine" ? "XÃ³a báº£n ghi tiÃªm phÃ²ng" : "XÃ³a há»“ sÆ¡ khÃ¡m bá»‡nh"}
             className={styles.deleteRecordButton}
             onClick={(event) => onDelete(entry, event.currentTarget)}
             type="button"
           >
-            Xóa
+            XÃ³a
           </button>
         </div>
       )}
@@ -678,8 +677,6 @@ function MedicalAttachmentRow({
   attachment: MedicalHistoryAttachment;
   recordId: string;
 }) {
-  const runtime = useAppRuntime();
-  const request = useRuntimeRequest();
   const [isOpening, setIsOpening] = useState(false);
   const [openError, setOpenError] = useState<string | null>(null);
   const openingGuard = useRef(false);
@@ -693,33 +690,27 @@ function MedicalAttachmentRow({
     const fileTab = window.open("about:blank", "_blank");
     if (fileTab) {
       fileTab.opener = null;
-      fileTab.document.title = "Đang mở file…";
+      fileTab.document.title = "Äang má»Ÿ fileâ€¦";
     }
 
     try {
-      if (runtime) {
-        const localUrl = runtime.attachmentUrl(attachment.attachment_id);
-        if (!localUrl || !fileTab) throw new Error("Không thể mở file trong trải nghiệm thử.");
-        fileTab.location.replace(localUrl);
-        return;
-      }
-      const response = await request(
+      const response = await fetch(
         `/api/medical-records/${encodeURIComponent(recordId)}/attachments?attachmentId=${encodeURIComponent(attachment.attachment_id)}`,
       );
       const payload = (await response.json()) as SignedUrlResponse;
       if (!response.ok || !payload.signed_url) {
-        throw new Error(payload.error || "Không thể mở file khám bệnh lúc này.");
+        throw new Error(payload.error || "KhÃ´ng thá»ƒ má»Ÿ file khÃ¡m bá»‡nh lÃºc nÃ y.");
       }
 
       const signedUrl = new URL(payload.signed_url);
       if (signedUrl.protocol !== "https:" && signedUrl.protocol !== "http:") {
-        throw new Error("Đường dẫn file không hợp lệ.");
+        throw new Error("ÄÆ°á»ng dáº«n file khÃ´ng há»£p lá»‡.");
       }
-      if (!fileTab) throw new Error("Trình duyệt đang chặn tab mới.");
+      if (!fileTab) throw new Error("TrÃ¬nh duyá»‡t Ä‘ang cháº·n tab má»›i.");
       fileTab.location.replace(signedUrl.toString());
     } catch (requestError) {
       fileTab?.close();
-      setOpenError(requestError instanceof Error ? requestError.message : "Không thể mở file khám bệnh lúc này.");
+      setOpenError(requestError instanceof Error ? requestError.message : "KhÃ´ng thá»ƒ má»Ÿ file khÃ¡m bá»‡nh lÃºc nÃ y.");
     } finally {
       openingGuard.current = false;
       setIsOpening(false);
@@ -732,10 +723,11 @@ function MedicalAttachmentRow({
         <Image alt="" aria-hidden="true" height={16} src="/file.svg" width={16} />
         <span className={styles.medicalAttachmentName} title={attachment.file_name}>{attachment.file_name}</span>
         <button disabled={isOpening} onClick={openAttachment} type="button">
-          {isOpening ? "Đang mở…" : "Xem file"}
+          {isOpening ? "Äang má»Ÿâ€¦" : "Xem file"}
         </button>
       </div>
       {openError && <p className={styles.medicalAttachmentError} role="alert">{openError}</p>}
     </div>
   );
 }
+

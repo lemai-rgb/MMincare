@@ -1,7 +1,6 @@
 "use client";
-import { useRuntimeRequest } from "@/lib/appRuntime";
 
-import { AppLink as Link } from "@/lib/appRuntime";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import type { LatestMedicalRecordSummary, MedicalHistoryEntry } from "@/lib/medicalHistory";
@@ -17,6 +16,7 @@ export type PetOverviewReminder = {
 type PetOverviewProps = {
   nextReminder: PetOverviewReminder | null;
   petId: string;
+  readOnly?: boolean;
   reminderLoadError: boolean;
 };
 
@@ -38,8 +38,7 @@ function formatDate(value: string) {
   }).format(date);
 }
 
-export function PetOverview({ nextReminder, petId, reminderLoadError }: PetOverviewProps) {
-  const request = useRuntimeRequest();
+export function PetOverview({ nextReminder, petId, readOnly = false, reminderLoadError }: PetOverviewProps) {
   const [overviewData, setOverviewData] = useState<OverviewData>({
     petId,
     entries: [],
@@ -53,12 +52,12 @@ export function PetOverview({ nextReminder, petId, reminderLoadError }: PetOverv
 
   useEffect(() => {
     const controller = new AbortController();
-    request(`/api/pets/${encodeURIComponent(petId)}/medical-history`, {
+    fetch(`/api/pets/${encodeURIComponent(petId)}/medical-history`, {
       cache: "no-store",
       signal: controller.signal,
     })
       .then(async (response) => {
-        if (!response.ok) throw new Error("Không thể tải tổng quan thú cưng.");
+        if (!response.ok) throw new Error("KhÃ´ng thá»ƒ táº£i tá»•ng quan thÃº cÆ°ng.");
         const payload = (await response.json()) as {
           records?: MedicalHistoryEntry[];
           latestMedicalRecord?: LatestMedicalRecordSummary | null;
@@ -78,7 +77,7 @@ export function PetOverview({ nextReminder, petId, reminderLoadError }: PetOverv
         }
       });
     return () => controller.abort();
-  }, [petId, request]);
+  }, [petId]);
 
   const vaccineEntries = useMemo(() => entries.filter((entry) => entry.type === "vaccine"), [entries]);
   const latestVaccine = vaccineEntries[0];
@@ -90,52 +89,52 @@ export function PetOverview({ nextReminder, petId, reminderLoadError }: PetOverv
         formatDate(latestMedicalRecord.visitDate),
         latestMedicalRecord.diagnosis || latestMedicalRecord.symptoms,
         latestMedicalRecord.clinicName,
-      ].filter(Boolean).join(" • ")
+      ].filter(Boolean).join(" â€¢ ")
     : null;
   const latestMedicalCard = loadState === "loading"
-    ? { value: "Đang tải…" }
+    ? { value: "Äang táº£iâ€¦" }
     : loadState === "error"
-      ? { value: "Không thể tải dữ liệu" }
+      ? { value: "KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u" }
       : latestMedicalValue
         ? { value: latestMedicalValue }
-        : { value: "Chưa có dữ liệu", action: "Thêm bản ghi đầu tiên", actionHref: addMedicalRecordHref };
+        : { value: "ChÆ°a cÃ³ dá»¯ liá»‡u", action: "ThÃªm báº£n ghi Ä‘áº§u tiÃªn", actionHref: addMedicalRecordHref };
   const nextReminderValue = reminderLoadError
-    ? "Không thể tải lịch nhắc hẹn"
+    ? "KhÃ´ng thá»ƒ táº£i lá»‹ch nháº¯c háº¹n"
     : nextReminder
       ? [
           getReminderTypeLabel(nextReminder.type),
           nextReminder.note?.trim(),
           formatDate(nextReminder.due_date),
-        ].filter(Boolean).join(" • ")
-      : "Chưa có lịch nhắc hẹn";
+        ].filter(Boolean).join(" â€¢ ")
+      : "ChÆ°a cÃ³ lá»‹ch nháº¯c háº¹n";
 
   return (
     <>
-      <section className={styles.summaryGrid} aria-label="Tổng quan chăm sóc">
-        <SummaryCard title="Mũi tiêm gần nhất" value={latestVaccine ? `${latestVaccine.title}: ${formatDate(latestVaccine.eventDate)}` : "Chưa có dữ liệu"} />
-        <SummaryCard title="Nhắc hẹn sắp tới" value={nextReminderValue} />
-        <SummaryCard title="Lần khám gần nhất" {...latestMedicalCard} />
+      <section className={styles.summaryGrid} aria-label="Tá»•ng quan chÄƒm sÃ³c">
+        <SummaryCard title="MÅ©i tiÃªm gáº§n nháº¥t" value={latestVaccine ? `${latestVaccine.title}: ${formatDate(latestVaccine.eventDate)}` : "ChÆ°a cÃ³ dá»¯ liá»‡u"} />
+        <SummaryCard title="Nháº¯c háº¹n sáº¯p tá»›i" value={nextReminderValue} />
+        <SummaryCard title="Láº§n khÃ¡m gáº§n nháº¥t" {...latestMedicalCard} />
       </section>
 
-      <section className={styles.overviewGrid} aria-label="Hoạt động và thao tác nhanh">
+      <section className={styles.overviewGrid} aria-label="Hoáº¡t Ä‘á»™ng vÃ  thao tÃ¡c nhanh">
         <section className={styles.historyCard}>
-          <div className={styles.cardHeading}><h2>Lịch sử gần đây</h2><span>Xem tất cả</span></div>
+          <div className={styles.cardHeading}><h2>Lá»‹ch sá»­ gáº§n Ä‘Ã¢y</h2><span>Xem táº¥t cáº£</span></div>
           {loadState === "loading"
-            ? <p className={styles.emptyActivity}>Đang tải hoạt động…</p>
+            ? <p className={styles.emptyActivity}>Äang táº£i hoáº¡t Ä‘á»™ngâ€¦</p>
             : loadState === "error"
-              ? <p className={styles.emptyActivity}>Không thể tải hoạt động lúc này</p>
+              ? <p className={styles.emptyActivity}>KhÃ´ng thá»ƒ táº£i hoáº¡t Ä‘á»™ng lÃºc nÃ y</p>
               : recentEntries.length > 0
                 ? <div className={styles.overviewHistoryList}>{recentEntries.map((entry) => <p key={entry.id}><strong>{entry.title}</strong><span>{formatDate(entry.eventDate)}</span></p>)}</div>
-                : <p className={styles.emptyActivity}>Chưa có hoạt động nào</p>}
+                : <p className={styles.emptyActivity}>ChÆ°a cÃ³ hoáº¡t Ä‘á»™ng nÃ o</p>}
         </section>
 
-        <section className={styles.quickActions}>
-          <h2>Thao tác nhanh</h2>
-          <Link href={`/pets/${encodeURIComponent(petId)}?tab=medical&form=vaccine`}>＋ Thêm mũi tiêm</Link>
-          <Link href={addMedicalRecordHref}>＋ Thêm lần khám</Link>
-          <Link href={addReminderHref}>＋ Tạo nhắc hẹn</Link>
-          <Link href={`/pets/${encodeURIComponent(petId)}?tab=health&form=health-log`}>＋ Thêm ghi chú sức khỏe</Link>
-        </section>
+        {!readOnly && <section className={styles.quickActions}>
+          <h2>Thao tÃ¡c nhanh</h2>
+          <Link href={`/pets/${encodeURIComponent(petId)}?tab=medical&form=vaccine`}>ï¼‹ ThÃªm mÅ©i tiÃªm</Link>
+          <Link href={addMedicalRecordHref}>ï¼‹ ThÃªm láº§n khÃ¡m</Link>
+          <Link href={addReminderHref}>ï¼‹ Táº¡o nháº¯c háº¹n</Link>
+          <Link href={`/pets/${encodeURIComponent(petId)}?tab=health&form=health-log`}>ï¼‹ ThÃªm ghi chÃº sá»©c khá»e</Link>
+        </section>}
       </section>
     </>
   );
@@ -160,3 +159,4 @@ function SummaryCard({
     </section>
   );
 }
+

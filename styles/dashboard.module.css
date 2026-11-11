@@ -679,7 +679,7 @@
 .petListMetadata li + li::before {
   margin-right: 10px;
   color: var(--mm-text);
-  content: "•";
+  content: "â€¢";
 }
 
 .petListHealthStatus {
@@ -1187,3 +1187,46 @@
 @media (prefers-reduced-motion: reduce) {
   .primaryAction, .secondaryAction, .logoutButton { transition: none; }
 }
+
+.sharedAccessSection {
+  width: min(100%, 1223px);
+  margin: 24px auto 0;
+  padding: 22px 24px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid #e5e1da;
+  border-radius: 18px;
+}
+
+.sharedAccessHeading,
+.sharedInvitationRow,
+.sharedPetCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sharedAccessHeading { justify-content: space-between; }
+.sharedAccessEyebrow { margin: 0 0 4px; color: #708473; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.sharedAccessHeading h2 { margin: 0; color: #2d2d2d; font-size: 24px; }
+.readOnlyLabel { padding: 8px 12px; color: #36583b; background: #eef6ed; border: 1px solid #cfe1ce; border-radius: 999px; font-size: 14px; font-weight: 600; }
+.sharedAccessError { color: #a4423b; }
+.sharedInvitationList { display: grid; gap: 10px; margin-top: 18px; }
+.sharedInvitationList h3 { margin: 0; color: #465b4b; font-size: 16px; }
+.sharedInvitationRow { justify-content: space-between; padding: 12px 0; border-top: 1px solid #e8ebe7; }
+.sharedInvitationRow strong, .sharedInvitationRow span { display: block; }
+.sharedInvitationRow span, .sharedPetCard p { margin: 4px 0 0; color: #667367; font-size: 14px; }
+.sharedInvitationRow button { min-height: 44px; padding: 10px 16px; color: #fff; background: #6d9272; border: 1px solid #6d9272; border-radius: 10px; font: inherit; cursor: pointer; }
+.sharedPetGrid { display: grid; gap: 12px; margin-top: 18px; }
+.sharedPetCard { padding: 14px; background: #fbfcfa; border: 1px solid #e4ebe2; border-radius: 14px; }
+.sharedPetAvatar { flex: 0 0 72px; width: 72px; height: 72px; }
+.sharedPetCard h3 { margin: 0; color: #2d2d2d; font-size: 18px; }
+.sharedPetCard p { margin-bottom: 0; }
+.sharedPetLink { margin-left: auto; color: #426b49; font-weight: 700; text-decoration: none; white-space: nowrap; }
+
+@media (max-width: 600px) {
+  .sharedAccessSection { padding: 18px 16px; }
+  .sharedAccessHeading, .sharedInvitationRow, .sharedPetCard { align-items: flex-start; flex-direction: column; }
+  .sharedPetLink { margin-left: 0; }
+  .sharedInvitationRow button { width: 100%; }
+}
+
