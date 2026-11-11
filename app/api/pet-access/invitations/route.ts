@@ -7,7 +7,7 @@ export async function GET() {
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   const userId = claimsData?.claims?.sub;
-  if (claimsError || !userId) return NextResponse.json({ error: "Vui lÃƒÂ²ng Ã„â€˜Ã„Æ’ng nhÃ¡ÂºÂ­p Ã„â€˜Ã¡Â»Æ’ xem lÃ¡Â»Âi mÃ¡Â»Âi." }, { status: 401 });
+  if (claimsError || !userId) return NextResponse.json({ error: "Vui lÃ²ng Ä‘Äƒng nháº­p Ä‘á»ƒ xem lá»i má»i." }, { status: 401 });
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user?.email_confirmed_at) return NextResponse.json({ invitations: [] });
 
@@ -26,7 +26,7 @@ export async function GET() {
     .eq("status", "Pending")
     .gte("valid_until", getTodayInVietnam())
     .order("valid_until", { ascending: true });
-  if (error) return NextResponse.json({ error: "KhÃƒÂ´ng thÃ¡Â»Æ’ tÃ¡ÂºÂ£i lÃ¡Â»Âi mÃ¡Â»Âi chia sÃ¡ÂºÂ» lÃƒÂºc nÃƒÂ y." }, { status: 500 });
+  if (error) return NextResponse.json({ error: "KhÃ´ng thá»ƒ táº£i lá»i má»i chia sáº» lÃºc nÃ y." }, { status: 500 });
   return NextResponse.json({ invitations: data ?? [] });
 }
 

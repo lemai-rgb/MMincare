@@ -9,7 +9,7 @@ export async function PATCH(_request: Request, { params }: RouteContext) {
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   const userId = claimsData?.claims?.sub;
-  if (claimsError || !userId) return NextResponse.json({ error: "Vui lÃƒÂ²ng Ã„â€˜Ã„Æ’ng nhÃ¡ÂºÂ­p Ã„â€˜Ã¡Â»Æ’ thu hÃ¡Â»â€œi quyÃ¡Â»Ân." }, { status: 401 });
+  if (claimsError || !userId) return NextResponse.json({ error: "Vui lÃ²ng Ä‘Äƒng nháº­p Ä‘á»ƒ thu há»“i quyá»n." }, { status: 401 });
 
   const { data, error } = await supabase
     .from("pet_access")
@@ -20,8 +20,8 @@ export async function PATCH(_request: Request, { params }: RouteContext) {
     .select("access_id, pet_id, caretaker_email, valid_until, status, revoked_at, pet_name_snapshot")
     .maybeSingle();
 
-  if (error) return NextResponse.json({ error: "KhÃƒÂ´ng thÃ¡Â»Æ’ thu hÃ¡Â»â€œi quyÃ¡Â»Ân lÃƒÂºc nÃƒÂ y. Vui lÃƒÂ²ng thÃ¡Â»Â­ lÃ¡ÂºÂ¡i." }, { status: 500 });
-  if (!data) return NextResponse.json({ error: "KhÃƒÂ´ng tÃƒÂ¬m thÃ¡ÂºÂ¥y lÃ¡Â»Âi mÃ¡Â»Âi hoÃ¡ÂºÂ·c quyÃ¡Â»Ân chia sÃ¡ÂºÂ» cÃƒÂ²n hiÃ¡Â»â€¡u lÃ¡Â»Â±c." }, { status: 404 });
+  if (error) return NextResponse.json({ error: "KhÃ´ng thá»ƒ thu há»“i quyá»n lÃºc nÃ y. Vui lÃ²ng thá»­ láº¡i." }, { status: 500 });
+  if (!data) return NextResponse.json({ error: "KhÃ´ng tÃ¬m tháº¥y lá»i má»i hoáº·c quyá»n chia sáº» cÃ²n hiá»‡u lá»±c." }, { status: 404 });
   return NextResponse.json({ access: data });
 }
 

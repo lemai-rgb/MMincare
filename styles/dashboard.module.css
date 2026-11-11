@@ -679,7 +679,7 @@
 .petListMetadata li + li::before {
   margin-right: 10px;
   color: var(--mm-text);
-  content: "â€¢";
+  content: "•";
 }
 
 .petListHealthStatus {

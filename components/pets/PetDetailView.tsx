@@ -16,15 +16,15 @@ import styles from "@/styles/petDetail.module.css";
 type PetDetailTab = "overview" | "medical" | "reminders" | "health";
 
 const detailTabs: Array<{ id: PetDetailTab; label: string }> = [
-  { id: "overview", label: "Tá»•ng quan" },
-  { id: "medical", label: "Há»“ sÆ¡ y táº¿" },
-  { id: "reminders", label: "Nháº¯c háº¹n" },
-  { id: "health", label: "Sá»©c khá»e" },
+  { id: "overview", label: "Tổng quan" },
+  { id: "medical", label: "Hồ sơ y tế" },
+  { id: "reminders", label: "Nhắc hẹn" },
+  { id: "health", label: "Sức khỏe" },
 ];
 
 function PetDetailTabs({ petId, activeTab, isOwner }: { petId: string; activeTab: PetDetailTab; isOwner: boolean }) {
   return (
-    <nav className={styles.tabBar} aria-label="CÃ¡c má»¥c há»“ sÆ¡">
+    <nav className={styles.tabBar} aria-label="Các mục hồ sơ">
       {detailTabs.filter((tab) => isOwner || (tab.id !== "reminders" && tab.id !== "health")).map((tab) => {
         const href = tab.id === "overview" ? `/pets/${petId}` : `/pets/${petId}?tab=${tab.id}`;
         const className = tab.id === activeTab ? styles.activeTab : styles.tabLink;
@@ -49,8 +49,8 @@ function getPetAgeLabel(dateOfBirth: string | null) {
   const totalMonths = Math.max(0, (now.getFullYear() - birthDate.getFullYear()) * 12
     + now.getMonth() - birthDate.getMonth()
     - (now.getDate() < birthDate.getDate() ? 1 : 0));
-  if (totalMonths < 12) return totalMonths === 0 ? "DÆ°á»›i 1 thÃ¡ng" : `${totalMonths} thÃ¡ng`;
-  return `${Math.floor(totalMonths / 12)} tuá»•i`;
+  if (totalMonths < 12) return totalMonths === 0 ? "Dưới 1 tháng" : `${totalMonths} tháng`;
+  return `${Math.floor(totalMonths / 12)} tuổi`;
 }
 
 export type PetDetailViewProps = {
@@ -79,14 +79,14 @@ export function PetDetailView({ pet, activeTab, form, healthView, healthPeriod, 
         <div className={styles.content}>
           <Link className={styles.backLink} href={isHealthSubpage ? healthHistoryHref : "/dashboard"}>
             <span className={styles.backArrow} aria-hidden="true" />
-            {isHealthSubpage ? "Quay láº¡i nháº­t kÃ½ sá»©c khá»e" : "ThÃº cÆ°ng cá»§a báº¡n"}
+            {isHealthSubpage ? "Quay lại nhật ký sức khỏe" : "Thú cưng của bạn"}
           </Link>
 
           <p className={styles.subtitle} id="pet-detail-title">
-            Tá»•ng quan há»“ sÆ¡ sá»©c khá»e, lá»‹ch tiÃªm vÃ  nháº¯c háº¹n chÄƒm sÃ³c cá»§a {pet.name}.
+            Tổng quan hồ sơ sức khỏe, lịch tiêm và nhắc hẹn chăm sóc của {pet.name}.
           </p>
 
-          <section className={styles.profileCard} aria-label={`Há»“ sÆ¡ cá»§a ${pet.name}`}>
+          <section className={styles.profileCard} aria-label={`Hồ sơ của ${pet.name}`}>
             <div className={styles.avatarWrap}>
               <PetAvatar className={styles.avatar} petId={pet.pet_id} species={pet.species} pictureUrl={pet.picture_url} />
             </div>
@@ -96,30 +96,30 @@ export function PetDetailView({ pet, activeTab, form, healthView, healthPeriod, 
               <p className={styles.metadata}>
                 {metadata.map((item, index) => (
                   <span className={`${styles.metadataItem} ${index === metadata.length - 1 && age ? styles.metadataAge : ""}`} key={`${item}-${index}`}>
-                    {index > 0 && <span aria-hidden="true" className={styles.metadataSeparator}>â€¢</span>}
+                    {index > 0 && <span aria-hidden="true" className={styles.metadataSeparator}>•</span>}
                     {item}
                   </span>
                 ))}
               </p>
               <span className={styles.vaccineStatus}>
                 {profileSummaryError
-                  ? "ChÆ°a thá»ƒ táº£i báº£n ghi sá»©c khá»e"
+                  ? "Chưa thể tải bản ghi sức khỏe"
                   : profileRecordCount !== null && profileRecordCount > 0
                     ? isHealthTab
-                      ? `${profileRecordCount} báº£n ghi`
-                      : `${profileRecordCount} báº£n ghi sá»©c khá»e`
-                    : isHealthTab ? "0 báº£n ghi" : "ChÆ°a cÃ³ báº£n ghi sá»©c khá»e"}
+                      ? `${profileRecordCount} bản ghi`
+                      : `${profileRecordCount} bản ghi sức khỏe`
+                    : isHealthTab ? "0 bản ghi" : "Chưa có bản ghi sức khỏe"}
               </span>
             </div>
 
             <div className={styles.profileAside}>
               {isOwner
-                ? <Link className={styles.editButton} href={`/pets/${encodeURIComponent(pet.pet_id)}/edit`}>Chá»‰nh sá»­a</Link>
-                : <span className={styles.readOnlyBadge}>Chá»‰ xem</span>}
+                ? <Link className={styles.editButton} href={`/pets/${encodeURIComponent(pet.pet_id)}/edit`}>Chỉnh sửa</Link>
+                : <span className={styles.readOnlyBadge}>Chỉ xem</span>}
               <p>
                 {profileSummaryError
-                  ? "ChÆ°a thá»ƒ táº£i cáº­p nháº­t"
-                  : latestHealthUpdate ? `Cáº­p nháº­t gáº§n nháº¥t: ${latestHealthUpdate}` : "ChÆ°a cÃ³ cáº­p nháº­t"}
+                  ? "Chưa thể tải cập nhật"
+                  : latestHealthUpdate ? `Cập nhật gần nhất: ${latestHealthUpdate}` : "Chưa có cập nhật"}
               </p>
             </div>
           </section>

@@ -75,29 +75,29 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
         <div className={styles.listIntro}>
           <div>
-            <p className={styles.eyebrow}>KhÃ´ng gian chÄƒm sÃ³c cá»§a báº¡n</p>
-            <h1 id="dashboard-title">ThÃº cÆ°ng cá»§a tÃ´i</h1>
-            <p>Quáº£n lÃ½ há»“ sÆ¡ sá»©c khá»e cá»§a cÃ¡c bÃ© táº¡i má»™t nÆ¡i.</p>
+            <p className={styles.eyebrow}>Không gian chăm sóc của bạn</p>
+            <h1 id="dashboard-title">Thú cưng của tôi</h1>
+            <p>Quản lý hồ sơ sức khỏe của các bé tại một nơi.</p>
           </div>
         </div>
 
         {species && pets.length === 0 && !petsError && (
           <p className={styles.onboardingNote}>
-            Lá»±a chá»n {species === "cat" ? "MÃ¨o" : "ChÃ³"} cá»§a báº¡n Ä‘Ã£ Ä‘Æ°á»£c giá»¯ láº¡i. HÃ£y táº¡o há»“ sÆ¡ Ä‘áº§u tiÃªn cho bÃ©.
+            Lựa chọn {species === "cat" ? "Mèo" : "Chó"} của bạn đã được giữ lại. Hãy tạo hồ sơ đầu tiên cho bé.
           </p>
         )}
 
         {petsError ? (
           <section className={styles.statusCard} role="alert">
-            <h2>ChÆ°a thá»ƒ táº£i danh sÃ¡ch thÃº cÆ°ng</h2>
-            <p>Vui lÃ²ng thá»­ táº£i láº¡i trang sau Ã­t phÃºt.</p>
+            <h2>Chưa thể tải danh sách thú cưng</h2>
+            <p>Vui lòng thử tải lại trang sau ít phút.</p>
           </section>
         ) : (
           <section className={styles.emptyState} aria-labelledby="empty-pets-title">
-            <span className={styles.emptyMark} aria-hidden="true">â™¡</span>
-            <h2 id="empty-pets-title">Báº¡n chÆ°a cÃ³ há»“ sÆ¡ thÃº cÆ°ng nÃ o</h2>
-            <p>HÃ£y thÃªm há»“ sÆ¡ Ä‘áº§u tiÃªn Ä‘á»ƒ lÆ°u giá»¯ thÃ´ng tin chÄƒm sÃ³c cá»§a bÃ©.</p>
-            <Link className={styles.primaryAction} href={newPetHref}>ThÃªm thÃº cÆ°ng</Link>
+            <span className={styles.emptyMark} aria-hidden="true">♡</span>
+            <h2 id="empty-pets-title">Bạn chưa có hồ sơ thú cưng nào</h2>
+            <p>Hãy thêm hồ sơ đầu tiên để lưu giữ thông tin chăm sóc của bé.</p>
+            <Link className={styles.primaryAction} href={newPetHref}>Thêm thú cưng</Link>
           </section>
         )}
         <SharedPetAccessSection />

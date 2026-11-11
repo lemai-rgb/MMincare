@@ -9,7 +9,7 @@ function jsonError(message: string, status: number) {
 }
 
 function attachmentLabel(fileType: string) {
-  return fileType === "pdf" ? "File khÃ¡m bá»‡nh (PDF)" : "áº¢nh khÃ¡m bá»‡nh";
+  return fileType === "pdf" ? "File khám bệnh (PDF)" : "Ảnh khám bệnh";
 }
 
 export async function GET(_request: Request, { params }: RouteContext) {
@@ -17,7 +17,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   const userId = claimsData?.claims?.sub;
 
-  if (claimsError || !userId) return jsonError("Báº¡n cáº§n Ä‘Äƒng nháº­p Ä‘á»ƒ xem há»“ sÆ¡ y táº¿.", 401);
+  if (claimsError || !userId) return jsonError("Bạn cần đăng nhập để xem hồ sơ y tế.", 401);
 
   const { petId } = await params;
   const { data: pet, error: petError } = await supabase
@@ -26,7 +26,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     .eq("pet_id", petId)
     .maybeSingle();
 
-  if (petError || !pet) return jsonError("KhÃ´ng tÃ¬m tháº¥y thÃº cÆ°ng.", 404);
+  if (petError || !pet) return jsonError("Không tìm thấy thú cưng.", 404);
 
   const [vaccinesResult, medicalResult] = await Promise.all([
     supabase
@@ -43,7 +43,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   ]);
 
   if (vaccinesResult.error || medicalResult.error) {
-    return jsonError("KhÃ´ng thá»ƒ táº£i há»“ sÆ¡ y táº¿ lÃºc nÃ y.", 500);
+    return jsonError("Không thể tải hồ sơ y tế lúc này.", 500);
   }
 
   const isOwner = pet.owner_id === userId;
@@ -62,7 +62,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
       .order("uploaded_at", { ascending: true });
 
     if (attachmentsError) {
-      return jsonError("KhÃ´ng thá»ƒ táº£i há»“ sÆ¡ y táº¿ lÃºc nÃ y.", 500);
+      return jsonError("Không thể tải hồ sơ y tế lúc này.", 500);
     }
 
     for (const attachment of attachments ?? []) {
@@ -82,9 +82,9 @@ export async function GET(_request: Request, { params }: RouteContext) {
     eventDate: record.vaccine_date,
     title: record.vaccine_name,
     description: [
-      record.dose_number ? `MÅ©i sá»‘ ${record.dose_number}` : null,
+      record.dose_number ? `Mũi số ${record.dose_number}` : null,
       record.note,
-    ].filter(Boolean).join(" â€¢ "),
+    ].filter(Boolean).join(" • "),
     clinicName: record.clinic_name,
     doseNumber: record.dose_number,
   }));
@@ -93,8 +93,8 @@ export async function GET(_request: Request, { params }: RouteContext) {
     id: record.record_id,
     type: "medical" as const,
     eventDate: record.visit_date,
-    title: record.diagnosis || "Láº§n khÃ¡m bá»‡nh",
-    description: [record.symptoms, record.medication, record.note].filter(Boolean).join(" â€¢ "),
+    title: record.diagnosis || "Lần khám bệnh",
+    description: [record.symptoms, record.medication, record.note].filter(Boolean).join(" • "),
     clinicName: record.clinic_name,
     doseNumber: null,
     addedByCurrentUser: isOwner && record.created_by === userId,

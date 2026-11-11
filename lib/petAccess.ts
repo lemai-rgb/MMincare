@@ -32,9 +32,9 @@ export function isAccessCurrentlyActive(validUntil: string, status: PetAccessSta
 }
 
 export function mapPetAccessError(error: { code?: string; message?: string } | null) {
-  if (error?.code === "23505") return "LÃ¡Â»Âi mÃ¡Â»Âi Ã„â€˜ang tÃ¡Â»â€œn tÃ¡ÂºÂ¡i hoÃ¡ÂºÂ·c quyÃ¡Â»Ân nÃƒÂ y Ã„â€˜ÃƒÂ£ Ã„â€˜Ã†Â°Ã¡Â»Â£c cÃ¡ÂºÂ¥p.";
-  if (error?.code === "42501") return "BÃ¡ÂºÂ¡n khÃƒÂ´ng cÃƒÂ³ quyÃ¡Â»Ân thÃ¡Â»Â±c hiÃ¡Â»â€¡n thao tÃƒÂ¡c nÃƒÂ y.";
-  return "KhÃƒÂ´ng thÃ¡Â»Æ’ xÃ¡Â»Â­ lÃƒÂ½ quyÃ¡Â»Ân chia sÃ¡ÂºÂ» lÃƒÂºc nÃƒÂ y. Vui lÃƒÂ²ng thÃ¡Â»Â­ lÃ¡ÂºÂ¡i.";
+  if (error?.code === "23505") return "Lá»i má»i Ä‘ang tá»“n táº¡i hoáº·c quyá»n nÃ y Ä‘Ã£ Ä‘Æ°á»£c cáº¥p.";
+  if (error?.code === "42501") return "Báº¡n khÃ´ng cÃ³ quyá»n thá»±c hiá»‡n thao tÃ¡c nÃ y.";
+  return "KhÃ´ng thá»ƒ xá»­ lÃ½ quyá»n chia sáº» lÃºc nÃ y. Vui lÃ²ng thá»­ láº¡i.";
 }
 
 
