@@ -38,7 +38,7 @@ export function AccountRoleMenu({ active }: { active: boolean }) {
   }, [open]);
 
   useEffect(() => {
-    if (!open || payload) return;
+    if (!open) return;
     const controller = new AbortController();
     void fetch("/api/account/roles", { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
@@ -52,7 +52,7 @@ export function AccountRoleMenu({ active }: { active: boolean }) {
         if ((error as { name?: string })?.name !== "AbortError") setPayload({ error: "Không thể tải thông tin tài khoản." });
       });
     return () => controller.abort();
-  }, [open, payload]);
+  }, [open]);
 
   const hasOwner = payload?.roles?.owner === true;
   const hasCaretaker = payload?.roles?.caretaker === true;
@@ -65,7 +65,11 @@ export function AccountRoleMenu({ active }: { active: boolean }) {
         aria-expanded={open}
         aria-haspopup="menu"
         className={active ? styles.activeNavItem : styles.navItem}
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          setPayload(null);
+          setSelectedRole(null);
+          setOpen((current) => !current);
+        }}
         type="button"
       >
         Tài khoản
