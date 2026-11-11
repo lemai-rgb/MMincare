@@ -10,7 +10,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   const userId = claimsData?.claims?.sub;
-  if (claimsError || !userId) return NextResponse.json({ error: "Vui lÃ²ng Ä‘Äƒng nháº­p Ä‘á»ƒ xem há»“ sÆ¡ y táº¿." }, { status: 401 });
+  if (claimsError || !userId) return NextResponse.json({ error: "Vui lòng đăng nhập để xem hồ sơ y tế." }, { status: 401 });
 
   const { data: access, error: accessError } = await supabase
     .from("pet_access")
@@ -20,7 +20,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     .eq("status", "Active")
     .gte("valid_until", getTodayInVietnam())
     .maybeSingle();
-  if (accessError || !access) return NextResponse.json({ error: "KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ Ä‘Æ°á»£c chia sáº»." }, { status: 404 });
+  if (accessError || !access) return NextResponse.json({ error: "Không tìm thấy hồ sơ được chia sẻ." }, { status: 404 });
 
   const [vaccinesResult, medicalResult] = await Promise.all([
     supabase
@@ -36,7 +36,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
       .order("visit_date", { ascending: false })
       .order("record_id", { ascending: false }),
   ]);
-  if (vaccinesResult.error || medicalResult.error) return NextResponse.json({ error: "KhÃ´ng thá»ƒ táº£i há»“ sÆ¡ y táº¿ lÃºc nÃ y." }, { status: 500 });
+  if (vaccinesResult.error || medicalResult.error) return NextResponse.json({ error: "Không thể tải hồ sơ y tế lúc này." }, { status: 500 });
 
   const records = [
     ...(vaccinesResult.data ?? []).map((record) => ({
@@ -44,7 +44,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
       type: "vaccine" as const,
       eventDate: record.vaccine_date,
       title: record.vaccine_name,
-      description: [record.dose_number ? `MÅ©i sá»‘ ${record.dose_number}` : null, record.note].filter(Boolean).join(" â€¢ "),
+      description: [record.dose_number ? `Mũi số ${record.dose_number}` : null, record.note].filter(Boolean).join(" • "),
       clinicName: record.clinic_name,
       doseNumber: record.dose_number,
     })),
@@ -52,8 +52,8 @@ export async function GET(_request: Request, { params }: RouteContext) {
       id: record.record_id,
       type: "medical" as const,
       eventDate: record.visit_date,
-      title: record.diagnosis || "Láº§n khÃ¡m bá»‡nh",
-      description: [record.symptoms, record.medication, record.note].filter(Boolean).join(" â€¢ "),
+      title: record.diagnosis || "Lần khám bệnh",
+      description: [record.symptoms, record.medication, record.note].filter(Boolean).join(" • "),
       clinicName: record.clinic_name,
       doseNumber: null,
     })),

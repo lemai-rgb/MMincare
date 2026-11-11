@@ -12,7 +12,7 @@ type RolePayload = {
 };
 
 function roleLabel(role: Role) {
-  return role === "owner" ? "Owner â€” Chá»§ thÃº cÆ°ng" : "Caretaker â€” NgÆ°á»i chÄƒm sÃ³c";
+  return role === "owner" ? "Owner — Chủ thú cưng" : "Caretaker — Người chăm sóc";
 }
 
 export function AccountRoleMenu({ active }: { active: boolean }) {
@@ -43,13 +43,13 @@ export function AccountRoleMenu({ active }: { active: boolean }) {
     void fetch("/api/account/roles", { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         const nextPayload = await response.json() as RolePayload;
-        if (!response.ok) throw new Error(nextPayload.error || "KhÃ´ng thá»ƒ táº£i thÃ´ng tin tÃ i khoáº£n.");
+        if (!response.ok) throw new Error(nextPayload.error || "Không thể tải thông tin tài khoản.");
         setPayload(nextPayload);
         const roles = nextPayload.roles;
         setSelectedRole(roles?.owner ? "owner" : roles?.caretaker ? "caretaker" : null);
       })
       .catch((error: unknown) => {
-        if ((error as { name?: string })?.name !== "AbortError") setPayload({ error: "KhÃ´ng thá»ƒ táº£i thÃ´ng tin tÃ i khoáº£n." });
+        if ((error as { name?: string })?.name !== "AbortError") setPayload({ error: "Không thể tải thông tin tài khoản." });
       });
     return () => controller.abort();
   }, [open, payload]);
@@ -57,7 +57,7 @@ export function AccountRoleMenu({ active }: { active: boolean }) {
   const hasOwner = payload?.roles?.owner === true;
   const hasCaretaker = payload?.roles?.caretaker === true;
   const roleOptions = (["owner", "caretaker"] as Role[]).filter((role) => role === "owner" ? hasOwner : hasCaretaker);
-  const displayName = payload?.profile?.name || "ChÆ°a thiáº¿t láº­p";
+  const displayName = payload?.profile?.name || "Chưa thiết lập";
 
   return (
     <div className={styles.accountRoleMenu} ref={rootRef}>
@@ -68,7 +68,7 @@ export function AccountRoleMenu({ active }: { active: boolean }) {
         onClick={() => setOpen((current) => !current)}
         type="button"
       >
-        TÃ i khoáº£n
+        Tài khoản
         <span aria-hidden="true" className={styles.navChevron} />
       </button>
       {open && (
@@ -85,15 +85,15 @@ export function AccountRoleMenu({ active }: { active: boolean }) {
               >
                 {roleLabel(role)}
               </button>
-            )) : <p className={styles.accountNoRole}>ChÆ°a cÃ³ vai trÃ²</p>}
+            )) : <p className={styles.accountNoRole}>Chưa có vai trò</p>}
           </div>
           <section aria-live="polite" className={styles.accountRolePanel}>
-            {payload?.error ? <p role="alert">{payload.error}</p> : payload === null ? <p role="status">Äang táº£i thÃ´ng tin tÃ i khoáº£nâ€¦</p> : (
+            {payload?.error ? <p role="alert">{payload.error}</p> : payload === null ? <p role="status">Đang tải thông tin tài khoản…</p> : (
               <>
-                <p className={styles.accountRolePanelLabel}>ThÃ´ng tin tÃ i khoáº£n</p>
+                <p className={styles.accountRolePanelLabel}>Thông tin tài khoản</p>
                 <strong>{displayName}</strong>
-                <span>{payload.profile?.email || "ChÆ°a thiáº¿t láº­p"}</span>
-                <span>{selectedRole ? roleLabel(selectedRole) : "ChÆ°a cÃ³ vai trÃ²"}</span>
+                <span>{payload.profile?.email || "Chưa thiết lập"}</span>
+                <span>{selectedRole ? roleLabel(selectedRole) : "Chưa có vai trò"}</span>
               </>
             )}
           </section>

@@ -60,27 +60,27 @@ export function AppHeader({ activeNav }: AppHeaderProps) {
       </Link>
 
       <div className={styles.headerActions}>
-        <nav className={styles.primaryNav} aria-label="Äiá»u hÆ°á»›ng chÃ­nh">
+        <nav className={styles.primaryNav} aria-label="Điều hướng chính">
           <Link
             aria-current={activeNav === "pets" ? "page" : undefined}
             className={activeNav === "pets" ? styles.activeNavItem : styles.navItem}
             href="/dashboard"
           >
-            ThÃº cÆ°ng
+            Thú cưng
           </Link>
           <Link
             aria-current={activeNav === "reminders" ? "page" : undefined}
             className={activeNav === "reminders" ? styles.activeNavItem : styles.navItem}
             href="/reminders"
           >
-            Nháº¯c háº¹n
+            Nhắc hẹn
           </Link>
           <AccountRoleMenu active={activeNav === "account"} />
         </nav>
         <button
           aria-controls="mobile-navigation-menu"
           aria-expanded={isMobileMenuOpen}
-          aria-label={isMobileMenuOpen ? "ÄÃ³ng menu Ä‘iá»u hÆ°á»›ng" : "Má»Ÿ menu Ä‘iá»u hÆ°á»›ng"}
+          aria-label={isMobileMenuOpen ? "Đóng menu điều hướng" : "Mở menu điều hướng"}
           className={styles.mobileMenuTrigger}
           onClick={toggleMobileMenu}
           ref={mobileMenuTriggerRef}
@@ -92,9 +92,9 @@ export function AppHeader({ activeNav }: AppHeaderProps) {
         <LogoutButton />
       </div>
       {isMobileMenuOpen && (
-        <nav aria-label="Äiá»u hÆ°á»›ng trÃªn thiáº¿t bá»‹ di Ä‘á»™ng" className={styles.mobileMenu} id="mobile-navigation-menu">
-          <Link aria-current={activeNav === "pets" ? "page" : undefined} className={styles.mobileMenuLink} href="/dashboard" onClick={closeMobileMenu}>ThÃº cÆ°ng</Link>
-          <Link aria-current={activeNav === "reminders" ? "page" : undefined} className={styles.mobileMenuLink} href="/reminders" onClick={closeMobileMenu}>Nháº¯c háº¹n</Link>
+        <nav aria-label="Điều hướng trên thiết bị di động" className={styles.mobileMenu} id="mobile-navigation-menu">
+          <Link aria-current={activeNav === "pets" ? "page" : undefined} className={styles.mobileMenuLink} href="/dashboard" onClick={closeMobileMenu}>Thú cưng</Link>
+          <Link aria-current={activeNav === "reminders" ? "page" : undefined} className={styles.mobileMenuLink} href="/reminders" onClick={closeMobileMenu}>Nhắc hẹn</Link>
           <div className={styles.mobileMenuAccount}><AccountRoleMenu active={activeNav === "account"} /></div>
           <div className={styles.mobileMenuLogout}><LogoutButton /></div>
         </nav>

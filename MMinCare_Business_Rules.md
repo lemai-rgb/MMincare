@@ -1,10 +1,10 @@
-# MMinCare â€” Business Rules
+# MMinCare — Business Rules
 
-**PhiÃªn báº£n:** 2.0 Â· **Cáº­p nháº­t:** 2026-10-11 (Asia/Ho_Chi_Minh)  
-**Baseline á»©ng dá»¥ng:** `main` `bcd14b51f4b70cd3d418bd10638f7a996713fdcf` â€” PR #26 Ä‘Ã£ merge, Vercel Production thÃ nh cÃ´ng.  
-**á»¨ng dá»¥ng:** https://m-mincare.vercel.app/ Â· **Tráº£i nghiá»‡m thá»­:** https://m-mincare.vercel.app/demo
+**Phiên bản:** 2.0 · **Cập nhật:** 2026-10-11 (Asia/Ho_Chi_Minh)  
+**Baseline ứng dụng:** `main` `bcd14b51f4b70cd3d418bd10638f7a996713fdcf` — PR #26 đã merge, Vercel Production thành công.  
+**Ứng dụng:** https://m-mincare.vercel.app/ · **Trải nghiệm thử:** https://m-mincare.vercel.app/demo
 
-> Current = code Ä‘Ã£ triá»ƒn khai táº¡i baseline trÃªn. Tráº¡ng thÃ¡i nÃ y khÃ´ng cÃ³ nghÄ©a má»i ká»‹ch báº£n Ä‘Ã£ kiá»ƒm thá»­ thá»±c táº¿. Demo dÃ¹ng dá»¯ liá»‡u giáº£ láº­p á»Ÿ trÃ¬nh duyá»‡t; khÃ´ng chá»©ng minh Auth, Owner A/B, Storage hoáº·c hiá»‡u nÄƒng backend.
+> Current = code đã triển khai tại baseline trên. Trạng thái này không có nghĩa mọi kịch bản đã kiểm thử thực tế. Demo dùng dữ liệu giả lập ở trình duyệt; không chứng minh Auth, Owner A/B, Storage hoặc hiệu năng backend.
 
 ## 1. Rule conventions
 
@@ -27,7 +27,7 @@
 | BR-AUTH-08 | A recovery link is processed through the Auth callback using PKCE `code` or a supported `token_hash`; the callback must establish a valid recovery session before redirecting. | Current |
 | BR-AUTH-09 | Recovery redirect accepts only the internal `/reset-password` destination; unsafe or external destinations are rejected/fallback safely. | Current |
 | BR-AUTH-10 | A user may submit a new password only while a valid recovery/authenticated session exists. The new password follows BR-AUTH-03. | Current |
-| BR-AUTH-11 | Google OAuth is not shown as available until provider configuration, redirect allowlist and runtime verification are complete. | Planned â€” Phase 1 |
+| BR-AUTH-11 | Google OAuth is not shown as available until provider configuration, redirect allowlist and runtime verification are complete. | Planned — Phase 1 |
 | BR-AUTH-12 | `public.users` is synchronized from `auth.users`; clients may not write identity fields or use a service-role secret. | Current |
 
 ## 3. Pet profile
@@ -38,7 +38,7 @@
 | BR-PET-02 | Breed/date_of_birth/image are optional. Date of birth must be valid and not future. Weight is a Health Log field, not a pets column. | Current |
 | BR-PET-03 | An Owner may read only Pets they own. | Current |
 | BR-PET-04 | Only the Owner may create or update the Pet profile in the current runtime. | Current |
-| BR-PET-05 | Optional JPG/JPEG/PNG/WebP â‰¤5 MiB; select/change/remove with preview. Private pet-photos object access is Owner-scoped; real photo cover fills a square, species fallback uses contain. | Current |
+| BR-PET-05 | Optional JPG/JPEG/PNG/WebP ≤5 MiB; select/change/remove with preview. Private pet-photos object access is Owner-scoped; real photo cover fills a square, species fallback uses contain. | Current |
 | BR-PET-06 | Pet card shows latest Health Log business date, status, weight and link to Health; hides food/amount. Missing values are explicit; latest order follows BR-HLOG-06. | Current |
 | BR-PET-07 | Pet deletion is not part of the current API. | Current constraint |
 
@@ -98,8 +98,8 @@
 | BR-HLOG-07 | Owner may edit business fields and recorded_on, or delete after confirmation. health_log_id/pet_id/created_by/logged_at are immutable; no soft-delete/audit history is claimed. | Current |
 | BR-HLOG-08 | The per-Pet dashboard accepts `period=week|month`; all period filtering uses `recorded_on`. | Current |
 | BR-HLOG-09 | Weight trend uses available weight values in the selected period. Loading, error, empty and insufficient-data states must be explicit. | Current |
-| BR-HLOG-10 | Status frequency displays BÃ¬nh thÆ°á»ng, Má»‡t má»i, Ä‚n kÃ©m/Bá» Äƒn, NÃ´n, TiÃªu cháº£y and KhÃ¡c. Any value outside the five named standard groups is aggregated into KhÃ¡c. | Current |
-| BR-HLOG-11 | Status tooltip supports hover, keyboard focus, Enter/Space and tap; it shows at most three recent records plus the remaining count. KhÃ¡c may show the original status breakdown. | Current |
+| BR-HLOG-10 | Status frequency displays Bình thường, Mệt mỏi, Ăn kém/Bỏ ăn, Nôn, Tiêu chảy and Khác. Any value outside the five named standard groups is aggregated into Khác. | Current |
+| BR-HLOG-11 | Status tooltip supports hover, keyboard focus, Enter/Space and tap; it shows at most three recent records plus the remaining count. Khác may show the original status breakdown. | Current |
 | BR-HLOG-12 | Tooltip interaction uses data already returned by the dashboard request and must not trigger a new fetch. | Current |
 | BR-HLOG-13 | A dashboard aggregating all Pets is not current. | Phase 2 |
 
@@ -125,8 +125,8 @@
 
 ## 10. Change requests and delivery
 
-- **CR-DELETE-001:** delivered â€” Vaccine/Medical hard-delete with confirmation, retained source-free Reminders and attachment cleanup reporting.
-- **CR-CHART-001:** delivered â€” full-period weight axis and point tooltip.
+- **CR-DELETE-001:** delivered — Vaccine/Medical hard-delete with confirmation, retained source-free Reminders and attachment cleanup reporting.
+- **CR-CHART-001:** delivered — full-period weight axis and point tooltip.
 - **CR-01/CR-02/CR-03:** PR #22 delivered request timeout/lifecycle, stale GET protection, literal `invalid` validation, immutable POST retry and idempotency. Automated regression evidence does not establish runtime A/B/retry tests.
 - **CR-08:** status contract fixed, production rule access/dataset still incomplete; no rule/interval fabricated for demo.
 
@@ -134,11 +134,11 @@
 
 | ID | Rule | Status |
 |---|---|---|
-| BR-HLOG-14 | POST requires idempotency_key â‰¤128 characters; same Owner/Pet/key and normalized payload returns canonical row. A different payload returns 409 with recovery=canonical and existing row. | Current |
+| BR-HLOG-14 | POST requires idempotency_key ≤128 characters; same Owner/Pet/key and normalized payload returns canonical row. A different payload returns 409 with recovery=canonical and existing row. | Current |
 | BR-HLOG-15 | Unknown POST result keeps immutable payload/key and locks fields until resolved; retry does not start a new logical creation. Cancel/error invalidates old requests and revalidates history. | Current |
 | BR-HLOG-16 | DELETE timeout/network/malformed response is ambiguous; retry 404 is not automatic success. Cancel revalidates canonical GET; stale GET cannot undo mutations. | Current |
 | BR-UX-01 | Enter in weight/food_type/food_amount never implicitly saves; textarea newline, date/select native action, Save button keyboard activation and IME preserved. | Current |
-| BR-UX-02 | Mobile Pet tabs form 2 Ã— 2; group age metadata, wrap long content, use positive spacing; compact attribution/actions footer and 44px touch targets. | Current |
+| BR-UX-02 | Mobile Pet tabs form 2 × 2; group age metadata, wrap long content, use positive spacing; compact attribution/actions footer and 44px touch targets. | Current |
 | BR-NOTIF-01 | Notification events are due_soon/overdue for eligible current Upcoming Reminders; opening panel does not mark read. | Current |
 | BR-NOTIF-02 | Only a red dot shows unread visually; accessible label may contain count. Successful read updates dot and navigates to linked Reminder highlight; errors retain unread with retry. | Current |
 | BR-NOTIF-03 | Revalidate on panel open and invalidate after Reminder mutations; abort/stale-response safeguards prevent obsolete reads or navigation. Escape/outside closes and restores focus; panel and mobile menu are exclusive. | Current |
@@ -149,7 +149,7 @@
 | BR-DEMO-04 | Sample observations illustrate UI/data only, no diagnosis, dose or vaccine interval guidance; demo success is not Owner isolation/backend performance evidence. | Current |
 
 
-## Phase 2.1 â€” Caretaker read-only boundary
+## Phase 2.1 — Caretaker read-only boundary
 
 Owner invitations are per Pet and use Pending/Active/Revoked with an expiry
 date. After acceptance, Caretaker can read only basic Pet information and
@@ -161,11 +161,11 @@ remain unavailable in this phase.
 
 | Version | Date | Change |
 |---|---|---|
-| 2.0 | 2026-10-11 | Äá»“ng bá»™ code Ä‘Ã£ triá»ƒn khai, CRUD/áº£nh/thÃ´ng bÃ¡o, request lifecycle/idempotency vÃ  demo cÃ¹ng UI; tÃ¡ch pháº¡m vi kiá»ƒm chá»©ng vÃ  káº¿ hoáº¡ch. |
+| 2.0 | 2026-10-11 | Đồng bộ code đã triển khai, CRUD/ảnh/thông báo, request lifecycle/idempotency và demo cùng UI; tách phạm vi kiểm chứng và kế hoạch. |
 | 1.6 | 2026-09-22 | Rebuilt rules for password recovery, current Owner-only Health Log/dashboard, Medical-source Reminder, completion hardening, private attachment bucket, deployment portability and pending changes. |
 | 1.5 | 2026-09-16 | Added initial Health Log date semantics. |
 
 The account menu may show Owner and/or Caretaker tabs only from active,
-server-derived roles. With neither role it shows `ChÆ°a cÃ³ vai trÃ²`; pending
+server-derived roles. With neither role it shows `Chưa có vai trò`; pending
 invitations remain in the invitation flow and do not grant access.
 

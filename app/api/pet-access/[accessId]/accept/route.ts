@@ -9,17 +9,17 @@ export async function POST(_request: Request, { params }: RouteContext) {
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   if (claimsError || !claimsData?.claims?.sub) {
-    return NextResponse.json({ error: "Vui lÃ²ng Ä‘Äƒng nháº­p Ä‘á»ƒ cháº¥p nháº­n lá»i má»i." }, { status: 401 });
+    return NextResponse.json({ error: "Vui lòng đăng nhập để chấp nhận lời mời." }, { status: 401 });
   }
 
   const { data, error } = await supabase.rpc("accept_pet_access", { p_access_id: accessId });
   if (error) {
     const message = error.message.includes("Confirmed email")
-      ? "HÃ£y xÃ¡c nháº­n email trÆ°á»›c khi cháº¥p nháº­n lá»i má»i."
-      : "Lá»i má»i khÃ´ng cÃ²n hiá»‡u lá»±c hoáº·c khÃ´ng dÃ nh cho tÃ i khoáº£n nÃ y.";
+      ? "Hãy xác nhận email trước khi chấp nhận lời mời."
+      : "Lời mời không còn hiệu lực hoặc không dành cho tài khoản này.";
     return NextResponse.json({ error: message }, { status: 409 });
   }
-  if (!data) return NextResponse.json({ error: "Lá»i má»i khÃ´ng cÃ²n hiá»‡u lá»±c hoáº·c khÃ´ng dÃ nh cho tÃ i khoáº£n nÃ y." }, { status: 409 });
+  if (!data) return NextResponse.json({ error: "Lời mời không còn hiệu lực hoặc không dành cho tài khoản này." }, { status: 409 });
   return NextResponse.json({ access: data });
 }
 

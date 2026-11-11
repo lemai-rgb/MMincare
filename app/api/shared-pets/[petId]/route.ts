@@ -10,7 +10,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   const userId = claimsData?.claims?.sub;
-  if (claimsError || !userId) return NextResponse.json({ error: "Vui lÃ²ng Ä‘Äƒng nháº­p Ä‘á»ƒ xem há»“ sÆ¡ Ä‘Æ°á»£c chia sáº»." }, { status: 401 });
+  if (claimsError || !userId) return NextResponse.json({ error: "Vui lòng đăng nhập để xem hồ sơ được chia sẻ." }, { status: 401 });
 
   const { data: access, error: accessError } = await supabase
     .from("pet_access")
@@ -20,14 +20,14 @@ export async function GET(_request: Request, { params }: RouteContext) {
     .eq("status", "Active")
     .gte("valid_until", getTodayInVietnam())
     .maybeSingle();
-  if (accessError || !access) return NextResponse.json({ error: "KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ Ä‘Æ°á»£c chia sáº»." }, { status: 404 });
+  if (accessError || !access) return NextResponse.json({ error: "Không tìm thấy hồ sơ được chia sẻ." }, { status: 404 });
 
   const { data: pet, error: petError } = await supabase
     .from("pets")
     .select("pet_id, name, species, gender, breed, date_of_birth, created_at, updated_at")
     .eq("pet_id", petId)
     .maybeSingle();
-  if (petError || !pet) return NextResponse.json({ error: "KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ Ä‘Æ°á»£c chia sáº»." }, { status: 404 });
+  if (petError || !pet) return NextResponse.json({ error: "Không tìm thấy hồ sơ được chia sẻ." }, { status: 404 });
 
   return NextResponse.json({
     pet: { ...pet, picture_url: null, access_id: access.access_id, valid_until: access.valid_until, read_only: true },
