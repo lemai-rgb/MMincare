@@ -49,6 +49,9 @@ async function fileData(file: File) {
 /** An explicit per-demo transport. Unknown URLs fail closed and never call
  * network fetch. Protected server routes, Auth, RLS and Storage are untouched. */
 export function createDemoTransport(store: Store) {
+  type DemoAccess = { access_id: string; pet_id: string; caretaker_email: string; valid_until: string; status: "Pending" | "Active" | "Revoked" };
+  const demoAccess: DemoAccess[] = [];
+  let sharingSeeded = false;
   const creationKeys = new Map<string, { id: string; payload: string }>();
   const attachmentBlobs = new Map<string, string>();
   const aborted = (signal?: AbortSignal | null) => { if (signal?.aborted) throw new DOMException("Aborted", "AbortError"); };
@@ -62,6 +65,11 @@ export function createDemoTransport(store: Store) {
     const method = init.method ?? "GET";
     const state = store.getSnapshot()?.data;
     if (!state) return invalid("Dữ liệu trải nghiệm chưa sẵn sàng.",503);
+    if (!sharingSeeded) {
+      sharingSeeded = true;
+      const firstPet = state.pets[0];
+      if (firstPet) demoAccess.push({ access_id: "00000000-0000-4000-8000-000000000901", pet_id: firstPet.pet_id, caretaker_email: "caregiver@example.com", valid_until: "2099-12-31", status: "Active" });
+    }
     const stamp = new Date().toISOString();
     const today = getVietnamToday();
     let body: Record<string, unknown> = {};
@@ -71,6 +79,26 @@ export function createDemoTransport(store: Store) {
     }
     const update = (fn: (data: DemoState) => DemoState) => { aborted(init.signal); store.update(fn); };
     try {
+      if (parts[1] === "pets" && parts[2] && parts[3] === "access" && parts.length === 4) {
+        const pet = state.pets.find((item) => item.pet_id === parts[2]);
+        if (!pet) return invalid("Không tìm thấy thú cưng.", 404);
+        if (method === "GET") return json({ access_list: demoAccess.filter((row) => row.pet_id === pet.pet_id) });
+        if (method === "POST") {
+          const email = typeof body.caretaker_email === "string" ? body.caretaker_email.trim().toLowerCase() : "";
+          const validUntil = typeof body.valid_until === "string" ? body.valid_until : "";
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !isDemoDate(validUntil) || validUntil < today) return invalid("Email hoặc ngày hết hạn không hợp lệ.");
+          if (demoAccess.some((row) => row.pet_id === pet.pet_id && row.caretaker_email === email && row.status !== "Revoked")) return invalid("Email này đã có lời mời còn hiệu lực.", 409);
+          const access: DemoAccess = { access_id: uuid(), pet_id: pet.pet_id, caretaker_email: email, valid_until: validUntil, status: "Pending" };
+          demoAccess.unshift(access);
+          return json({ access }, 201);
+        }
+      }
+      if (parts[1] === "pet-access" && parts[2] && parts[3] === "revoke" && parts.length === 4 && method === "PATCH") {
+        const row = demoAccess.find((entry) => entry.access_id === parts[2] && entry.status !== "Revoked");
+        if (!row) return invalid("Không tìm thấy lời mời.", 404);
+        row.status = "Revoked";
+        return json({ access: row });
+      }
       if (parts[1] === "notifications") {
         const events = getDemoNotifications(state,today);
         if (method === "GET" && parts.length === 2) return json({ notifications: events.map((e) => ({...e,

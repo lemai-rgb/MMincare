@@ -52,8 +52,7 @@ test("Owner invite, Caretaker accept, isolation, and revoke", async ({ browser }
   try {
     await test.step("Owner invites Caretaker", async () => {
       await login(ownerPage, ownerEmail);
-      await ownerPage.goto(`/pets/${petId}`);
-      await ownerPage.getByRole("button", { name: "Quản lý chia sẻ" }).click();
+      await ownerPage.getByRole("button", { name: "Chia sẻ hồ sơ Meo CI" }).click();
       await ownerPage.getByLabel("Email Caretaker").fill(caretakerEmail);
       await ownerPage.getByLabel("Xem đến hết ngày").fill("2099-12-31");
       const response = ownerPage.waitForResponse((r) => r.request().method() === "POST" && r.url().includes("/access"));
@@ -89,7 +88,7 @@ test("Owner invite, Caretaker accept, isolation, and revoke", async ({ browser }
     });
     await test.step("Owner revokes; old link no longer grants access", async () => {
       await ownerPage.reload();
-      await ownerPage.getByRole("button", { name: "Quản lý chia sẻ" }).click();
+      await ownerPage.getByRole("button", { name: "Chia sẻ hồ sơ Meo CI" }).click();
       await expect(ownerPage.getByText(caretakerEmail)).toBeVisible();
       const response = ownerPage.waitForResponse((r) => r.request().method() === "PATCH" && r.url().includes("/revoke"));
       await ownerPage.getByRole("button", { name: "Thu hồi" }).click();

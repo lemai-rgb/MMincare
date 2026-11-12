@@ -1,8 +1,10 @@
 "use client";
 import { AppLink as Link } from "@/lib/appRuntime";
+import { useRef, useState } from "react";
 
 import { AppHeader } from "@/components/layout/AppHeader";
 import { PetAvatar } from "@/components/pets/PetAvatar";
+import { PetAccessManager } from "@/components/pets/PetAccessManager";
 import { PetListCardDecorations, PetListPanelDecorations } from "@/components/pets/PetListDecorations";
 import { getPetGenderLabel, getPetSpeciesLabel, type Pet } from "@/lib/pets";
 import { getPetHealthHref, getPetHealthSummary, type PetListHealthLog } from "@/lib/petHealthSummary";
@@ -30,6 +32,12 @@ function formatUpdatedAt(value: string) {
 }
 
 export function PetListView({ pets, latestHealthLogs, healthLogsError = false }: { pets: Pet[]; latestHealthLogs: Map<string, PetListHealthLog>; healthLogsError?: boolean }) {
+    const [sharing, setSharing] = useState<Pet | null>(null);
+    const dialogRef = useRef<HTMLDialogElement>(null);
+    function openSharing(pet: Pet) {
+      setSharing(pet);
+      dialogRef.current?.showModal();
+    }
     return (
       <main className={`${styles.page} ${styles.populatedPage}`}>
         <AppHeader activeNav="pets" />
@@ -81,9 +89,12 @@ export function PetListView({ pets, latestHealthLogs, healthLogsError = false }:
                     )}
                   </div>
                   <div className={styles.petListActions}>
+                    <div className={styles.petListActionButtons}>
                     <Link className={styles.petListPreviewButton} href={`/pets/${pet.pet_id}`}>
                       Xem hồ sơ →
                     </Link>
+                    <button className={styles.petListShareButton} type="button" onClick={() => openSharing(pet)} aria-label={`Chia sẻ hồ sơ ${pet.name}`}>Chia sẻ</button>
+                    </div>
                     {updatedAt && <p className={styles.petListUpdatedAt}>Cập nhật gần nhất: {updatedAt}</p>}
                   </div>
                 </article>
@@ -91,6 +102,10 @@ export function PetListView({ pets, latestHealthLogs, healthLogsError = false }:
             })}
           </section>
         </section>
+        <dialog ref={dialogRef} className={styles.shareDialog} aria-label="Chia sẻ hồ sơ" onClose={() => setSharing(null)}>
+          <button type="button" className={styles.shareDialogClose} onClick={() => dialogRef.current?.close()} aria-label="Đóng">×</button>
+          {sharing && <PetAccessManager petId={sharing.pet_id} petName={sharing.name} inDialog />}
+        </dialog>
       </main>
     );
 }

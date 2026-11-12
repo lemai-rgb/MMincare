@@ -11,6 +11,18 @@ describe("scoped demo API adapter",() => {
   afterEach(() => vi.unstubAllGlobals());
   function setup() {const store=createDemoStore();store.start();const transport=createDemoTransport(store);return {store,...transport};}
   const post = (body:unknown,method="POST") => ({method,body:JSON.stringify(body)});
+  it("simulates sharing for the selected pet without network requests",async () => {
+    const {request,store}=setup(); const [pet,other]=store.getSnapshot()!.data.pets;
+    const accessUrl=`/api/pets/${pet.pet_id}/access`;
+    expect((await (await request(accessUrl)).json()).access_list[0].caretaker_email).toBe("caregiver@example.com");
+    const created=await (await request(accessUrl,post({caretaker_email:"demo@example.com",valid_until:"2099-12-31"}))).json();
+    expect(created.access.status).toBe("Pending");
+    expect((await (await request(accessUrl)).json()).access_list).toHaveLength(2);
+    expect((await (await request(`/api/pets/${other.pet_id}/access`)).json()).access_list).toHaveLength(0);
+    const revoked=await (await request(`/api/pet-access/${created.access.access_id}/revoke`,{method:"PATCH"})).json();
+    expect(revoked.access.status).toBe("Revoked");
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
   it("returns the real medical, statistics and notification contracts; fails closed for unknown/external routes",async () => {
     const {request,store}=setup();const pet=store.getSnapshot()!.data.pets[0];
     for (const period of ["week","month"] as const) expect(parseHealthDashboardData(await (await request(`/api/pets/${pet.pet_id}/dashboard?period=${period}`)).json(),period)).not.toBeNull();
