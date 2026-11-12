@@ -435,13 +435,22 @@ jobs:
           do $$
           begin
             if exists (
-              select 1 from unnest(array['pet_access_owner_select','pet_access_caretaker_select','pet_access_owner_insert','pet_access_owner_update']) required(name)
+              select 1 from unnest(array['pet_access_owner_select','pet_access_owner_insert','pet_access_owner_update']) required(name)
               where not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'pet_access' and policyname = required.name)
             ) then
               raise exception 'Pet access policies are missing';
             end if;
             if exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'pet_access' and policyname = 'pet_access_caretaker_update') then
               raise exception 'Caretaker must accept through the verified RPC';
+            end if;
+            if exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'pet_access' and policyname = 'pet_access_caretaker_select') then
+              raise exception 'Caretaker cannot read invitation rows directly';
+            end if;
+            if not has_function_privilege('authenticated', 'public.list_pet_invitations()', 'EXECUTE')
+              or has_function_privilege('anon', 'public.list_pet_invitations()', 'EXECUTE')
+              or not has_function_privilege('authenticated', 'public.has_active_caretaker_access()', 'EXECUTE')
+              or has_function_privilege('anon', 'public.has_active_caretaker_access()', 'EXECUTE') then
+              raise exception 'Unexpected invitation RPC privileges';
             end if;
             if exists (select 1 from pg_policies where schemaname = 'public'
               and policyname in ('pets_caretaker_select','vaccine_records_caretaker_select','medical_records_caretaker_select')) then
@@ -545,7 +554,7 @@ jobs:
         run: npm run test:notifications
 
       - name: Run account role menu regression test
-        run: npx vitest run components/layout/AccountRoleMenu.test.tsx
+        run: npx vitest run components/layout/AccountRoleMenu.test.tsx components/pets/SharedPetAccessSection.test.tsx 'app/api/pet-access/[accessId]/accept/route.test.ts' app/api/pet-access/invitations/route.test.ts
 
       - name: Stop local Supabase services
         if: always()

@@ -57,7 +57,7 @@ $$;
 revoke execute on function public.guard_pet_access_update() from public, anon, authenticated;
 
 create or replace function public.accept_pet_access(p_access_id uuid)
-returns public.pet_access
+returns jsonb
 language plpgsql
 security definer
 set search_path = ''
@@ -66,7 +66,7 @@ declare
   actor_id uuid := (select auth.uid());
   actor_email text;
   confirmed_at timestamptz;
-  accepted public.pet_access;
+  accepted_id uuid;
 begin
   if actor_id is null then
     raise exception 'Authentication required';
@@ -90,12 +90,12 @@ begin
     and caretaker_email = actor_email
     and status = 'Pending'
     and valid_until >= ((now() at time zone 'Asia/Ho_Chi_Minh')::date)
-  returning * into accepted;
+  returning access_id into accepted_id;
 
-  if accepted.access_id is null then
+  if accepted_id is null then
     raise exception 'Invitation is unavailable';
   end if;
-  return accepted;
+  return jsonb_build_object('access_id', accepted_id, 'status', 'Active');
 end;
 $$;
 
@@ -119,14 +119,48 @@ for select to authenticated
 using (granted_by = (select auth.uid()));
 
 drop policy if exists pet_access_caretaker_select on public.pet_access;
-create policy pet_access_caretaker_select
-on public.pet_access
-for select to authenticated
-using (
-  caretaker_email = lower(btrim(coalesce((select auth.jwt() ->> 'email'), '')))
-  and status in ('Pending', 'Active')
-  and valid_until >= ((now() at time zone 'Asia/Ho_Chi_Minh')::date)
-);
+
+-- Return only the invitation fields a confirmed recipient needs.
+create or replace function public.list_pet_invitations()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'access_id', a.access_id,
+    'inviter_name', coalesce(nullif(btrim(u.name), ''), 'Chủ thú cưng'),
+    'pet_name_snapshot', a.pet_name_snapshot,
+    'valid_until', a.valid_until
+  ) order by a.valid_until, a.access_id), '[]'::jsonb)
+  from auth.users recipient
+  join public.pet_access a on a.caretaker_email = lower(btrim(recipient.email))
+  left join public.users u on u.user_id = a.granted_by
+  where recipient.id = (select auth.uid())
+    and recipient.email_confirmed_at is not null
+    and a.status = 'Pending'
+    and a.valid_until >= ((now() at time zone 'Asia/Ho_Chi_Minh')::date);
+$$;
+revoke execute on function public.list_pet_invitations() from public, anon;
+grant execute on function public.list_pet_invitations() to authenticated;
+
+create or replace function public.has_active_caretaker_access()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.pet_access a
+    where a.caretaker_id = (select auth.uid())
+      and a.status = 'Active'
+      and a.valid_until >= ((now() at time zone 'Asia/Ho_Chi_Minh')::date)
+  );
+$$;
+revoke execute on function public.has_active_caretaker_access() from public, anon;
+grant execute on function public.has_active_caretaker_access() to authenticated;
 
 drop policy if exists pet_access_owner_insert on public.pet_access;
 create policy pet_access_owner_insert

@@ -19,7 +19,9 @@ export async function POST(_request: Request, { params }: RouteContext) {
       : "Lời mời không còn hiệu lực hoặc không dành cho tài khoản này.";
     return NextResponse.json({ error: message }, { status: 409 });
   }
-  if (!data) return NextResponse.json({ error: "Lời mời không còn hiệu lực hoặc không dành cho tài khoản này." }, { status: 409 });
-  return NextResponse.json({ access: data });
+  if (!data || typeof data !== "object" || data.access_id !== accessId || data.status !== "Active") {
+    return NextResponse.json({ error: "Lời mời không còn hiệu lực hoặc không dành cho tài khoản này." }, { status: 409 });
+  }
+  return NextResponse.json({ access: { access_id: data.access_id, status: "Active" } });
 }
 
