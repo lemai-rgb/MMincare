@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "supabase/migrations/**"
+      - "supabase/ci-production-pet-access-shape.sql"
       - "supabase/config.toml"
       - "database/schema.sql"
       - ".github/workflows/supabase-migration-replay.yml"
@@ -591,6 +592,31 @@ jobs:
             sleep 1
           done
           test "$ready" = true
+          LOCAL_TEST_SERVICE_ROLE_KEY="$local_service" npx playwright test e2e/phase21-sharing.spec.ts
+
+          # Replay a second time with the observed production legacy shape.
+          # This migration exists only in the ephemeral runner, not the repo.
+          cp supabase/ci-production-pet-access-shape.sql supabase/migrations/20261111195815_ci_production_pet_access_shape.sql
+          supabase db reset --local --no-seed
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 <<'SQL'
+          do $$ begin
+            if not exists (
+              select 1 from public.pet_access
+              where access_id = '00000000-0000-0000-0000-0000000000e4'
+                and caretaker_id = '00000000-0000-0000-0000-0000000000e2'
+                and status = 'Pending'
+                and caretaker_email = 'legacy-caretaker@example.test'
+                and pet_name_snapshot = 'Legacy Pet'
+            ) then raise exception 'Legacy pet_access row not preserved and aligned'; end if;
+            if (select count(*) from public.pet_access
+                where access_id in ('00000000-0000-0000-0000-0000000000e7', '00000000-0000-0000-0000-0000000000e8')
+                  and ((status = 'Active' and caretaker_email = 'legacy-active@example.test')
+                    or (status = 'Revoked' and caretaker_email = 'legacy-revoked@example.test'))) <> 2 then
+              raise exception 'Legacy active or revoked rows not preserved';
+            end if;
+          end $$;
+          SQL
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 -f supabase/tests/phase21_sharing.sql
           LOCAL_TEST_SERVICE_ROLE_KEY="$local_service" npx playwright test e2e/phase21-sharing.spec.ts
 
       - name: Stop local Supabase services

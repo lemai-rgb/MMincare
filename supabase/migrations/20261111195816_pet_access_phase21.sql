@@ -3,8 +3,55 @@ begin;
 -- Phase 2.1: per-pet, read-only Caretaker access. Existing migrations remain
 -- unchanged; this migration only adds forward policies and least-privilege
 -- grants for the invitation flow.
+-- Production's legacy enum used PendingInvitation, while the clean baseline
+-- already uses Pending. Rename in place to preserve existing row values.
+do $$
+declare
+  has_pending boolean;
+  has_legacy_pending boolean;
+begin
+  select exists (select 1 from pg_enum where enumtypid = 'public.pet_access_status'::regtype and enumlabel = 'Pending'),
+         exists (select 1 from pg_enum where enumtypid = 'public.pet_access_status'::regtype and enumlabel = 'PendingInvitation')
+  into has_pending, has_legacy_pending;
+  if has_pending and has_legacy_pending then
+    raise exception 'Ambiguous pet_access_status: both pending labels exist';
+  elsif has_legacy_pending then
+    alter type public.pet_access_status rename value 'PendingInvitation' to 'Pending';
+  elsif not has_pending then
+    raise exception 'Unexpected pet_access_status: no pending label';
+  end if;
+end $$;
+
+-- Legacy production linked an invitation to an existing user instead of an
+-- email. Preserve that identity, deriving the email only for existing rows.
+alter table public.pet_access
+  add column if not exists caretaker_email text,
+  add column if not exists activated_at timestamptz,
+  add column if not exists revoked_at timestamptz;
+alter table public.pet_access alter column caretaker_id drop not null;
+update public.pet_access a
+set caretaker_email = lower(btrim(u.email))
+from public.users u
+where a.caretaker_email is null and a.caretaker_id = u.user_id;
+
+do $$ begin
+  if exists (
+    select 1 from public.pet_access
+    where caretaker_email is null or caretaker_email <> lower(btrim(caretaker_email))
+      or caretaker_email !~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$'
+  ) then
+    raise exception 'Cannot safely align legacy pet_access: invalid or missing caretaker email';
+  end if;
+end $$;
+alter table public.pet_access alter column caretaker_email set not null;
+
 alter table public.pet_access
   add column if not exists pet_name_snapshot text;
+
+update public.pet_access a
+set pet_name_snapshot = p.name
+from public.pets p
+where a.pet_id = p.pet_id and a.pet_name_snapshot is null;
 
 alter table public.pet_access
   drop constraint if exists pet_access_pet_name_snapshot_check;
