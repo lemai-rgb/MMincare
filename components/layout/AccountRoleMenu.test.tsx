@@ -31,7 +31,7 @@ describe("AccountRoleMenu", () => {
     fireEvent.click(button);
     fireEvent.click(button);
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-    expect(await screen.findAllByText("Chưa có vai trò")).toHaveLength(2);
+    expect(await screen.findAllByText("Chưa có vai trò")).toHaveLength(1);
     expect(screen.getAllByText("Chưa thiết lập").length).toBeGreaterThan(0);
   });
 });
