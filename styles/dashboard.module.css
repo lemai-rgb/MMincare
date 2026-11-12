@@ -654,7 +654,7 @@
   isolation: isolate;
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr) minmax(180px, 210px);
+  grid-template-columns: 180px minmax(0, 1fr) minmax(280px, 300px);
   column-gap: 40px;
   align-items: center;
   min-height: 177px;
@@ -777,15 +777,15 @@
   justify-items: center;
 }
 
-.petListActionButtons { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; }
+.petListActionButtons { display: flex; flex-wrap: nowrap; justify-content: center; align-items: center; gap: 10px; }
 .petListShareButton {
-  min-height: 44px; padding: 10px 20px; border: 1px solid #769276;
+  min-height: 52px; padding: 10px 20px; border: 1px solid #769276;
   border-radius: 18px; background: #fdfaf4; color: #496c4d;
   font: inherit; font-weight: 600; cursor: pointer;
 }
 .petListShareButton:hover { background: #f2f6ed; }
 .petListShareButton:focus-visible, .shareDialogClose:focus-visible { outline: 2px solid #496c4d; outline-offset: 3px; }
-.shareDialog { position: fixed; width: min(760px, calc(100% - 32px)); max-height: min(85vh, 800px); padding: 24px; border: 1px solid #d9e5d7; border-radius: 20px; background: #fffefa; box-shadow: 0 18px 55px rgb(35 58 38 / 22%); overflow-y: auto; }
+.shareDialog { position: fixed; inset: 0; margin: auto; box-sizing: border-box; width: min(760px, calc(100% - 32px)); max-height: min(85dvh, 800px); padding: 24px; border: 1px solid #d9e5d7; border-radius: 20px; background: #fffefa; box-shadow: 0 18px 55px rgb(35 58 38 / 22%); overflow-y: auto; }
 .shareDialog::backdrop { background: rgb(25 39 28 / 46%); }
 .shareDialogClose { display: block; margin-left: auto; border: 0; background: transparent; color: #496c4d; font-size: 28px; line-height: 1; cursor: pointer; }
 
@@ -1016,7 +1016,7 @@
   }
 
   .petListCard {
-    grid-template-columns: 150px minmax(0, 1fr) 150px;
+    grid-template-columns: 150px minmax(0, 1fr) 260px;
     column-gap: 32px;
     min-height: 154px;
     padding: 18px 48px;
@@ -1185,7 +1185,8 @@
   .primaryNav { display: none; }
   .populatedBrand { font-size: 28px; }
   .petListShell { width: calc(100% - 32px); min-height: calc(100dvh - 100px); padding: 18px 28px 56px; }
-  .petListCard { grid-template-columns: 130px minmax(0, 1fr) 145px; column-gap: 24px; min-height: 156px; padding: 20px 24px; }
+  .petListCard { grid-template-columns: 130px minmax(0, 1fr); column-gap: 24px; min-height: 156px; padding: 20px 24px; }
+  .petListActions { grid-column: 1 / -1; justify-items: start; }
   .petListAvatar { width: 100%; height: auto; }
   .petListDetails h2 { font-size: 24px; }
   .petListMetadata, .petListHealthStatus { font-size: 17px; }
@@ -1199,6 +1200,8 @@
 }
 
 @media (max-width: 640px) {
+  .petListActionButtons { flex-wrap: wrap; justify-content: flex-start; }
+  .petListShareButton { min-height: 40px; }
   .page { padding: 10px; }
   .petShell { min-height: calc(100dvh - 20px); padding: 22px 18px; border-radius: 24px; }
   .petHeader { align-items: flex-start; }
