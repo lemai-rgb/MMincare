@@ -51,6 +51,7 @@ async function fileData(file: File) {
 export function createDemoTransport(store: Store) {
   type DemoAccess = { access_id: string; pet_id: string; caretaker_email: string; valid_until: string; status: "Pending" | "Active" | "Revoked" };
   const demoAccess: DemoAccess[] = [];
+  let sharingSeeded = false;
   const creationKeys = new Map<string, { id: string; payload: string }>();
   const attachmentBlobs = new Map<string, string>();
   const aborted = (signal?: AbortSignal | null) => { if (signal?.aborted) throw new DOMException("Aborted", "AbortError"); };
@@ -64,6 +65,11 @@ export function createDemoTransport(store: Store) {
     const method = init.method ?? "GET";
     const state = store.getSnapshot()?.data;
     if (!state) return invalid("Dữ liệu trải nghiệm chưa sẵn sàng.",503);
+    if (!sharingSeeded) {
+      sharingSeeded = true;
+      const firstPet = state.pets[0];
+      if (firstPet) demoAccess.push({ access_id: "00000000-0000-4000-8000-000000000901", pet_id: firstPet.pet_id, caretaker_email: "caregiver@example.com", valid_until: "2099-12-31", status: "Active" });
+    }
     const stamp = new Date().toISOString();
     const today = getVietnamToday();
     let body: Record<string, unknown> = {};
