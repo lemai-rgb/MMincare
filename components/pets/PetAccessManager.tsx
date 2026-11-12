@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRuntimeRequest } from "@/lib/appRuntime";
+import { useAppRuntime, useRuntimeRequest } from "@/lib/appRuntime";
 
 import styles from "@/styles/petDetail.module.css";
 
@@ -20,6 +20,7 @@ function formatDate(value: string) {
 
 export function PetAccessManager({ petId, petName, inDialog = false }: { petId: string; petName: string; inDialog?: boolean }) {
   const request = useRuntimeRequest();
+  const isDemo = useAppRuntime() !== null;
   const [isOpen, setIsOpen] = useState(inDialog);
   const [email, setEmail] = useState("");
   const [validUntil, setValidUntil] = useState("");
@@ -66,7 +67,7 @@ export function PetAccessManager({ petId, petName, inDialog = false }: { petId: 
       setRows((current) => [payload.access as AccessRow, ...current]);
       setEmail("");
       setValidUntil("");
-      setNotice("Đã gửi lời mời chia sẻ. Người nhận cần đăng nhập bằng đúng email để chấp nhận.");
+      setNotice(isDemo ? "Đã tạo lời mời mẫu. Demo không gửi email và không cấp quyền thật." : "Đã gửi lời mời chia sẻ. Người nhận cần đăng nhập bằng đúng email để chấp nhận.");
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Không thể gửi lời mời.");
     } finally {
@@ -97,6 +98,7 @@ export function PetAccessManager({ petId, petName, inDialog = false }: { petId: 
         <div>
           <h2 id="pet-access-title">Chia sẻ hồ sơ</h2>
           <p>Chia sẻ <strong>{petName}</strong> ở chế độ chỉ xem.</p>
+          {isDemo && <p>Trải nghiệm demo: lời mời chỉ lưu tạm trong phiên này, không gửi email.</p>}
         </div>
         {!inDialog && <button className={styles.petAccessToggle} onClick={() => setIsOpen((current) => !current)} type="button" aria-expanded={isOpen}>
           {isOpen ? "Đóng" : "Quản lý chia sẻ"}
