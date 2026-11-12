@@ -10,13 +10,20 @@ vi.mock("next/link",() => ({default:({children,href,prefetch,...props}:AnchorHTM
 
 describe("demo uses real application views without production requests",() => {
   beforeEach(() => {
-    sessionStorage.clear();window.history.replaceState(null,"","/demo");
+    sessionStorage.clear();window.history.replaceState(null,"","/demo?screen=%2Fdashboard");
     vi.stubGlobal("fetch",vi.fn(() => {throw new Error("Must not call a production API");}));
     vi.spyOn(window,"confirm").mockReturnValue(true);
     HTMLElement.prototype.scrollIntoView = vi.fn();
   });
   afterEach(() => {vi.useRealTimers();vi.unstubAllGlobals();vi.restoreAllMocks();});
   const state = () => JSON.parse(sessionStorage.getItem(DEMO_STORAGE_KEY)!);
+  it.each(["Đăng nhập", "Tạo hồ sơ cho bé mèo", "Tạo hồ sơ cho bé chó"])("opens sample pets from demo landing: %s", async (label) => {
+    window.history.replaceState(null, "", "/demo");
+    render(<PortfolioDemo />);
+    fireEvent.click(await screen.findByRole("link", { name: label }));
+    expect(await screen.findByRole("heading", { name: "Thú cưng của bạn" })).toBeTruthy();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
   it.each([
     {name:"Meo", counts:[4,1,0,0,1,2], details:["Sốt", "Tránh ánh sáng"], absent:["Rụng lông"]},
     {name:"Min", counts:[4,0,1,1,0,2], details:["Rụng lông"], absent:["Sốt", "Tránh ánh sáng"]},
