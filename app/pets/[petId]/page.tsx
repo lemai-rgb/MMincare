@@ -6,6 +6,7 @@ import { type PetOverviewReminder } from "@/components/pets/PetOverview";
 import { isHealthDashboardPeriod, type HealthDashboardPeriod } from "@/lib/healthLogs/dashboard";
 import { getTodayInVietnam } from "@/lib/petAccess";
 import { createClient } from "@/lib/supabase/server";
+import { readSharedPets } from "@/lib/sharedPets";
 import { createServerTiming } from "@/lib/performance/serverTiming";
 
 export const dynamic = "force-dynamic";
@@ -101,13 +102,33 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
     .maybeSingle());
 
   // Do not disclose whether a missing row belongs to another owner.
-  if (petError || !petRow) {
+  if (petError) {
     timing.finish("error");
     redirect("/dashboard");
   }
+  if (!petRow) {
+    let shared;
+    try { [shared] = await readSharedPets(supabase, petId); }
+    catch { timing.finish("error"); redirect("/dashboard"); }
+    if (!shared) { timing.finish("error"); redirect("/dashboard"); }
+    if (requestedTab === "reminders" || requestedTab === "health") {
+      redirect(`/pets/${encodeURIComponent(petId)}?tab=medical`);
+    }
+    const sharedPet = {
+      pet_id: shared.pet_id, name: shared.name, species: shared.species,
+      gender: shared.gender, breed: shared.breed, date_of_birth: shared.date_of_birth,
+    };
+    timing.finish("ok");
+    return <PetDetailView pet={sharedPet} activeTab={requestedTab} healthView="history"
+      healthPeriod={healthPeriod} isHealthSubpage={false} healthHistoryHref=""
+      profileSummaryError={false} profileRecordCount={shared.records.length}
+      upcomingReminder={null} reminderLoadError={false} currentUserId={claimsData.claims.sub}
+      isOwner={false} />;
+  }
 
   const isOwner = petRow.owner_id === claimsData.claims.sub;
-  const pet = { ...(petRow as Pet), picture_url: isOwner ? petRow.picture_url : null } as Pet;
+  if (!isOwner) { timing.finish("error"); redirect("/dashboard"); }
+  const pet = petRow as Pet;
   if (!isOwner && (requestedTab === "reminders" || requestedTab === "health")) {
     redirect(`/pets/${encodeURIComponent(petId)}?tab=medical`);
   }

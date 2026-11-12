@@ -11,6 +11,7 @@ import { PetHealthHistory } from "@/components/pets/PetHealthHistory";
 import { PetAccessManager } from "@/components/pets/PetAccessManager";
 import { type HealthDashboardPeriod } from "@/lib/healthLogs/dashboard";
 import { getPetGenderLabel, getPetSpeciesLabel, type Pet } from "@/lib/pets";
+import type { SharedPet } from "@/lib/sharedPets";
 import styles from "@/styles/petDetail.module.css";
 
 type PetDetailTab = "overview" | "medical" | "reminders" | "health";
@@ -54,7 +55,7 @@ function getPetAgeLabel(dateOfBirth: string | null) {
 }
 
 export type PetDetailViewProps = {
-  pet: Pet; activeTab: PetDetailTab; form?: string; healthView: "history" | "statistics";
+  pet: Pet | Pick<SharedPet, "pet_id" | "name" | "species" | "gender" | "breed" | "date_of_birth">; activeTab: PetDetailTab; form?: string; healthView: "history" | "statistics";
   healthPeriod: HealthDashboardPeriod; isHealthSubpage: boolean; healthHistoryHref: string;
   profileSummaryError: boolean; profileRecordCount: number | null;
   latestHealthUpdate?: string; upcomingReminder: PetOverviewReminder | null;
@@ -88,7 +89,7 @@ export function PetDetailView({ pet, activeTab, form, healthView, healthPeriod, 
 
           <section className={styles.profileCard} aria-label={`Hồ sơ của ${pet.name}`}>
             <div className={styles.avatarWrap}>
-              <PetAvatar className={styles.avatar} petId={pet.pet_id} species={pet.species} pictureUrl={pet.picture_url} />
+              <PetAvatar className={styles.avatar} petId={pet.pet_id} species={pet.species} pictureUrl={"picture_url" in pet ? pet.picture_url : null} />
             </div>
 
             <div className={styles.profileDetails}>

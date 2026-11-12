@@ -443,8 +443,13 @@ jobs:
             if exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'pet_access' and policyname = 'pet_access_caretaker_update') then
               raise exception 'Caretaker must accept through the verified RPC';
             end if;
-            if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'pets' and policyname = 'pets_caretaker_select') then
-              raise exception 'Caretaker pet policy is missing';
+            if exists (select 1 from pg_policies where schemaname = 'public'
+              and policyname in ('pets_caretaker_select','vaccine_records_caretaker_select','medical_records_caretaker_select')) then
+              raise exception 'Caretaker must not read Owner rows from base tables';
+            end if;
+            if not has_function_privilege('authenticated', 'public.read_shared_pets(uuid)', 'EXECUTE')
+              or has_function_privilege('anon', 'public.read_shared_pets(uuid)', 'EXECUTE') then
+              raise exception 'Unexpected shared projection RPC privileges';
             end if;
             if not has_table_privilege('authenticated', 'public.pet_access', 'SELECT') or not has_table_privilege('authenticated', 'public.pet_access', 'INSERT') then
               raise exception 'authenticated pet_access grants are missing';
@@ -466,6 +471,11 @@ jobs:
             end if;
           end $$;
           SQL
+
+      - name: Verify Phase 2.1 sharing isolation
+        env:
+          LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: psql "$LOCAL_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f supabase/tests/phase21_sharing.sql
 
       - name: Verify notification database behavior
         shell: bash
@@ -533,6 +543,9 @@ jobs:
 
       - name: Run notification selector regression test
         run: npm run test:notifications
+
+      - name: Run account role menu regression test
+        run: npx vitest run components/layout/AccountRoleMenu.test.tsx
 
       - name: Stop local Supabase services
         if: always()

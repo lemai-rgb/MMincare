@@ -162,40 +162,52 @@ with check (
 drop policy if exists pet_access_caretaker_update on public.pet_access;
 
 drop policy if exists pets_caretaker_select on public.pets;
-create policy pets_caretaker_select
-on public.pets
-for select to authenticated
-using (exists (
-  select 1 from public.pet_access
-  where pet_access.pet_id = pets.pet_id
-    and pet_access.caretaker_id = (select auth.uid())
-    and pet_access.status = 'Active'
-    and pet_access.valid_until >= ((now() at time zone 'Asia/Ho_Chi_Minh')::date)
-));
-
 drop policy if exists vaccine_records_caretaker_select on public.vaccine_records;
-create policy vaccine_records_caretaker_select
-on public.vaccine_records
-for select to authenticated
-using (exists (
-  select 1 from public.pet_access
-  where pet_access.pet_id = vaccine_records.pet_id
-    and pet_access.caretaker_id = (select auth.uid())
-    and pet_access.status = 'Active'
-    and pet_access.valid_until >= ((now() at time zone 'Asia/Ho_Chi_Minh')::date)
-));
-
 drop policy if exists medical_records_caretaker_select on public.medical_records;
-create policy medical_records_caretaker_select
-on public.medical_records
-for select to authenticated
-using (exists (
-  select 1 from public.pet_access
-  where pet_access.pet_id = medical_records.pet_id
-    and pet_access.caretaker_id = (select auth.uid())
-    and pet_access.status = 'Active'
-    and pet_access.valid_until >= ((now() at time zone 'Asia/Ho_Chi_Minh')::date)
-));
+
+-- This bounded projection is the only Caretaker read path into Owner rows.
+-- It checks auth.uid() and active access on every invocation, including RPC
+-- calls made directly through the Data API.
+create or replace function public.read_shared_pets(p_pet_id uuid default null)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'pet_id', p.pet_id, 'name', p.name, 'species', p.species,
+    'gender', p.gender, 'breed', p.breed, 'date_of_birth', p.date_of_birth,
+    'valid_until', a.valid_until,
+    'records', (
+      select coalesce(jsonb_agg(r.entry order by r.event_date desc, r.id desc), '[]'::jsonb)
+      from (
+        select v.vaccine_date as event_date, v.vaccine_record_id as id,
+          jsonb_build_object('id', v.vaccine_record_id, 'type', 'vaccine',
+            'eventDate', v.vaccine_date, 'title', v.vaccine_name,
+            'description', concat_ws(' • ', case when v.dose_number is not null then 'Mũi số ' || v.dose_number end, v.note),
+            'clinicName', v.clinic_name, 'doseNumber', v.dose_number) as entry
+        from public.vaccine_records v where v.pet_id = p.pet_id
+        union all
+        select m.visit_date, m.record_id,
+          jsonb_build_object('id', m.record_id, 'type', 'medical',
+            'eventDate', m.visit_date, 'title', coalesce(nullif(m.diagnosis, ''), 'Lần khám bệnh'),
+            'description', concat_ws(' • ', m.symptoms, m.medication, m.note),
+            'clinicName', m.clinic_name, 'doseNumber', null)
+        from public.medical_records m where m.pet_id = p.pet_id
+      ) r
+    )
+  ) order by p.created_at desc), '[]'::jsonb)
+  from public.pet_access a
+  join public.pets p on p.pet_id = a.pet_id
+  where (select auth.uid()) is not null
+    and a.caretaker_id = (select auth.uid())
+    and a.status = 'Active'
+    and a.valid_until >= ((now() at time zone 'Asia/Ho_Chi_Minh')::date)
+    and (p_pet_id is null or p.pet_id = p_pet_id);
+$$;
+revoke execute on function public.read_shared_pets(uuid) from public, anon;
+grant execute on function public.read_shared_pets(uuid) to authenticated;
 
 revoke all on table public.pet_access from public, anon;
 revoke insert, update, delete, truncate, references, trigger on table public.pet_access from anon;

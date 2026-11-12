@@ -26,7 +26,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     .eq("pet_id", petId)
     .maybeSingle();
 
-  if (petError || !pet) return jsonError("Không tìm thấy thú cưng.", 404);
+  if (petError || !pet || pet.owner_id !== userId) return jsonError("Không tìm thấy thú cưng.", 404);
 
   const [vaccinesResult, medicalResult] = await Promise.all([
     supabase

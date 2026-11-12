@@ -78,7 +78,7 @@ export function AccountRoleMenu({ active }: { active: boolean }) {
       {open && (
         <div className={styles.accountRolePopover} role="menu">
           <div className={styles.accountRoleOptions}>
-            {roleOptions.length > 0 ? roleOptions.map((role) => (
+            {payload && !payload.error && (roleOptions.length > 0 ? roleOptions.map((role) => (
               <button
                 aria-checked={selectedRole === role}
                 className={selectedRole === role ? styles.accountRoleOptionActive : styles.accountRoleOption}
@@ -89,7 +89,7 @@ export function AccountRoleMenu({ active }: { active: boolean }) {
               >
                 {roleLabel(role)}
               </button>
-            )) : <p className={styles.accountNoRole}>Chưa có vai trò</p>}
+            )) : <p className={styles.accountNoRole}>Chưa có vai trò</p>)}
           </div>
           <section aria-live="polite" className={styles.accountRolePanel}>
             {payload?.error ? <p role="alert">{payload.error}</p> : payload === null ? <p role="status">Đang tải thông tin tài khoản…</p> : (

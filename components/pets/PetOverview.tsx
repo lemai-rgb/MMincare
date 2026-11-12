@@ -54,7 +54,7 @@ export function PetOverview({ nextReminder, petId, readOnly = false, reminderLoa
 
   useEffect(() => {
     const controller = new AbortController();
-    request(`/api/pets/${encodeURIComponent(petId)}/medical-history`, {
+    request(`/api/${readOnly ? "shared-pets" : "pets"}/${encodeURIComponent(petId)}/medical-history`, {
       cache: "no-store",
       signal: controller.signal,
     })
@@ -79,7 +79,7 @@ export function PetOverview({ nextReminder, petId, readOnly = false, reminderLoa
         }
       });
     return () => controller.abort();
-  }, [petId, request]);
+  }, [petId, readOnly, request]);
 
   const vaccineEntries = useMemo(() => entries.filter((entry) => entry.type === "vaccine"), [entries]);
   const latestVaccine = vaccineEntries[0];
@@ -114,8 +114,8 @@ export function PetOverview({ nextReminder, petId, readOnly = false, reminderLoa
     <>
       <section className={styles.summaryGrid} aria-label="Tổng quan chăm sóc">
         <SummaryCard title="Mũi tiêm gần nhất" value={latestVaccine ? `${latestVaccine.title}: ${formatDate(latestVaccine.eventDate)}` : "Chưa có dữ liệu"} />
-        <SummaryCard title="Nhắc hẹn sắp tới" value={nextReminderValue} />
-        <SummaryCard title="Lần khám gần nhất" {...latestMedicalCard} />
+        {!readOnly && <SummaryCard title="Nhắc hẹn sắp tới" value={nextReminderValue} />}
+        <SummaryCard title="Lần khám gần nhất" {...(readOnly && !latestMedicalValue ? { value: "Chưa có dữ liệu" } : latestMedicalCard)} />
       </section>
 
       <section className={styles.overviewGrid} aria-label="Hoạt động và thao tác nhanh">
