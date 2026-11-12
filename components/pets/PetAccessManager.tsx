@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRuntimeRequest } from "@/lib/appRuntime";
 
 import styles from "@/styles/petDetail.module.css";
 
@@ -17,8 +18,9 @@ function formatDate(value: string) {
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Asia/Ho_Chi_Minh" }).format(date);
 }
 
-export function PetAccessManager({ petId, petName }: { petId: string; petName: string }) {
-  const [isOpen, setIsOpen] = useState(false);
+export function PetAccessManager({ petId, petName, inDialog = false }: { petId: string; petName: string; inDialog?: boolean }) {
+  const request = useRuntimeRequest();
+  const [isOpen, setIsOpen] = useState(inDialog);
   const [email, setEmail] = useState("");
   const [validUntil, setValidUntil] = useState("");
   const [rows, setRows] = useState<AccessRow[]>([]);
@@ -31,7 +33,7 @@ export function PetAccessManager({ petId, petName }: { petId: string; petName: s
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/pets/${encodeURIComponent(petId)}/access`, { cache: "no-store" });
+      const response = await request(`/api/pets/${encodeURIComponent(petId)}/access`, { cache: "no-store" });
       const payload = await response.json() as { access_list?: AccessRow[]; error?: string };
       if (!response.ok || !Array.isArray(payload.access_list)) throw new Error(payload.error || "Không thể tải danh sách chia sẻ.");
       setRows(payload.access_list);
@@ -40,7 +42,7 @@ export function PetAccessManager({ petId, petName }: { petId: string; petName: s
     } finally {
       setIsLoading(false);
     }
-  }, [petId]);
+  }, [petId, request]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -54,7 +56,7 @@ export function PetAccessManager({ petId, petName }: { petId: string; petName: s
     setError(null);
     setNotice(null);
     try {
-      const response = await fetch(`/api/pets/${encodeURIComponent(petId)}/access`, {
+      const response = await request(`/api/pets/${encodeURIComponent(petId)}/access`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ caretaker_email: email, valid_until: validUntil }),
@@ -77,7 +79,7 @@ export function PetAccessManager({ petId, petName }: { petId: string; petName: s
     setIsSubmitting(true);
     setError(null);
     try {
-      const response = await fetch(`/api/pet-access/${encodeURIComponent(accessId)}/revoke`, { method: "PATCH" });
+      const response = await request(`/api/pet-access/${encodeURIComponent(accessId)}/revoke`, { method: "PATCH" });
       const payload = await response.json() as { access?: AccessRow; error?: string };
       if (!response.ok || !payload.access) throw new Error(payload.error || "Không thể thu hồi quyền.");
       setRows((current) => current.map((row) => row.access_id === accessId ? { ...row, ...payload.access } : row));
@@ -96,9 +98,9 @@ export function PetAccessManager({ petId, petName }: { petId: string; petName: s
           <h2 id="pet-access-title">Chia sẻ hồ sơ</h2>
           <p>Chia sẻ <strong>{petName}</strong> ở chế độ chỉ xem.</p>
         </div>
-        <button className={styles.petAccessToggle} onClick={() => setIsOpen((current) => !current)} type="button" aria-expanded={isOpen}>
+        {!inDialog && <button className={styles.petAccessToggle} onClick={() => setIsOpen((current) => !current)} type="button" aria-expanded={isOpen}>
           {isOpen ? "Đóng" : "Quản lý chia sẻ"}
-        </button>
+        </button>}
       </div>
       {isOpen && (
         <div className={styles.petAccessBody}>
