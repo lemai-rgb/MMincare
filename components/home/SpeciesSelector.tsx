@@ -1,7 +1,7 @@
 import { SpeciesCard } from "./SpeciesCard";
 import styles from "@/styles/home.module.css";
 
-export function SpeciesSelector() {
+export function SpeciesSelector({ demoEnter }: { demoEnter?: () => void }) {
   return (
     <div className={styles.speciesSelector}>
       <SpeciesCard
@@ -9,6 +9,7 @@ export function SpeciesSelector() {
         label="Dành cho bé Mèo"
         imageSrc="/images/pets/cat-avatar.png"
         ariaLabel="Tạo hồ sơ cho bé mèo"
+        demoEnter={demoEnter}
       />
 
       <span className={styles.orDivider} aria-hidden="true">
@@ -20,6 +21,7 @@ export function SpeciesSelector() {
         label="Dành cho bé Chó"
         imageSrc="/images/pets/dog-avatar.png"
         ariaLabel="Tạo hồ sơ cho bé chó"
+        demoEnter={demoEnter}
       />
     </div>
   );

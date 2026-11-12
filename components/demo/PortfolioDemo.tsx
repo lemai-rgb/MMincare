@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { AppRuntimeContext, type AppRuntime } from "@/lib/appRuntime";
+import { HomeContent } from "@/components/home/HomeContent";
 import { PetListView } from "@/components/pets/PetListView";
 import { PetDetailView, type PetDetailViewProps } from "@/components/pets/PetDetailView";
 import { CreatePetForm } from "@/components/pets/CreatePetForm";
@@ -15,10 +16,10 @@ import styles from "@/styles/demo.module.css";
 const emptySnapshot = () => null;
 const demoHref = (href: string) => `/demo?screen=${encodeURIComponent(href)}`;
 function readScreen() {
-  const value = new URLSearchParams(window.location.search).get("screen") ?? "/dashboard";
+  const value = new URLSearchParams(window.location.search).get("screen") ?? "/";
   try {
     const route = new URL(value,"https://demo.invalid");
-    return route.origin === "https://demo.invalid" && /^\/(?:dashboard|reminders|pets(?:\/[^/]+(?:\/edit)?)?)$/.test(route.pathname) ? value : "/dashboard";
+    return route.origin === "https://demo.invalid" && (route.pathname === "/" || /^\/(?:dashboard|reminders|pets(?:\/[^/]+(?:\/edit)?)?)$/.test(route.pathname)) ? value : "/dashboard";
   } catch { return "/dashboard"; }
 }
 
@@ -26,7 +27,7 @@ export function PortfolioDemo() {
   const [store] = useState(createDemoStore);
   const [transport] = useState(() => createDemoTransport(store));
   const snapshot = useSyncExternalStore(store.subscribe,store.getSnapshot,emptySnapshot);
-  const [screen,setScreen] = useState("/dashboard");
+  const [screen,setScreen] = useState("/");
   const [resetVersion,setResetVersion] = useState(0);
   useEffect(() => {
     store.start();
@@ -43,7 +44,7 @@ export function PortfolioDemo() {
     reset:() => {
       if (!window.confirm("Khôi phục dữ liệu mẫu? Các thay đổi trong trải nghiệm thử sẽ bị xóa.")) return;
       transport.cleanup(); store.reset(); setScreen("/dashboard"); setResetVersion((v) => v+1);
-      window.history.replaceState(null,"","/demo");
+      window.history.replaceState(null,"",demoHref("/dashboard"));
     },
     navigate:(href,replace = false) => {
       if (href === "/") return;
@@ -59,7 +60,8 @@ export function PortfolioDemo() {
   const pet = state.pets.find((p) => p.pet_id === parts[1]);
   const query = route.searchParams;
   let content;
-  if (route.pathname === "/reminders") content = <ReminderPage highlightedReminderId={query.get("highlight") ?? undefined} />;
+  if (route.pathname === "/") content = <HomeContent demoEnter={() => runtime.navigate("/dashboard")} />;
+  else if (route.pathname === "/reminders") content = <ReminderPage highlightedReminderId={query.get("highlight") ?? undefined} />;
   else if (route.pathname === "/pets/new") content = <CreatePetForm key="new" initialSpecies={query.get("species") === "cat" ? "Cat" : query.get("species") === "dog" ? "Dog" : undefined} />;
   else if (pet && parts[2] === "edit") content = <CreatePetForm key={pet.pet_id} mode="edit" petId={pet.pet_id} initialPet={pet} />;
   else if (pet) {

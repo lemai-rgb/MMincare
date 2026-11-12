@@ -8,6 +8,7 @@ type SpeciesCardProps = {
   label: string;
   imageSrc: string;
   ariaLabel: string;
+  demoEnter?: () => void;
 };
 
 export function SpeciesCard({
@@ -15,11 +16,13 @@ export function SpeciesCard({
   label,
   imageSrc,
   ariaLabel,
+  demoEnter,
 }: SpeciesCardProps) {
   return (
     <Link
       className={`${styles.speciesCard} ${styles[`${species}Card`]}`}
-      href={`/register?species=${species}`}
+      href={demoEnter ? "/demo?screen=%2Fdashboard" : `/register?species=${species}`}
+      onClick={demoEnter ? (event) => { event.preventDefault(); demoEnter(); } : undefined}
       aria-label={ariaLabel}
     >
       <span className={styles.petImageFrame} aria-hidden="true">
