@@ -3625,3 +3625,66 @@
   object-fit: cover;
   object-position: center;
 }
+
+.readOnlyBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 8px 16px;
+  color: #36583b;
+  background: #eef6ed;
+  border: 1px solid #cfe1ce;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.petAccessPanel {
+  width: min(100%, 850px);
+  margin: 22px auto 0;
+  padding: 22px 24px;
+  background: rgb(255 255 255 / 94%);
+  border: 1px solid #e5e1da;
+  border-radius: 18px;
+}
+
+.petAccessHeader,
+.petAccessRow { display: flex; align-items: center; gap: 16px; }
+.petAccessHeader { justify-content: space-between; }
+.petAccessHeader h2,
+.petAccessList h3 { margin: 0; color: #2d2d2d; font-size: 20px; }
+.petAccessHeader p,
+.petAccessRow span,
+.petAccessList > p { margin: 4px 0 0; color: #667367; font-size: 14px; }
+.petAccessToggle,
+.petAccessSubmit,
+.petAccessRow button { min-height: 44px; padding: 10px 16px; border-radius: 10px; font: inherit; cursor: pointer; }
+.petAccessToggle,
+.petAccessRow button { color: #426b49; background: #fff; border: 1px solid #b8cbb3; }
+.petAccessBody { margin-top: 18px; }
+.petAccessForm { display: grid; grid-template-columns: minmax(0, 1fr) 170px auto; gap: 12px; align-items: end; }
+.petAccessForm label { display: grid; gap: 6px; color: #465b4b; font-size: 14px; font-weight: 600; }
+.petAccessForm input { min-height: 44px; padding: 9px 12px; border: 1px solid #d6dfd3; border-radius: 8px; font: inherit; }
+.petAccessSubmit { color: #fff; background: #6d9272; border: 1px solid #6d9272; }
+.petAccessSubmit:disabled,
+.petAccessRow button:disabled { cursor: not-allowed; opacity: .65; }
+.petAccessNotice,
+.petAccessError { margin: 12px 0 0; font-size: 14px; }
+.petAccessNotice { color: #36583b; }
+.petAccessError { color: #a4423b; }
+.petAccessList { margin-top: 20px; }
+.petAccessRows { display: grid; gap: 10px; margin-top: 10px; }
+.petAccessRow { justify-content: space-between; padding: 12px 0; border-top: 1px solid #e8ebe7; }
+.petAccessRow > div { min-width: 0; }
+.petAccessRow strong { display: block; overflow-wrap: anywhere; }
+
+@media (max-width: 720px) {
+  .petAccessPanel { padding: 18px 16px; }
+  .petAccessHeader { align-items: flex-start; flex-direction: column; }
+  .petAccessForm { grid-template-columns: 1fr; }
+  .petAccessSubmit { width: 100%; }
+  .petAccessRow { align-items: flex-start; flex-direction: column; }
+  .petAccessRow button { width: 100%; }
+}
+

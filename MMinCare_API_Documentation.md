@@ -129,6 +129,15 @@ Shared timeout helper bounds supported Pet/Health/Notification request pipelines
 
 Public `/demo` is a page route, not a second production API. Shared components call an explicit local request/navigation adapter in the demo React context; it simulates supported responses from per-tab state and does not send writes/files to production. Unsupported calls fail locally. Auth/email/RLS/private-storage enforcement and real backend timings are not simulated evidence. Default context outside demo retains original fetch/Next router.
 
+## 11. Phase 2.1 Pet Access
+
+The Owner-only endpoints are `GET/POST /api/pets/{pet_id}/access` and
+`PATCH /api/pet-access/{access_id}/revoke`. A verified Caretaker uses
+`GET /api/pet-access/invitations`, `POST /api/pet-access/{access_id}/accept`,
+and `GET /api/shared-pets`. Shared pet detail exposes only read-only
+Vaccine/Medical text; Health Log, Reminder, statistics and private assets are
+not part of this phase.
+
 ## 10. Evidence and maintenance
 
 Source: all `app/api/**/route.ts`, `lib/healthLogs/dashboard.ts`, migrations and demo transport at the stated application SHA. Inventory includes23 method/path combinations. Unit/rendered tests and CI are regression evidence; real Owner A/B, upload/retry and full visual QA remain unverified. No secret or real payload is included.
@@ -137,3 +146,11 @@ Source: all `app/api/**/route.ts`, `lib/healthLogs/dashboard.ts`, migrations and
 |---|---|---|
 | 2.0 | 2026-10-11 | Replace conflicting original-design API examples with actual routes, payloads, idempotency, deletions, private photos, Notification and demo boundaries. |
 | 1.6 | 2026-09-22 | Earlier Owner API baseline; retained in version history, superseded here. |
+
+### Account role menu
+
+`GET /api/account/roles` returns only the signed-in profile name/email and
+server-derived Owner/Caretaker flags. Pending, expired and revoked invitations
+do not create a Caretaker role; no Pet ownership IDs, photo paths or attachment
+metadata are returned.
+

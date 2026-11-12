@@ -98,7 +98,9 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
     const controller = new AbortController();
     historyRequestController.current = controller;
     const historyKey = `${petId}:${form ?? ""}`;
-    const endpoint = form === "medical-record" ? "medical-records" : "medical-history";
+    const endpoint = !isOwner
+      ? `/api/shared-pets/${encodeURIComponent(petId)}/medical-history`
+      : `/api/pets/${encodeURIComponent(petId)}/${form === "medical-record" ? "medical-records" : "medical-history"}`;
     setEntries([]);
     setLoadedHistoryKey("");
     setError(null);
@@ -108,7 +110,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
       && activeRequestId === requestId.current
       && !controller.signal.aborted;
 
-    void requestJson(`/api/pets/${encodeURIComponent(petId)}/${endpoint}`, { signal: controller.signal })
+    void requestJson(endpoint, { signal: controller.signal })
       .then(({ response, payload }) => {
         if (!response.ok) throw new Error("Medical history request failed");
         const records = parseMedicalHistoryRecords(payload);
@@ -129,7 +131,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
       });
 
     return controller;
-  }, [form, petId, requestJson]);
+  }, [form, isOwner, petId, requestJson]);
 
   useEffect(() => {
     let active = true;
@@ -386,7 +388,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
                 </button>
               ))}
             </div>
-            <div className={styles.addRecordMenu}>
+            {isOwner && <div className={styles.addRecordMenu}>
               <button aria-expanded={isAddMenuOpen} aria-haspopup="menu" className={styles.addRecordButton} onClick={() => setIsAddMenuOpen((open) => !open)} type="button">
                 <span aria-hidden="true">+</span>Thêm bản ghi
               </button>
@@ -396,7 +398,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
                   <button onClick={openAddMedicalRecord} role="menuitem" type="button">Thêm lần khám</button>
                 </div>
               )}
-            </div>
+            </div>}
           </div>
 
           {notice && (
@@ -739,3 +741,4 @@ function MedicalAttachmentRow({
     </div>
   );
 }
+

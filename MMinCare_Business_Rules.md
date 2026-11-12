@@ -149,6 +149,14 @@
 | BR-DEMO-04 | Sample observations illustrate UI/data only, no diagnosis, dose or vaccine interval guidance; demo success is not Owner isolation/backend performance evidence. | Current |
 
 
+## Phase 2.1 — Caretaker read-only boundary
+
+Owner invitations are per Pet and use Pending/Active/Revoked with an expiry
+date. After acceptance, Caretaker can read only basic Pet information and
+textual Vaccine/Medical history for that Pet. Health Log, Reminder, statistics,
+Notification Center, private photos, attachments, writes and further sharing
+remain unavailable in this phase.
+
 ## 11. Changelog
 
 | Version | Date | Change |
@@ -156,3 +164,8 @@
 | 2.0 | 2026-10-11 | Đồng bộ code đã triển khai, CRUD/ảnh/thông báo, request lifecycle/idempotency và demo cùng UI; tách phạm vi kiểm chứng và kế hoạch. |
 | 1.6 | 2026-09-22 | Rebuilt rules for password recovery, current Owner-only Health Log/dashboard, Medical-source Reminder, completion hardening, private attachment bucket, deployment portability and pending changes. |
 | 1.5 | 2026-09-16 | Added initial Health Log date semantics. |
+
+The account menu may show Owner and/or Caretaker tabs only from active,
+server-derived roles. With neither role it shows `Chưa có vai trò`; pending
+invitations remain in the invitation flow and do not grant access.
+

@@ -7,6 +7,13 @@ on:
       - "supabase/config.toml"
       - "database/schema.sql"
       - ".github/workflows/supabase-migration-replay.yml"
+      - "e2e/**"
+      - "playwright.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "app/**"
+      - "components/**"
+      - "lib/**"
   workflow_dispatch:
 
 permissions:
@@ -15,8 +22,8 @@ permissions:
 jobs:
   replay:
     name: Replay all local migrations
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
 
     steps:
       - name: Check out repository
@@ -425,6 +432,67 @@ jobs:
           $$;
           SQL
 
+      - name: Verify Phase 2.1 pet access privileges and policies
+        shell: bash
+        env:
+          LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: |
+          set -euo pipefail
+          psql "$LOCAL_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+          do $$
+          begin
+            if exists (
+              select 1 from unnest(array['pet_access_owner_select','pet_access_owner_insert','pet_access_owner_update']) required(name)
+              where not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'pet_access' and policyname = required.name)
+            ) then
+              raise exception 'Pet access policies are missing';
+            end if;
+            if exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'pet_access' and policyname = 'pet_access_caretaker_update') then
+              raise exception 'Caretaker must accept through the verified RPC';
+            end if;
+            if exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'pet_access' and policyname = 'pet_access_caretaker_select') then
+              raise exception 'Caretaker cannot read invitation rows directly';
+            end if;
+            if not has_function_privilege('authenticated', 'public.list_pet_invitations()', 'EXECUTE')
+              or has_function_privilege('anon', 'public.list_pet_invitations()', 'EXECUTE')
+              or not has_function_privilege('authenticated', 'public.has_active_caretaker_access()', 'EXECUTE')
+              or has_function_privilege('anon', 'public.has_active_caretaker_access()', 'EXECUTE') then
+              raise exception 'Unexpected invitation RPC privileges';
+            end if;
+            if exists (select 1 from pg_policies where schemaname = 'public'
+              and policyname in ('pets_caretaker_select','vaccine_records_caretaker_select','medical_records_caretaker_select')) then
+              raise exception 'Caretaker must not read Owner rows from base tables';
+            end if;
+            if not has_function_privilege('authenticated', 'public.read_shared_pets(uuid)', 'EXECUTE')
+              or has_function_privilege('anon', 'public.read_shared_pets(uuid)', 'EXECUTE') then
+              raise exception 'Unexpected shared projection RPC privileges';
+            end if;
+            if not has_table_privilege('authenticated', 'public.pet_access', 'SELECT') or not has_table_privilege('authenticated', 'public.pet_access', 'INSERT') then
+              raise exception 'authenticated pet_access grants are missing';
+            end if;
+            if has_table_privilege('authenticated', 'public.pet_access', 'UPDATE') or has_table_privilege('authenticated', 'public.pet_access', 'DELETE') then
+              raise exception 'pet_access exposes unexpected table mutation privileges';
+            end if;
+            if has_table_privilege('anon', 'public.pet_access', 'SELECT') or has_table_privilege('anon', 'public.pet_access', 'INSERT') then
+              raise exception 'anon has pet_access privileges';
+            end if;
+            if has_column_privilege('authenticated', 'public.pet_access', 'pet_id', 'UPDATE') or has_column_privilege('authenticated', 'public.pet_access', 'granted_by', 'UPDATE') or has_column_privilege('authenticated', 'public.pet_access', 'caretaker_email', 'UPDATE') or has_column_privilege('authenticated', 'public.pet_access', 'valid_until', 'UPDATE') then
+              raise exception 'pet_access identity columns are writable';
+            end if;
+            if not has_function_privilege('authenticated', 'public.accept_pet_access(uuid)', 'EXECUTE') then
+              raise exception 'Verified accept RPC is not executable by authenticated';
+            end if;
+            if has_function_privilege('anon', 'public.accept_pet_access(uuid)', 'EXECUTE') then
+              raise exception 'anon can execute verified accept RPC';
+            end if;
+          end $$;
+          SQL
+
+      - name: Verify Phase 2.1 sharing isolation
+        env:
+          LOCAL_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: psql "$LOCAL_DATABASE_URL" -X -v ON_ERROR_STOP=1 -f supabase/tests/phase21_sharing.sql
+
       - name: Verify notification database behavior
         shell: bash
         env:
@@ -492,6 +560,40 @@ jobs:
       - name: Run notification selector regression test
         run: npm run test:notifications
 
+      - name: Run account role menu regression test
+        run: npx vitest run components/layout/AccountRoleMenu.test.tsx components/pets/SharedPetAccessSection.test.tsx 'app/api/pet-access/[accessId]/accept/route.test.ts' app/api/pet-access/invitations/route.test.ts
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Exercise sharing with local Supabase and two synthetic accounts
+        shell: bash
+        run: |
+          set -euo pipefail
+          local_status="$(supabase status -o env)"
+          local_url="$(printf '%s\n' "$local_status" | sed -n 's/^API_URL="\(.*\)"$/\1/p')"
+          local_anon="$(printf '%s\n' "$local_status" | sed -n 's/^ANON_KEY="\(.*\)"$/\1/p')"
+          local_service="$(printf '%s\n' "$local_status" | sed -n 's/^SERVICE_ROLE_KEY="\(.*\)"$/\1/p')"
+          test "$local_url" = "http://127.0.0.1:54321"
+          test -n "$local_anon" && test -n "$local_service"
+          echo "::add-mask::$local_anon"
+          echo "::add-mask::$local_service"
+          export NEXT_PUBLIC_SUPABASE_URL="$local_url"
+          export NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="$local_anon"
+          npm run build
+          npm run start -- --hostname 127.0.0.1 > "$RUNNER_TEMP/mmincare-phase21-app.log" 2>&1 &
+          app_pid=$!
+          trap 'kill "$app_pid" 2>/dev/null || true' EXIT
+          ready=false
+          for attempt in {1..60}; do
+            if curl --fail --silent --output /dev/null http://127.0.0.1:3000/login; then ready=true; break; fi
+            if ! kill -0 "$app_pid" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          test "$ready" = true
+          LOCAL_TEST_SERVICE_ROLE_KEY="$local_service" npx playwright test e2e/phase21-sharing.spec.ts
+
       - name: Stop local Supabase services
         if: always()
         run: supabase stop --no-backup
+

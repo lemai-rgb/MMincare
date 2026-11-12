@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 
 import { type PetOverviewReminder } from "@/components/pets/PetOverview";
 import { isHealthDashboardPeriod, type HealthDashboardPeriod } from "@/lib/healthLogs/dashboard";
+import { getTodayInVietnam } from "@/lib/petAccess";
 import { createClient } from "@/lib/supabase/server";
+import { readSharedPets } from "@/lib/sharedPets";
 import { createServerTiming } from "@/lib/performance/serverTiming";
 
 export const dynamic = "force-dynamic";
@@ -69,17 +71,6 @@ function getLatestCreatedAt(...values: Array<string | null | undefined>) {
     .sort((left, right) => new Date(right).getTime() - new Date(left).getTime())[0];
 }
 
-function getTodayInVietnam() {
-  const parts = new Intl.DateTimeFormat("en", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    timeZone: "Asia/Ho_Chi_Minh",
-  }).formatToParts(new Date());
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
 function logUpcomingReminderError(error: HealthSummaryQueryError) {
   console.error("[PET-UPCOMING-REMINDER] Query failed", {
     code: error.code,
@@ -101,14 +92,52 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
 
   const { petId } = await params;
   const query = await searchParams;
-  const activeTab = getDetailTab(query.tab);
+  const requestedTab = getDetailTab(query.tab);
   const form = Array.isArray(query.form) ? query.form[0] : query.form;
-  const healthView = activeTab === "health" ? getHealthView(query.view) : "history";
   const healthPeriod = getHealthDashboardPeriod(query.period);
+  const { data: petRow, error: petError } = await timing.measure("pet_ownership", () => supabase
+    .from("pets")
+    .select("pet_id, owner_id, name, species, gender, breed, date_of_birth, picture_url, created_at, updated_at")
+    .eq("pet_id", petId)
+    .maybeSingle());
+
+  // Do not disclose whether a missing row belongs to another owner.
+  if (petError) {
+    timing.finish("error");
+    redirect("/dashboard");
+  }
+  if (!petRow) {
+    let shared;
+    try { [shared] = await readSharedPets(supabase, petId); }
+    catch { timing.finish("error"); redirect("/dashboard"); }
+    if (!shared) { timing.finish("error"); redirect("/dashboard"); }
+    if (requestedTab === "reminders" || requestedTab === "health") {
+      redirect(`/pets/${encodeURIComponent(petId)}?tab=medical`);
+    }
+    const sharedPet = {
+      pet_id: shared.pet_id, name: shared.name, species: shared.species,
+      gender: shared.gender, breed: shared.breed, date_of_birth: shared.date_of_birth,
+    };
+    timing.finish("ok");
+    return <PetDetailView pet={sharedPet} activeTab={requestedTab} healthView="history"
+      healthPeriod={healthPeriod} isHealthSubpage={false} healthHistoryHref=""
+      profileSummaryError={false} profileRecordCount={shared.records.length}
+      upcomingReminder={null} reminderLoadError={false} currentUserId={claimsData.claims.sub}
+      isOwner={false} />;
+  }
+
+  const isOwner = petRow.owner_id === claimsData.claims.sub;
+  if (!isOwner) { timing.finish("error"); redirect("/dashboard"); }
+  const pet = petRow as Pet;
+  if (!isOwner && (requestedTab === "reminders" || requestedTab === "health")) {
+    redirect(`/pets/${encodeURIComponent(petId)}?tab=medical`);
+  }
+  const activeTab = requestedTab;
+  const healthView = activeTab === "health" ? getHealthView(query.view) : "history";
   const isHealthForm = activeTab === "health" && form === "health-log";
   const isHealthSubpage = isHealthForm;
   const needsHealthSummary = activeTab === "health";
-  const needsUpcomingReminder = activeTab === "overview";
+  const needsUpcomingReminder = activeTab === "overview" && isOwner;
   const healthHistoryParams = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
     if (key === "form" || key === "view" || key === "period" || value === undefined) continue;
@@ -117,20 +146,6 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
   }
   healthHistoryParams.set("tab", "health");
   const healthHistoryHref = `/pets/${encodeURIComponent(petId)}?${healthHistoryParams.toString()}`;
-  const { data: petRow, error: petError } = await timing.measure("pet_ownership", () => supabase
-    .from("pets")
-    .select("pet_id, owner_id, name, species, gender, breed, date_of_birth, picture_url, created_at, updated_at")
-    .eq("pet_id", petId)
-    .eq("owner_id", claimsData.claims.sub)
-    .maybeSingle());
-
-  // Do not disclose whether a missing row belongs to another owner.
-  if (petError || !petRow) {
-    timing.finish("error");
-    redirect("/dashboard");
-  }
-
-  const pet = petRow as Pet;
   const [vaccineSummary, medicalSummary, upcomingReminderResult, healthLogSummary] = await timing.measure("summary.parallel", () => Promise.all([
     !needsHealthSummary ? supabase
       .from("vaccine_records")
@@ -196,5 +211,6 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
     profileSummaryError={profileSummaryError} profileRecordCount={profileRecordCount}
     latestHealthUpdate={latestHealthUpdate} upcomingReminder={upcomingReminder}
     reminderLoadError={Boolean(upcomingReminderResult.error)} currentUserId={claimsData.claims.sub}
-    isOwner={pet.owner_id === claimsData.claims.sub} />;
+    isOwner={isOwner} />;
 }
+

@@ -4,6 +4,7 @@ import { AppLink as Link } from "@/lib/appRuntime";
 import { useEffect, useRef, useState } from "react";
 
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { AccountRoleMenu } from "@/components/layout/AccountRoleMenu";
 import { NotificationCenter } from "@/components/layout/NotificationCenter";
 import { PetListHeaderDecorations } from "@/components/pets/PetListDecorations";
 import styles from "@/styles/dashboard.module.css";
@@ -74,10 +75,7 @@ export function AppHeader({ activeNav }: AppHeaderProps) {
           >
             Nhắc hẹn
           </Link>
-          <span className={activeNav === "account" ? styles.activeNavItem : styles.navItem}>
-            Tài khoản
-            <span className={styles.navChevron} aria-hidden="true" />
-          </span>
+          <AccountRoleMenu active={activeNav === "account"} />
         </nav>
         <button
           aria-controls="mobile-navigation-menu"
@@ -97,9 +95,11 @@ export function AppHeader({ activeNav }: AppHeaderProps) {
         <nav aria-label="Điều hướng trên thiết bị di động" className={styles.mobileMenu} id="mobile-navigation-menu">
           <Link aria-current={activeNav === "pets" ? "page" : undefined} className={styles.mobileMenuLink} href="/dashboard" onClick={closeMobileMenu}>Thú cưng</Link>
           <Link aria-current={activeNav === "reminders" ? "page" : undefined} className={styles.mobileMenuLink} href="/reminders" onClick={closeMobileMenu}>Nhắc hẹn</Link>
+          <div className={styles.mobileMenuAccount}><AccountRoleMenu active={activeNav === "account"} /></div>
           <div className={styles.mobileMenuLogout}><LogoutButton /></div>
         </nav>
       )}
     </header>
   );
 }
+

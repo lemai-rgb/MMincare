@@ -22,12 +22,11 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const { petId } = await params;
   const { data: pet, error: petError } = await supabase
     .from("pets")
-    .select("pet_id")
+    .select("pet_id, owner_id")
     .eq("pet_id", petId)
-    .eq("owner_id", userId)
     .maybeSingle();
 
-  if (petError || !pet) return jsonError("Không tìm thấy thú cưng.", 404);
+  if (petError || !pet || pet.owner_id !== userId) return jsonError("Không tìm thấy thú cưng.", 404);
 
   const [vaccinesResult, medicalResult] = await Promise.all([
     supabase
@@ -47,7 +46,8 @@ export async function GET(_request: Request, { params }: RouteContext) {
     return jsonError("Không thể tải hồ sơ y tế lúc này.", 500);
   }
 
-  const medicalRecordIds = (medicalResult.data ?? []).map((record) => record.record_id);
+  const isOwner = pet.owner_id === userId;
+  const medicalRecordIds = isOwner ? (medicalResult.data ?? []).map((record) => record.record_id) : [];
   const attachmentsByRecord = new Map<string, Array<{
     attachment_id: string;
     file_name: string;
@@ -97,7 +97,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     description: [record.symptoms, record.medication, record.note].filter(Boolean).join(" • "),
     clinicName: record.clinic_name,
     doseNumber: null,
-    addedByCurrentUser: record.created_by === userId,
+    addedByCurrentUser: isOwner && record.created_by === userId,
     attachments: attachmentsByRecord.get(record.record_id) ?? [],
   }));
 
@@ -116,3 +116,4 @@ export async function GET(_request: Request, { params }: RouteContext) {
   );
   return NextResponse.json({ records, latestMedicalRecord });
 }
+

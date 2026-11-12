@@ -226,7 +226,18 @@ Mẫu ban đầu:3 Pet,31 Health Logs (Meo 15/Min 14/Sushi 2),4 Vaccine,2 Medica
 
 Đây là các version được ghi nhận trong lịch sử triển khai trước đó, không phải toàn bộ migration history và không phải một audit production mới. Không repair hoặc apply lại chỉ để cập nhật tài liệu. Presence của policy/index không là bằng chứng Owner A/B runtime PASS.
 
+### Phase 2.1 access boundary
+
+`pet_access` grants per-Pet read-only Caretaker access after verified-email
+acceptance. Pending invitations expose only the Pet-name snapshot and expiry.
+Active access is required for Pet/Vaccine/Medical reads; Health Log, Reminder,
+statistics, Notification Center and private assets remain unavailable.
+
 | Version | Date | Change |
 |---|---|---|
 | 3.0 | 2026-10-11 | Sửa đúng tên/cột/FK thực tế, thêm Notification/rules/idempotency/Storage và ranh giới demo. |
 | 2.5 | 2026-09-22 | Phiên bản cũ được thay trong lần đồng bộ; bản này nâng lên3.0, thuộc cùng release đồng bộ2026-10-11. |
+
+`GET /api/account/roles` returns the current profile name/email and boolean
+role flags derived from owned Pets and active, unexpired `pet_access` rows.
+

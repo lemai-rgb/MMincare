@@ -17,6 +17,7 @@ export type PetOverviewReminder = {
 type PetOverviewProps = {
   nextReminder: PetOverviewReminder | null;
   petId: string;
+  readOnly?: boolean;
   reminderLoadError: boolean;
 };
 
@@ -38,7 +39,7 @@ function formatDate(value: string) {
   }).format(date);
 }
 
-export function PetOverview({ nextReminder, petId, reminderLoadError }: PetOverviewProps) {
+export function PetOverview({ nextReminder, petId, readOnly = false, reminderLoadError }: PetOverviewProps) {
   const request = useRuntimeRequest();
   const [overviewData, setOverviewData] = useState<OverviewData>({
     petId,
@@ -53,7 +54,7 @@ export function PetOverview({ nextReminder, petId, reminderLoadError }: PetOverv
 
   useEffect(() => {
     const controller = new AbortController();
-    request(`/api/pets/${encodeURIComponent(petId)}/medical-history`, {
+    request(`/api/${readOnly ? "shared-pets" : "pets"}/${encodeURIComponent(petId)}/medical-history`, {
       cache: "no-store",
       signal: controller.signal,
     })
@@ -78,7 +79,7 @@ export function PetOverview({ nextReminder, petId, reminderLoadError }: PetOverv
         }
       });
     return () => controller.abort();
-  }, [petId, request]);
+  }, [petId, readOnly, request]);
 
   const vaccineEntries = useMemo(() => entries.filter((entry) => entry.type === "vaccine"), [entries]);
   const latestVaccine = vaccineEntries[0];
@@ -113,8 +114,8 @@ export function PetOverview({ nextReminder, petId, reminderLoadError }: PetOverv
     <>
       <section className={styles.summaryGrid} aria-label="Tổng quan chăm sóc">
         <SummaryCard title="Mũi tiêm gần nhất" value={latestVaccine ? `${latestVaccine.title}: ${formatDate(latestVaccine.eventDate)}` : "Chưa có dữ liệu"} />
-        <SummaryCard title="Nhắc hẹn sắp tới" value={nextReminderValue} />
-        <SummaryCard title="Lần khám gần nhất" {...latestMedicalCard} />
+        {!readOnly && <SummaryCard title="Nhắc hẹn sắp tới" value={nextReminderValue} />}
+        <SummaryCard title="Lần khám gần nhất" {...(readOnly && !latestMedicalValue ? { value: "Chưa có dữ liệu" } : latestMedicalCard)} />
       </section>
 
       <section className={styles.overviewGrid} aria-label="Hoạt động và thao tác nhanh">
@@ -129,13 +130,13 @@ export function PetOverview({ nextReminder, petId, reminderLoadError }: PetOverv
                 : <p className={styles.emptyActivity}>Chưa có hoạt động nào</p>}
         </section>
 
-        <section className={styles.quickActions}>
+        {!readOnly && <section className={styles.quickActions}>
           <h2>Thao tác nhanh</h2>
           <Link href={`/pets/${encodeURIComponent(petId)}?tab=medical&form=vaccine`}>＋ Thêm mũi tiêm</Link>
           <Link href={addMedicalRecordHref}>＋ Thêm lần khám</Link>
           <Link href={addReminderHref}>＋ Tạo nhắc hẹn</Link>
           <Link href={`/pets/${encodeURIComponent(petId)}?tab=health&form=health-log`}>＋ Thêm ghi chú sức khỏe</Link>
-        </section>
+        </section>}
       </section>
     </>
   );
@@ -160,3 +161,4 @@ function SummaryCard({
     </section>
   );
 }
+

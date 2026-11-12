@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/layout/AppHeader";
 import { PetListView } from "@/components/pets/PetListView";
+import { SharedPetAccessSection } from "@/components/pets/SharedPetAccessSection";
 import { parseSpecies } from "@/lib/authRedirect";
 import { type Pet } from "@/lib/pets";
 import { type PetListHealthLog } from "@/lib/petHealthSummary";
@@ -61,7 +62,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const hasPets = pets.length > 0;
 
   if (hasPets) {
-    return <PetListView pets={pets} latestHealthLogs={latestHealthLogs} healthLogsError={Boolean(healthLogsError)} />;
+    return <>
+      <PetListView pets={pets} latestHealthLogs={latestHealthLogs} healthLogsError={Boolean(healthLogsError)} />
+      <SharedPetAccessSection />
+    </>;
   }
 
   return (
@@ -96,7 +100,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             <Link className={styles.primaryAction} href={newPetHref}>Thêm thú cưng</Link>
           </section>
         )}
+        <SharedPetAccessSection />
       </section>
     </main>
   );
 }
+

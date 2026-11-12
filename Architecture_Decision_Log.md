@@ -1,5 +1,15 @@
 # MMinCare — Architecture Decision Log
 
+## ADR-005 — Per-pet Caretaker read-only sharing (Phase 2.1)
+
+- Owner invitations are stored in `pet_access` as Pending until a verified
+  Caretaker account accepts the exact normalized email invite.
+- Active access is per Pet and expires by `valid_until`; revoke/expiry is
+  enforced by API and RLS for every subsequent request.
+- Phase 2.1 allows only basic Pet data and textual Vaccine/Medical history.
+  Health Log, Reminder, statistics, Notification Center, private assets,
+  writes and further sharing remain denied.
+
 **Phiên bản:** 2.0 · **Cập nhật:** 2026-10-11 (Asia/Ho_Chi_Minh)  
 **Baseline ứng dụng:** `main` `bcd14b51f4b70cd3d418bd10638f7a996713fdcf` — PR #26 đã merge, Vercel Production thành công.  
 **Ứng dụng:** https://m-mincare.vercel.app/ · **Trải nghiệm thử:** https://m-mincare.vercel.app/demo
@@ -221,3 +231,4 @@
 | 2.0 | 2026-10-11 | Đồng bộ code đã triển khai, CRUD/ảnh/thông báo, request lifecycle/idempotency và demo cùng UI; tách phạm vi kiểm chứng và kế hoạch. |
 | 1.6 | 22/09/2026 | Đồng bộ decision register với baseline `cd701979…`; bổ sung recovery, source reminder, dashboard sức khỏe, hardening RLS, portability, CR delete và trạng thái PR #7. |
 | 1.5 trở về trước | Trước 22/09/2026 | Lịch sử cũ; các mục mâu thuẫn được đánh dấu Superseded trong bản này. |
+

@@ -8,8 +8,10 @@ import { PetMedicalHistory } from "@/components/pets/PetMedicalHistory";
 import { PetOverview, type PetOverviewReminder } from "@/components/pets/PetOverview";
 import { PetReminders } from "@/components/pets/PetReminders";
 import { PetHealthHistory } from "@/components/pets/PetHealthHistory";
+import { PetAccessManager } from "@/components/pets/PetAccessManager";
 import { type HealthDashboardPeriod } from "@/lib/healthLogs/dashboard";
 import { getPetGenderLabel, getPetSpeciesLabel, type Pet } from "@/lib/pets";
+import type { SharedPet } from "@/lib/sharedPets";
 import styles from "@/styles/petDetail.module.css";
 
 type PetDetailTab = "overview" | "medical" | "reminders" | "health";
@@ -21,10 +23,10 @@ const detailTabs: Array<{ id: PetDetailTab; label: string }> = [
   { id: "health", label: "Sức khỏe" },
 ];
 
-function PetDetailTabs({ petId, activeTab }: { petId: string; activeTab: PetDetailTab }) {
+function PetDetailTabs({ petId, activeTab, isOwner }: { petId: string; activeTab: PetDetailTab; isOwner: boolean }) {
   return (
     <nav className={styles.tabBar} aria-label="Các mục hồ sơ">
-      {detailTabs.map((tab) => {
+      {detailTabs.filter((tab) => isOwner || (tab.id !== "reminders" && tab.id !== "health")).map((tab) => {
         const href = tab.id === "overview" ? `/pets/${petId}` : `/pets/${petId}?tab=${tab.id}`;
         const className = tab.id === activeTab ? styles.activeTab : styles.tabLink;
 
@@ -53,7 +55,7 @@ function getPetAgeLabel(dateOfBirth: string | null) {
 }
 
 export type PetDetailViewProps = {
-  pet: Pet; activeTab: PetDetailTab; form?: string; healthView: "history" | "statistics";
+  pet: Pet | Pick<SharedPet, "pet_id" | "name" | "species" | "gender" | "breed" | "date_of_birth">; activeTab: PetDetailTab; form?: string; healthView: "history" | "statistics";
   healthPeriod: HealthDashboardPeriod; isHealthSubpage: boolean; healthHistoryHref: string;
   profileSummaryError: boolean; profileRecordCount: number | null;
   latestHealthUpdate?: string; upcomingReminder: PetOverviewReminder | null;
@@ -87,7 +89,7 @@ export function PetDetailView({ pet, activeTab, form, healthView, healthPeriod, 
 
           <section className={styles.profileCard} aria-label={`Hồ sơ của ${pet.name}`}>
             <div className={styles.avatarWrap}>
-              <PetAvatar className={styles.avatar} petId={pet.pet_id} species={pet.species} pictureUrl={pet.picture_url} />
+              <PetAvatar className={styles.avatar} petId={pet.pet_id} species={pet.species} pictureUrl={"picture_url" in pet ? pet.picture_url : null} />
             </div>
 
             <div className={styles.profileDetails}>
@@ -112,7 +114,9 @@ export function PetDetailView({ pet, activeTab, form, healthView, healthPeriod, 
             </div>
 
             <div className={styles.profileAside}>
-              <Link className={styles.editButton} href={`/pets/${encodeURIComponent(pet.pet_id)}/edit`}>Chỉnh sửa</Link>
+              {isOwner
+                ? <Link className={styles.editButton} href={`/pets/${encodeURIComponent(pet.pet_id)}/edit`}>Chỉnh sửa</Link>
+                : <span className={styles.readOnlyBadge}>Chỉ xem</span>}
               <p>
                 {profileSummaryError
                   ? "Chưa thể tải cập nhật"
@@ -121,17 +125,20 @@ export function PetDetailView({ pet, activeTab, form, healthView, healthPeriod, 
             </div>
           </section>
 
-          <PetDetailTabs activeTab={activeTab} petId={pet.pet_id} />
+          <PetDetailTabs activeTab={activeTab} isOwner={isOwner} petId={pet.pet_id} />
+
+          {isOwner && <PetAccessManager petId={pet.pet_id} petName={pet.name} />}
 
           {activeTab === "overview" && (
             <PetOverview
               nextReminder={upcomingReminder}
               petId={pet.pet_id}
+              readOnly={!isOwner}
               reminderLoadError={reminderLoadError}
             />
           )}
 
-          {activeTab === "medical" && <PetMedicalHistory form={form} isOwner={isOwner} petId={pet.pet_id} species={pet.species} />}
+          {activeTab === "medical" && <PetMedicalHistory form={isOwner ? form : undefined} isOwner={isOwner} petId={pet.pet_id} species={pet.species} />}
           {activeTab === "reminders" && (
             <PetReminders
               focusForm={form === "reminder"}
@@ -155,3 +162,4 @@ export function PetDetailView({ pet, activeTab, form, healthView, healthPeriod, 
     </main>
   );
 }
+
