@@ -8,7 +8,6 @@ import { PetMedicalHistory } from "@/components/pets/PetMedicalHistory";
 import { PetOverview, type PetOverviewReminder } from "@/components/pets/PetOverview";
 import { PetReminders } from "@/components/pets/PetReminders";
 import { PetHealthHistory } from "@/components/pets/PetHealthHistory";
-import { PetAccessManager } from "@/components/pets/PetAccessManager";
 import { type HealthDashboardPeriod } from "@/lib/healthLogs/dashboard";
 import { getPetGenderLabel, getPetSpeciesLabel, type Pet } from "@/lib/pets";
 import type { SharedPet } from "@/lib/sharedPets";
@@ -127,7 +126,6 @@ export function PetDetailView({ pet, activeTab, form, healthView, healthPeriod, 
 
           <PetDetailTabs activeTab={activeTab} isOwner={isOwner} petId={pet.pet_id} />
 
-          {isOwner && <PetAccessManager petId={pet.pet_id} petName={pet.name} />}
 
           {activeTab === "overview" && (
             <PetOverview
