@@ -14,10 +14,10 @@ describe("scoped demo API adapter",() => {
   it("simulates sharing for the selected pet without network requests",async () => {
     const {request,store}=setup(); const [pet,other]=store.getSnapshot()!.data.pets;
     const accessUrl=`/api/pets/${pet.pet_id}/access`;
-    expect((await (await request(accessUrl)).json()).access_list).toEqual([]);
+    expect((await (await request(accessUrl)).json()).access_list[0].caretaker_email).toBe("caregiver@example.com");
     const created=await (await request(accessUrl,post({caretaker_email:"demo@example.com",valid_until:"2099-12-31"}))).json();
     expect(created.access.status).toBe("Pending");
-    expect((await (await request(accessUrl)).json()).access_list).toHaveLength(1);
+    expect((await (await request(accessUrl)).json()).access_list).toHaveLength(2);
     expect((await (await request(`/api/pets/${other.pet_id}/access`)).json()).access_list).toHaveLength(0);
     const revoked=await (await request(`/api/pet-access/${created.access.access_id}/revoke`,{method:"PATCH"})).json();
     expect(revoked.access.status).toBe("Revoked");
