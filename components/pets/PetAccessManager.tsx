@@ -33,10 +33,10 @@ export function PetAccessManager({ petId, petName }: { petId: string; petName: s
     try {
       const response = await fetch(`/api/pets/${encodeURIComponent(petId)}/access`, { cache: "no-store" });
       const payload = await response.json() as { access_list?: AccessRow[]; error?: string };
-      if (!response.ok || !Array.isArray(payload.access_list)) throw new Error(payload.error || "KhÃ´ng thá»ƒ táº£i danh sÃ¡ch chia sáº».");
+      if (!response.ok || !Array.isArray(payload.access_list)) throw new Error(payload.error || "Không thể tải danh sách chia sẻ.");
       setRows(payload.access_list);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "KhÃ´ng thá»ƒ táº£i danh sÃ¡ch chia sáº».");
+      setError(requestError instanceof Error ? requestError.message : "Không thể tải danh sách chia sẻ.");
     } finally {
       setIsLoading(false);
     }
@@ -60,13 +60,13 @@ export function PetAccessManager({ petId, petName }: { petId: string; petName: s
         body: JSON.stringify({ caretaker_email: email, valid_until: validUntil }),
       });
       const payload = await response.json() as { access?: AccessRow; error?: string };
-      if (!response.ok || !payload.access) throw new Error(payload.error || "KhÃ´ng thá»ƒ gá»­i lá»i má»i.");
+      if (!response.ok || !payload.access) throw new Error(payload.error || "Không thể gửi lời mời.");
       setRows((current) => [payload.access as AccessRow, ...current]);
       setEmail("");
       setValidUntil("");
-      setNotice("ÄÃ£ gá»­i lá»i má»i chia sáº». NgÆ°á»i nháº­n cáº§n Ä‘Äƒng nháº­p báº±ng Ä‘Ãºng email Ä‘á»ƒ cháº¥p nháº­n.");
+      setNotice("Đã gửi lời mời chia sẻ. Người nhận cần đăng nhập bằng đúng email để chấp nhận.");
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "KhÃ´ng thá»ƒ gá»­i lá»i má»i.");
+      setError(requestError instanceof Error ? requestError.message : "Không thể gửi lời mời.");
     } finally {
       setIsSubmitting(false);
     }
@@ -79,11 +79,11 @@ export function PetAccessManager({ petId, petName }: { petId: string; petName: s
     try {
       const response = await fetch(`/api/pet-access/${encodeURIComponent(accessId)}/revoke`, { method: "PATCH" });
       const payload = await response.json() as { access?: AccessRow; error?: string };
-      if (!response.ok || !payload.access) throw new Error(payload.error || "KhÃ´ng thá»ƒ thu há»“i quyá»n.");
+      if (!response.ok || !payload.access) throw new Error(payload.error || "Không thể thu hồi quyền.");
       setRows((current) => current.map((row) => row.access_id === accessId ? { ...row, ...payload.access } : row));
-      setNotice("ÄÃ£ thu há»“i quyá»n chia sáº».");
+      setNotice("Đã thu hồi quyền chia sẻ.");
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "KhÃ´ng thá»ƒ thu há»“i quyá»n.");
+      setError(requestError instanceof Error ? requestError.message : "Không thể thu hồi quyền.");
     } finally {
       setIsSubmitting(false);
     }
@@ -93,11 +93,11 @@ export function PetAccessManager({ petId, petName }: { petId: string; petName: s
     <section className={styles.petAccessPanel} aria-labelledby="pet-access-title">
       <div className={styles.petAccessHeader}>
         <div>
-          <h2 id="pet-access-title">Chia sáº» há»“ sÆ¡</h2>
-          <p>Chia sáº» <strong>{petName}</strong> á»Ÿ cháº¿ Ä‘á»™ chá»‰ xem.</p>
+          <h2 id="pet-access-title">Chia sẻ hồ sơ</h2>
+          <p>Chia sẻ <strong>{petName}</strong> ở chế độ chỉ xem.</p>
         </div>
         <button className={styles.petAccessToggle} onClick={() => setIsOpen((current) => !current)} type="button" aria-expanded={isOpen}>
-          {isOpen ? "ÄÃ³ng" : "Quáº£n lÃ½ chia sáº»"}
+          {isOpen ? "Đóng" : "Quản lý chia sẻ"}
         </button>
       </div>
       {isOpen && (
@@ -108,24 +108,24 @@ export function PetAccessManager({ petId, petName }: { petId: string; petName: s
               <input autoComplete="email" onChange={(event) => setEmail(event.target.value)} placeholder="caretaker@example.com" type="email" value={email} />
             </label>
             <label>
-              Xem Ä‘áº¿n háº¿t ngÃ y
+              Xem đến hết ngày
               <input onChange={(event) => setValidUntil(event.target.value)} type="date" value={validUntil} />
             </label>
             <button className={styles.petAccessSubmit} disabled={isSubmitting || !email || !validUntil} onClick={() => void submitInvite()} type="button">
-              {isSubmitting ? "Äang gá»­iâ€¦" : "Gá»­i lá»i má»i"}
+              {isSubmitting ? "Đang gửi…" : "Gửi lời mời"}
             </button>
           </div>
           {notice && <p className={styles.petAccessNotice} role="status">{notice}</p>}
           {error && <p className={styles.petAccessError} role="alert">{error}</p>}
           <div className={styles.petAccessList}>
-            <h3>Lá»i má»i vÃ  quyá»n hiá»‡n táº¡i</h3>
-            {isLoading ? <p>Äang táº£iâ€¦</p> : rows.length === 0 ? <p>ChÆ°a cÃ³ lá»i má»i nÃ o.</p> : rows.map((row) => (
+            <h3>Lời mời và quyền hiện tại</h3>
+            {isLoading ? <p>Đang tải…</p> : rows.length === 0 ? <p>Chưa có lời mời nào.</p> : rows.map((row) => (
               <div className={styles.petAccessRow} key={row.access_id}>
                 <div>
                   <strong>{row.caretaker_email}</strong>
-                  <span>{row.status === "Pending" ? "Äang chá»" : row.status === "Active" ? "Äang hoáº¡t Ä‘á»™ng" : "ÄÃ£ thu há»“i"} Â· Ä‘áº¿n {formatDate(row.valid_until)}</span>
+                  <span>{row.status === "Pending" ? "Đang chờ" : row.status === "Active" ? "Đang hoạt động" : "Đã thu hồi"} · đến {formatDate(row.valid_until)}</span>
                 </div>
-                {row.status !== "Revoked" && <button disabled={isSubmitting} onClick={() => void revoke(row.access_id)} type="button">Thu há»“i</button>}
+                {row.status !== "Revoked" && <button disabled={isSubmitting} onClick={() => void revoke(row.access_id)} type="button">Thu hồi</button>}
               </div>
             ))}
           </div>
