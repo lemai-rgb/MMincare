@@ -97,7 +97,6 @@ export function AccountRoleMenu({ active }: { active: boolean }) {
                 <p className={styles.accountRolePanelLabel}>Thông tin tài khoản</p>
                 <strong>{displayName}</strong>
                 <span>{payload.profile?.email || "Chưa thiết lập"}</span>
-                <span>{selectedRole ? roleLabel(selectedRole) : "Chưa có vai trò"}</span>
               </>
             )}
           </section>
