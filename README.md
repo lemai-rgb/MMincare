@@ -6,13 +6,13 @@ MMinCare helps dog and cat owners keep pet profiles, vaccination history, medica
 
 [Live application](https://m-mincare.vercel.app/) · [Try the demo](https://m-mincare.vercel.app/demo) · [Portfolio Demo guide](docs/PORTFOLIO_DEMO.md) · [Sample dataset](demo/README.md) · [Project status](docs/PROJECT_STATUS.md) · [BA/PM/Tester evidence](docs/PORTFOLIO_EVIDENCE.md)
 
-> **Status —11 October2026 (VN):** Owner MVP and public same-UI demo are deployed at main `bcd14b51f4b70cd3d418bd10638f7a996713fdcf` after PR #26. Demo state is browser-local, with3 synthetic Pets and31 Health Logs; real Auth/Owner A-B/Storage and production timings remain separate, unverified tests.
+> **Project phase: Phase 2.1 — read-only Caretaker sharing.** The application supports per-pet invitations, acceptance and revocation. The public demo uses synthetic, browser-local data; demo invitations are simulated, do not send email or grant real access, and reset when the demo reloads. Check individual PRs and CI runs for verification status.
 
 ## Problem and intended users
 
 Pet information is often scattered across vaccination books, prescriptions, clinic messages, photos, calendars, and personal notes. Owners need a chronological record to find past care events, track changes, and remember upcoming care dates.
 
-The initial scope prioritizes an owner managing dogs or cats. Shared Caretaker access is a future extension, not a current production permission.
+Owners can manage their dogs and cats and invite a Caretaker to view a selected pet. A Caretaker uses their own confirmed account and receives access only after accepting the invitation.
 
 ## Portfolio guide
 
@@ -37,6 +37,12 @@ This is an independent project with AI-assisted implementation and review. Repos
 | Health summaries | Compact latest-journal summary on pet cards; per-pet weekly/monthly statistics |
 | Data access | Authenticated Owner checks in APIs, database RLS, private Storage and Owner-authorized photo delivery |
 
+## Phase 2.1 — Caretaker sharing
+
+An Owner invites a Caretaker by email for one selected pet and an expiry date. The recipient accepts using the matching verified account. The Owner can revoke access; revoked or expired access is blocked on the next request. A person can own their pets and be a Caretaker for another person's pet.
+
+Caretaker access is read-only: basic pet information and text vaccination/medical history. It excludes changes, onward sharing, private photos and attachments, reminders, notifications and health journals. The demo simulates invitation creation and revocation locally; it does not deliver invitations or exercise real authentication, RLS or Storage.
+
 **Typical flow:** register and confirm email → create a pet → record care and health observations → set reminders → review notifications and complete tasks → review history/statistics.
 
 ## Business decisions
@@ -46,13 +52,13 @@ This is an independent project with AI-assisted implementation and review. Repos
 - Health logs separate the selected business date (`recorded_on`) from the immutable creation timestamp (`logged_at`).
 - Optional photos can be removed without making a profile invalid. Private pet photos use an authorized API; medical attachments use authorized signed URLs.
 - Medical/vaccine deletion handles linked reminders; medical deletion reports attachment-cleanup warnings. Pet/account hard deletion is not implemented.
-- Caretaker sharing, OAuth, proactive email/push reminders and multi-pet aggregate analytics are not shipped.
+- Google OAuth, proactive email/push reminders and multi-pet aggregate analytics remain future work.
 
 ## Delivery and quality
 
-Current application baseline is main `bcd14b51f4b70cd3d418bd10638f7a996713fdcf`, merged PR #26, with [successful exact-commit production deployment](https://vercel.com/lemai-rgbs-projects/m-mincare/E3bmui2BdzU7iAzkP2kNtnM4XSLD).
+The original Owner MVP baseline was main `bcd14b51f4b70cd3d418bd10638f7a996713fdcf` (PR #26). Phase 2.1 was subsequently implemented in [PR #30](https://github.com/lemai-rgb/MMincare/pull/30); [PR #31](https://github.com/lemai-rgb/MMincare/pull/31) reconciles the production migration with repository history. See GitHub for their current status.
 
-Release-head checks:31 demo tests/4 files, lint, TypeScript, Webpack production build and [CI](https://github.com/lemai-rgb/MMincare/actions/runs/38068595221) passed at7b777d1. Public production smoke covered3 cards, Min14 logs, different monthly status data, Min Other details and return-home. This is sampled evidence, not full E2E/UAT. Historical app-suite counts are documented separately, not presented as rerun at this merge SHA.
+Historical checks at `7b777d1` included demo tests, lint, TypeScript, build and [CI](https://github.com/lemai-rgb/MMincare/actions/runs/38068595221). Phase 2.1's Owner/Caretaker flow was exercised using synthetic accounts and local Supabase in [CI](https://github.com/lemai-rgb/MMincare/actions/runs/43139448333). These are not a full production UAT.
 
 PR #22 delivered request lifecycle/idempotency/text fixes; PR #23 responsive layout; PR #24 statistics timestamp/range contract; PR #26 corrected demo parity and fixtures. CR-08 rule access/dataset remains incomplete. Post-delete focus, CI coverage/database advisories and manual QA keep their stated evidence status. See [current status](docs/PROJECT_STATUS.md) and [portfolio evidence](docs/PORTFOLIO_EVIDENCE.md).
 
