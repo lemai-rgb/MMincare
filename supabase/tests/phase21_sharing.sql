@@ -88,11 +88,19 @@ set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}',true);
 do $$ begin
  if not exists (select 1 from public.medical_records where diagnosis = 'Caretaker diagnosis') then raise exception 'Owner cannot see caretaker record'; end if;
+ delete from public.medical_records where diagnosis = 'Caretaker diagnosis';
+ if exists (select 1 from public.medical_records where diagnosis = 'Caretaker diagnosis') then raise exception 'Owner cannot delete caretaker medical record'; end if;
+ delete from public.vaccine_records where vaccine_name = 'Caretaker vaccine';
+ if exists (select 1 from public.vaccine_records where vaccine_name = 'Caretaker vaccine') then raise exception 'Owner cannot delete caretaker vaccine'; end if;
 end $$;
 select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-0000000000c1","email":"other-c@example.com","role":"authenticated"}',true);
 do $$ begin
  if jsonb_array_length(public.read_shared_pets(null)) <> 0 then raise exception 'Uninvited user saw shared pet'; end if;
  if jsonb_array_length(public.list_pet_invitations()) <> 0 then raise exception 'Uninvited user saw invitation'; end if;
+ delete from public.medical_records;
+ if found then raise exception 'Unrelated account deleted medical records'; end if;
+ delete from public.vaccine_records;
+ if found then raise exception 'Unrelated account deleted vaccines'; end if;
 end $$;
 select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-0000000000d1","email":"unconfirmed-d@example.com","role":"authenticated"}',true);
 do $$ begin

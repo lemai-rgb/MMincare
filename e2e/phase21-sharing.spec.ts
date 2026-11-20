@@ -113,6 +113,24 @@ test("Owner invite, Caretaker accept, isolation, and revoke", async ({ browser }
       await expect(caretakerPage.getByRole("heading", { name: "Caretaker visit" })).toBeVisible();
       await expect(caretakerPage.getByRole("button", { name: /Xóa/ })).toHaveCount(0);
     });
+    await test.step("Owner deletes Caretaker records using the visible UI buttons", async () => {
+      await ownerPage.goto(`/pets/${petId}?tab=medical`);
+      for (const title of ["Caretaker visit", "Caretaker vaccine"]) {
+        const card = ownerPage.getByRole("article").filter({ has: ownerPage.getByRole("heading", { name: title, exact: true }) });
+        await expect(card).toBeVisible();
+        await card.getByRole("button", { name: /Xóa/ }).click();
+        const response = ownerPage.waitForResponse(r => r.request().method() === "DELETE" && r.url().includes(`/api/pets/${petId}/`));
+        await ownerPage.getByRole("dialog").getByRole("button", { name: "Xóa bản ghi", exact: true }).click();
+        expect((await response).status()).toBe(200);
+        await expect(ownerPage.getByRole("heading", { name: title, exact: true })).toHaveCount(0);
+      }
+      const medical = await admin.from("medical_records").select("record_id").eq("pet_id", petId);
+      const vaccines = await admin.from("vaccine_records").select("vaccine_record_id").eq("pet_id", petId);
+      expect(medical.error).toBeNull(); expect(vaccines.error).toBeNull();
+      expect(medical.data).toEqual([]); expect(vaccines.data).toEqual([]);
+      await caretakerPage.reload();
+      await expect(caretakerPage.getByRole("heading", { name: "Caretaker visit", exact: true })).toHaveCount(0);
+    });
     await test.step("Owner revokes; old link no longer grants access", async () => {
       await ownerPage.reload();
       await ownerPage.getByRole("button", { name: "Chia sẻ hồ sơ Meo CI" }).click();

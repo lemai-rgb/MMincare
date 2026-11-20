@@ -56,7 +56,6 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     .select("record_id")
     .eq("record_id", medicalRecordId)
     .eq("pet_id", petId)
-    .eq("created_by", userId)
     .maybeSingle();
   if (recordError) {
     logDeleteError("record lookup", recordError);
@@ -88,7 +87,6 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     .delete()
     .eq("record_id", medicalRecordId)
     .eq("pet_id", petId)
-    .eq("created_by", userId)
     .select("record_id");
   if (deleteError) {
     logDeleteError("record delete", deleteError);

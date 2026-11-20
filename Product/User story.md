@@ -304,3 +304,5 @@ Acceptance criteria:
 6. Revoke blocks the next request; concurrent in-flight writes follow the documented transaction ordering.
 
 Evidence: see PR #36, `supabase/tests/phase21_sharing.sql`, `e2e/phase21-sharing.spec.ts`, and `lib/sharedRecordRoute.test.ts`. Runtime race and Preview visual QA remain separate checks.
+
+Owner deletion AC: the Owner sees the Delete button on Caretaker records; confirmation deletes the record through the app API and RLS. Other owners and Caretakers remain denied.

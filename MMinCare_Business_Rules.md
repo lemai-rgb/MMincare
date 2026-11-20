@@ -177,4 +177,4 @@ This amendment supersedes Phase 2.1 read-only restrictions for creation only:
 - The database derives `created_by` from the authenticated account. The Owner can read those records.
 - Caretakers cannot update/delete records (including their own), share onward, access private files/photos, Health Logs, or manage Reminders.
 - Each write checks current access and expiry using the Vietnam date. Writes serialize with revoke on the access row: a write already holding the lock may commit before revoke; once revoke commits, subsequent writes fail.
-- Base-table SELECT/INSERT policies remain Owner-only. Owner retains existing controls; this phase does not extend Owner deletion to other authors' medical records.
+- Base-table SELECT/INSERT policies remain Owner-only. Owner may delete Vaccine/Medical records of their own Pet, including records created by a Caretaker. Caretakers may not delete any records.

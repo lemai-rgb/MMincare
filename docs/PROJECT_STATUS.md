@@ -69,3 +69,6 @@ The [7 October review](CODE_REVIEW_2026-10-07.md) remains dated historical evide
 All11 product/technical artifacts (eight Markdown, ERD, User Flow, Use Case) now describe the application SHA above. BR/US/ADL IDs are preserved; new stories/decisions cover delivered feedback and public demo. API examples reflect actual handlers; Data Dictionary uses real column/FK names plus incremental migration fields. Personas/quotes are design hypotheses, not interviews. README/portfolio material distinguishes shipped features, checked evidence, planned work and runtime limitations.
 
 No “100% complete”, user-adoption count, production SLA, formal UAT sign-off or measured business improvement is claimed.
+
+## Owner deletion follow-up (PR #36)
+Owner can delete vaccine/medical records for their own Pet regardless of author. API creator filters are removed only after the Pet owner check; medical DELETE RLS is owner-scoped. UI buttons remain visible to Owner. SQL and Playwright tests cover deletion of Caretaker-created records. Production was observed INACTIVE on 2026-11-20, so no live database verification or migration application is claimed.
