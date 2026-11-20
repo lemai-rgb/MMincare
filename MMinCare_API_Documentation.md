@@ -154,3 +154,12 @@ server-derived Owner/Caretaker flags. Pending, expired and revoked invitations
 do not create a Caretaker role; no Pet ownership IDs, photo paths or attachment
 metadata are returned.
 
+
+## Phase 2.2 amendment — pending deployment
+
+Supersedes the Phase 2.1 prohibition on adding records only. Confirmed Caretakers with Active, unexpired access may call:
+
+- `POST /api/shared-pets/{petId}/vaccines`: `vaccine_name`, `vaccine_date`, optional `dose_number`, `clinic_name`, `note`.
+- `POST /api/shared-pets/{petId}/medical-records`: `visit_date`, optional `symptoms`, `diagnosis`, `clinic_name`, `medication`, `note`.
+
+Returns 201 with `vaccine_record` or `medical_record`, containing text fields and record ID only. Unsigned requests return 401; inactive/expired/revoked/unshared access returns 403; invalid content returns 400. No caller-supplied identity, attachment or reminder fields are accepted. RPC `add_shared_pet_record(uuid,text,jsonb)` revalidates authorization and content even for direct Data API requests. Existing shared read projections and base-table isolation remain. No migration has been applied by this PR.

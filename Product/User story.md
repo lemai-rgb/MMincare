@@ -290,3 +290,17 @@ Acceptance criteria above describe expected behavior; they are not all executed 
 |---|---|---|
 | 2.0 | 2026-10-11 | Kept US-01…US-17 IDs, moved delivered chart/deletion into Current and added US-18…US-23 for shipped feedback/demo flows. |
 | 1.6 | 2026-09-22 | Owner baseline, recovery, health/dashboard, future scope and pending changes. |
+
+## US-16 extension — Phase 2.2 (in review, not deployed)
+
+As an active Caretaker, I can add a vaccine or medical text record for the selected shared Pet so its Owner can see the care provided.
+
+Acceptance criteria:
+1. The medical tab offers both create forms and does not offer upload or reminder creation.
+2. A successful save returns to history, with the new text record visible to Caretaker and Owner.
+3. Pending, expired, revoked, unconfirmed and unrelated accounts cannot write through app API or RPC.
+4. Actor/Pet identity cannot be overwritten through payload fields; responses contain no ownership IDs or private file information.
+5. Existing Owner flows remain available. Caretaker cannot update/delete even records they created.
+6. Revoke blocks the next request; concurrent in-flight writes follow the documented transaction ordering.
+
+Evidence: see PR #36, `supabase/tests/phase21_sharing.sql`, `e2e/phase21-sharing.spec.ts`, and `lib/sharedRecordRoute.test.ts`. Runtime race and Preview visual QA remain separate checks.
