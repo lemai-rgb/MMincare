@@ -1,0 +1,34 @@
+name: Phase 2.2 Production HTTP Smoke
+on:
+  push:
+    branches:
+      - verify/phase22-production-smoke-20261121
+    paths:
+      - .github/workflows/phase22-production-smoke.yml
+
+permissions: {}
+
+jobs:
+  public-http:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify public production pages
+        shell: bash
+        env:
+          SMOKE_BASE_URL: https://m-mincare.vercel.app
+        run: |
+          set -euo pipefail
+          printf '| Path | Status | Redirect check |\n|---|---|---|\n' >> "$GITHUB_STEP_SUMMARY"
+          for path in / /login /demo; do
+            expected_url="$SMOKE_BASE_URL$path"
+            result="$(curl --silent --show-error --location --connect-timeout 10 --max-time 30 --retry 1 --retry-delay 2 --output "$RUNNER_TEMP/phase22-smoke-body" --write-out '%{http_code} %{url_effective}' "$expected_url")"
+            status="${result%% *}"
+            effective_url="${result#* }"
+            printf '%s: HTTP %s, URL %s\n' "$path" "$status" "$effective_url"
+            test "$status" = 200
+            test "$effective_url" = "$expected_url"
+            test -s "$RUNNER_TEMP/phase22-smoke-body"
+            printf '| %s | %s | Exact URL retained |\n' "$path" "$status" >> "$GITHUB_STEP_SUMMARY"
+          done
+          printf '\nRead-only HTTP checks against the production alias; no credentials or mutations. This does not certify authenticated UAT or identify the deployed commit from page HTML.\n' >> "$GITHUB_STEP_SUMMARY"
