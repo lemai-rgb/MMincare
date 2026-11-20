@@ -20,6 +20,9 @@ values ('00000000-0000-0000-0000-0000000000a4','00000000-0000-0000-0000-00000000
  '00000000-0000-0000-0000-0000000000a1','unconfirmed-d@example.com','Pending',current_date + 10);
 update public.pet_access set pet_name_snapshot = 'Meo' where access_id = '00000000-0000-0000-0000-0000000000a4';
 
+insert into public.pet_access (pet_id,granted_by,caretaker_email,caretaker_id,status,granted_at,valid_until)
+values ('00000000-0000-0000-0000-0000000000a3','00000000-0000-0000-0000-0000000000a1',
+ 'caretaker-b@example.com','00000000-0000-0000-0000-0000000000b1','Active',now()-interval '3 days',current_date-1);
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-0000000000b1","email":"caretaker-b@example.com","role":"authenticated"}',true);
 do $$
@@ -33,6 +36,14 @@ begin
    or invitations->0 ?| array['granted_by','caretaker_email','pet_id','caretaker_id']
  then raise exception 'Invitation projection incorrect'; end if;
  if public.has_active_caretaker_access() then raise exception 'Pending counted as active'; end if;
+ begin
+  perform public.add_shared_pet_record('00000000-0000-0000-0000-0000000000a2', 'medical-records', jsonb_build_object('visit_date', current_date::text));
+  raise exception 'Pending write succeeded';
+ exception when insufficient_privilege then null; end;
+ begin
+  perform public.add_shared_pet_record('00000000-0000-0000-0000-0000000000a3', 'medical-records', jsonb_build_object('visit_date', current_date::text));
+  raise exception 'Expired write succeeded';
+ exception when insufficient_privilege then null; end;
  if public.accept_pet_access('00000000-0000-0000-0000-0000000000a4')
    <> '{"access_id":"00000000-0000-0000-0000-0000000000a4","status":"Active"}'::jsonb
  then raise exception 'Accept response leaked fields'; end if;
