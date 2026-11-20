@@ -235,6 +235,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
   }
 
   function handleVaccineSaved(result: VaccineSavedResult) {
+    if (!isOwner) { goToHistory("Đã lưu mũi tiêm."); loadHistory(); return; }
     setIsLoading(false);
     setError(null);
     setEntries((current) => [result.entry, ...current.filter((item) => item.id !== result.entry.id)]);
@@ -264,6 +265,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
   }
 
   function handleMedicalRecordReady(entry: MedicalHistoryEntry) {
+    if (!isOwner) { goToHistory("Đã lưu lần khám."); loadHistory(); return; }
     setError(null);
     setNotice(null);
     setReminderDate("");
@@ -388,7 +390,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
                 </button>
               ))}
             </div>
-            {isOwner && <div className={styles.addRecordMenu}>
+            {<div className={styles.addRecordMenu}>
               <button aria-expanded={isAddMenuOpen} aria-haspopup="menu" className={styles.addRecordButton} onClick={() => setIsAddMenuOpen((open) => !open)} type="button">
                 <span aria-hidden="true">+</span>Thêm bản ghi
               </button>
@@ -447,7 +449,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
       {view.kind === "add-vaccine" && (
         <div className={styles.medicalWorkspace}>
           <MedicalRecordPreview entries={entries} />
-          <VaccineCreateForm onCancel={() => goToHistory()} onSaved={handleVaccineSaved} petId={petId} species={species} />
+          <VaccineCreateForm shared={!isOwner} onCancel={() => goToHistory()} onSaved={handleVaccineSaved} petId={petId} species={species} />
         </div>
       )}
 
@@ -455,6 +457,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
         <div className={`${styles.medicalWorkspace} ${styles.medicalRecordWorkspace}`}>
           <MedicalRecordPreview entries={entries} medicalOnly />
           <MedicalRecordCreateForm
+            shared={!isOwner}
             onCancel={() => goToHistory()}
             onRecordSaved={handleMedicalRecordSaved}
             onReadyForReminder={handleMedicalRecordReady}

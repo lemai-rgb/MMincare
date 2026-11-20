@@ -50,6 +50,34 @@ begin
    or (shared->0->'records'->0) ?| array['created_by','attachments','storage_path']
  then raise exception 'Unexpected shared projection'; end if;
 end $$;
+-- Phase 2.2: narrow writes, truthful authorship and no base-table visibility.
+do $$
+declare result jsonb;
+begin
+ result := public.add_shared_pet_record('00000000-0000-0000-0000-0000000000a2', 'medical-records',
+   jsonb_build_object('visit_date', current_date::text, 'diagnosis', 'Caretaker diagnosis'));
+ if result->'medical_record' ?| array['created_by','pet_id','owner_id'] then raise exception 'Write projection leaked identity'; end if;
+ perform public.add_shared_pet_record('00000000-0000-0000-0000-0000000000a2', 'vaccines',
+   jsonb_build_object('vaccine_date', current_date::text, 'vaccine_name', 'Caretaker vaccine'));
+ if exists (select 1 from public.medical_records) or exists (select 1 from public.vaccine_records) then raise exception 'Caretaker base records leaked'; end if;
+ begin
+  perform public.add_shared_pet_record('00000000-0000-0000-0000-0000000000a3', 'medical-records', jsonb_build_object('visit_date', current_date::text));
+  raise exception 'Unshared write succeeded';
+ exception when insufficient_privilege then null; end;
+ begin
+  perform public.add_shared_pet_record('00000000-0000-0000-0000-0000000000a2', 'medical-records', jsonb_build_object('visit_date', current_date::text, 'created_by', 'spoof'));
+  raise exception 'Author injection succeeded';
+ exception when invalid_parameter_value then null; end;
+end $$;
+reset role;
+do $$ begin
+ if not exists (select 1 from public.medical_records where diagnosis = 'Caretaker diagnosis' and created_by = '00000000-0000-0000-0000-0000000000b1') then raise exception 'Incorrect caretaker author'; end if;
+end $$;
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}',true);
+do $$ begin
+ if not exists (select 1 from public.medical_records where diagnosis = 'Caretaker diagnosis') then raise exception 'Owner cannot see caretaker record'; end if;
+end $$;
 select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-0000000000c1","email":"other-c@example.com","role":"authenticated"}',true);
 do $$ begin
  if jsonb_array_length(public.read_shared_pets(null)) <> 0 then raise exception 'Uninvited user saw shared pet'; end if;
@@ -74,5 +102,9 @@ select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000
 do $$ begin
  if jsonb_array_length(public.read_shared_pets(null)) <> 0 then raise exception 'Revoked access still visible'; end if;
  if public.has_active_caretaker_access() then raise exception 'Revoked access counted as active'; end if;
+ begin
+  perform public.add_shared_pet_record('00000000-0000-0000-0000-0000000000a2', 'medical-records', jsonb_build_object('visit_date', current_date::text));
+  raise exception 'Revoked write succeeded';
+ exception when insufficient_privilege then null; end;
 end $$;
 rollback;

@@ -115,7 +115,7 @@ export function PetDetailView({ pet, activeTab, form, healthView, healthPeriod, 
             <div className={styles.profileAside}>
               {isOwner
                 ? <Link className={styles.editButton} href={`/pets/${encodeURIComponent(pet.pet_id)}/edit`}>Chỉnh sửa</Link>
-                : <span className={styles.readOnlyBadge}>Chỉ xem</span>}
+                : <span className={styles.readOnlyBadge}>Xem và thêm hồ sơ</span>}
               <p>
                 {profileSummaryError
                   ? "Chưa thể tải cập nhật"
@@ -136,7 +136,7 @@ export function PetDetailView({ pet, activeTab, form, healthView, healthPeriod, 
             />
           )}
 
-          {activeTab === "medical" && <PetMedicalHistory form={isOwner ? form : undefined} isOwner={isOwner} petId={pet.pet_id} species={pet.species} />}
+          {activeTab === "medical" && <PetMedicalHistory form={form} isOwner={isOwner} petId={pet.pet_id} species={pet.species} />}
           {activeTab === "reminders" && (
             <PetReminders
               focusForm={form === "reminder"}

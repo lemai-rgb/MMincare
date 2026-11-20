@@ -1,5 +1,18 @@
 # MMinCare — delivery status
 
+## Current checkpoint — 2026-11-20
+
+- Main baseline: `9fdc68e`, including merged PR #31 (production schema/history reconciliation).
+- PR #30: Phase 2.1 invitations, acceptance, limited reads and revocation merged.
+- PR #32–#35: sharing dialog, demo fixtures/landing, account menu and balanced frame merged.
+- Phase 2.2: implementation in review preparation. Narrow RPC + two POST routes allow active Caretakers to add vaccination/medical text records; actor is database-derived, and inserts serialize with revocation. No new base-table Caretaker policies.
+- UI reuses forms, hides file upload/reminder creation and preserves Owner-only delete controls.
+- Tests added: route authorization/error mapping, SQL projection/authorship/Owner visibility and unshared/revoked denial; Playwright extends the local two-account flow. CI results must be checked on the new PR head.
+- Not deployed: new migration is repository-only. Runtime expiry/race testing and browser visual QA remain pending. Existing production migration status is historical evidence from PR #31, not a fresh production audit.
+
+## Historical checkpoint — 2026-10-11
+
+
 **Cập nhật:** 2026-10-11 (VN) · **Application baseline:** `main` `bcd14b51f4b70cd3d418bd10638f7a996713fdcf`  
 **Đã triển khai:** PR #26 đã merge, [Vercel Production success](https://vercel.com/lemai-rgbs-projects/m-mincare/E3bmui2BdzU7iAzkP2kNtnM4XSLD).  
 [Ứng dụng](https://m-mincare.vercel.app/) · [Trải nghiệm thử](https://m-mincare.vercel.app/demo)

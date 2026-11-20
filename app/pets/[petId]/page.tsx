@@ -119,7 +119,7 @@ export default async function PetDetailPage({ params, searchParams }: PetDetailP
       gender: shared.gender, breed: shared.breed, date_of_birth: shared.date_of_birth,
     };
     timing.finish("ok");
-    return <PetDetailView pet={sharedPet} activeTab={requestedTab} healthView="history"
+    return <PetDetailView pet={sharedPet} form={form} activeTab={requestedTab} healthView="history"
       healthPeriod={healthPeriod} isHealthSubpage={false} healthHistoryHref=""
       profileSummaryError={false} profileRecordCount={shared.records.length}
       upcomingReminder={null} reminderLoadError={false} currentUserId={claimsData.claims.sub}

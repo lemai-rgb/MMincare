@@ -97,7 +97,7 @@ export function PetAccessManager({ petId, petName, inDialog = false }: { petId: 
       <div className={styles.petAccessHeader}>
         <div>
           <h2 id="pet-access-title">Chia sẻ hồ sơ</h2>
-          <p>Chia sẻ <strong>{petName}</strong> ở chế độ chỉ xem.</p>
+          <p>Chia sẻ <strong>{petName}</strong> với quyền xem và thêm hồ sơ tiêm phòng, khám bệnh.</p>
           {isDemo && <p>Trải nghiệm demo: lời mời chỉ lưu tạm trong phiên này, không gửi email.</p>}
         </div>
         {!inDialog && <button className={styles.petAccessToggle} onClick={() => setIsOpen((current) => !current)} type="button" aria-expanded={isOpen}>

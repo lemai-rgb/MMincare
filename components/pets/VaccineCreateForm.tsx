@@ -37,6 +37,7 @@ export type VaccineSavedResult = {
 };
 
 type VaccineCreateFormProps = {
+  shared?: boolean;
   petId: string;
   species: PetSpecies;
   onCancel: () => void;
@@ -55,7 +56,7 @@ function toEntry(record: SavedVaccine): MedicalHistoryEntry {
   };
 }
 
-export function VaccineCreateForm({ petId, species, onCancel, onSaved }: VaccineCreateFormProps) {
+export function VaccineCreateForm({ petId, species, onCancel, onSaved, shared = false }: VaccineCreateFormProps) {
   const request = useRuntimeRequest();
   const [vaccineSelection, setVaccineSelection] = useState("");
   const [customVaccineName, setCustomVaccineName] = useState("");
@@ -88,7 +89,7 @@ export function VaccineCreateForm({ petId, species, onCancel, onSaved }: Vaccine
     requestController.current?.abort();
     requestController.current = controller;
     try {
-      const response = await request(`/api/pets/${encodeURIComponent(petId)}/vaccines`, {
+      const response = await request(`/api/${shared ? "shared-pets" : "pets"}/${encodeURIComponent(petId)}/vaccines`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ vaccine_name: submittedVaccineName, vaccine_date: vaccineDate, dose_number: doseNumber, clinic_name: clinicName, note }),
