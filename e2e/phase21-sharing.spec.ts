@@ -80,20 +80,67 @@ test("Owner invite, Caretaker accept, isolation, and revoke", async ({ browser }
     await test.step("Caretaker sees only the shared read-only profile", async () => {
       await caretakerPage.goto(`/pets/${petId}`);
       await expect(caretakerPage.getByRole("heading", { name: "Meo CI" })).toBeVisible();
-      await expect(caretakerPage.getByText("Chỉ xem")).toBeVisible();
+      await expect(caretakerPage.getByText("Xem và thêm hồ sơ")).toBeVisible();
       await expect(caretakerPage.getByRole("link", { name: "Chỉnh sửa" })).toHaveCount(0);
       await expect(caretakerPage.getByRole("button", { name: "Quản lý chia sẻ" })).toHaveCount(0);
       await caretakerPage.getByRole("button", { name: "Tài khoản" }).click();
       await expect(caretakerPage.getByRole("menuitemradio", { name: /Caretaker/ })).toBeVisible();
     });
+    await test.step("Caretaker adds text records, Owner sees them, direct writes remain denied", async () => {
+      await caretakerPage.goto(`/pets/${petId}?tab=medical`);
+      await caretakerPage.getByRole("button", { name: "Thêm bản ghi" }).click();
+      await caretakerPage.getByRole("menuitem", { name: "Thêm lần khám" }).click();
+      await expect(caretakerPage.getByRole("heading", { name: "THÊM LẦN KHÁM" })).toBeVisible();
+      await expect(caretakerPage.getByText("Tải ảnh hoặc PDF")).toHaveCount(0);
+      const payload = { visit_date: "2026-01-01", diagnosis: "Caretaker visit" };
+      const added = await caretakerPage.request.post(`/api/shared-pets/${petId}/medical-records`, { data: payload });
+      expect(added.status()).toBe(201);
+      const saved = await added.json();
+      expect(saved.medical_record.created_by).toBeUndefined();
+      const vaccine = await caretakerClient.rpc("add_shared_pet_record", { p_pet_id: petId, p_kind: "vaccines", p_body: { vaccine_name: "Caretaker vaccine", vaccine_date: "2026-01-01" } });
+      expect(vaccine.error).toBeNull();
+      const ownerRecords = await ownerClient.from("medical_records").select("record_id,created_by").eq("record_id", saved.medical_record.record_id);
+      expect(ownerRecords.data?.[0]?.created_by).toBe(caretaker.data.user!.id);
+      const direct = await caretakerClient.from("medical_records").insert({ pet_id: petId, created_by: caretaker.data.user!.id, visit_date: "2026-01-01" });
+      expect(direct.error).toBeTruthy();
+      const deleted = await caretakerClient.from("medical_records").delete().eq("record_id", saved.medical_record.record_id).select();
+      expect(deleted.data ?? []).toEqual([]);
+      const forged = await caretakerClient.rpc("add_shared_pet_record", { p_pet_id: petId, p_kind: "medical-records", p_body: { ...payload, created_by: owner.data.user!.id } });
+      expect(forged.error?.code).toBe("22023");
+      const unrelated = await caretakerClient.rpc("add_shared_pet_record", { p_pet_id: "00000000-0000-4000-8000-000000000999", p_kind: "medical-records", p_body: payload });
+      expect(unrelated.error?.code).toBe("42501");
+      await caretakerPage.goto(`/pets/${petId}?tab=medical`);
+      await expect(caretakerPage.getByRole("heading", { name: "Caretaker visit" })).toBeVisible();
+      await expect(caretakerPage.getByRole("button", { name: /Xóa/ })).toHaveCount(0);
+    });
+    await test.step("Owner deletes Caretaker records using the visible UI buttons", async () => {
+      await ownerPage.goto(`/pets/${petId}?tab=medical`);
+      for (const title of ["Caretaker visit", "Caretaker vaccine"]) {
+        const card = ownerPage.getByRole("article").filter({ has: ownerPage.getByRole("heading", { name: title, exact: true }) });
+        await expect(card).toBeVisible();
+        await card.getByRole("button", { name: /Xóa/ }).click();
+        const response = ownerPage.waitForResponse(r => r.request().method() === "DELETE" && r.url().includes(`/api/pets/${petId}/`));
+        await ownerPage.getByRole("dialog").getByRole("button", { name: "Xóa bản ghi", exact: true }).click();
+        expect((await response).status()).toBe(200);
+        await expect(ownerPage.getByRole("heading", { name: title, exact: true })).toHaveCount(0);
+      }
+      const medical = await admin.from("medical_records").select("record_id").eq("pet_id", petId);
+      const vaccines = await admin.from("vaccine_records").select("vaccine_record_id").eq("pet_id", petId);
+      expect(medical.error).toBeNull(); expect(vaccines.error).toBeNull();
+      expect(medical.data).toEqual([]); expect(vaccines.data).toEqual([]);
+      await caretakerPage.reload();
+      await expect(caretakerPage.getByRole("heading", { name: "Caretaker visit", exact: true })).toHaveCount(0);
+    });
     await test.step("Owner revokes; old link no longer grants access", async () => {
-      await ownerPage.reload();
+      await ownerPage.goto("/dashboard");
       await ownerPage.getByRole("button", { name: "Chia sẻ hồ sơ Meo CI" }).click();
       await expect(ownerPage.getByText(caretakerEmail)).toBeVisible();
       const response = ownerPage.waitForResponse((r) => r.request().method() === "PATCH" && r.url().includes("/revoke"));
       await ownerPage.getByRole("button", { name: "Thu hồi" }).click();
       expect((await response).status()).toBe(200);
       await expect(ownerPage.getByText("Đã thu hồi quyền chia sẻ.")).toBeVisible();
+      const denied = await caretakerClient.rpc("add_shared_pet_record", { p_pet_id: petId, p_kind: "medical-records", p_body: { visit_date: "2026-01-01" } });
+      expect(denied.error?.code).toBe("42501");
       await caretakerPage.goto(`/pets/${petId}`);
       await caretakerPage.waitForURL("**/dashboard");
       await expect(caretakerPage.getByRole("heading", { name: "Meo CI" })).toHaveCount(0);

@@ -6,7 +6,7 @@ MMinCare helps dog and cat owners keep pet profiles, vaccination history, medica
 
 [Live application](https://m-mincare.vercel.app/) · [Try the demo](https://m-mincare.vercel.app/demo) · [Portfolio Demo guide](docs/PORTFOLIO_DEMO.md) · [Sample dataset](demo/README.md) · [Project status](docs/PROJECT_STATUS.md) · [BA/PM/Tester evidence](docs/PORTFOLIO_EVIDENCE.md)
 
-> **Project phase: Phase 2.1 — read-only Caretaker sharing.** The application supports per-pet invitations, acceptance and revocation. The public demo uses synthetic, browser-local data; demo invitations are simulated, do not send email or grant real access, and reset when the demo reloads. Check individual PRs and CI runs for verification status.
+> **Project phase: Phase 2.2 — Caretaker text records; release tracked in [PR #36](https://github.com/lemai-rgb/MMincare/pull/36).** The application supports per-pet invitations, acceptance and revocation. The public demo uses synthetic, browser-local data; demo invitations are simulated, do not send email or grant real access, and reset when the demo reloads. Check individual PRs and CI runs for verification status.
 
 ## Problem and intended users
 
@@ -37,11 +37,11 @@ This is an independent project with AI-assisted implementation and review. Repos
 | Health summaries | Compact latest-journal summary on pet cards; per-pet weekly/monthly statistics |
 | Data access | Authenticated Owner checks in APIs, database RLS, private Storage and Owner-authorized photo delivery |
 
-## Phase 2.1 — Caretaker sharing
+## Phase 2 — Caretaker sharing
 
 An Owner invites a Caretaker by email for one selected pet and an expiry date. The recipient accepts using the matching verified account. The Owner can revoke access; revoked or expired access is blocked on the next request. A person can own their pets and be a Caretaker for another person's pet.
 
-Caretaker access is read-only: basic pet information and text vaccination/medical history. It excludes changes, onward sharing, private photos and attachments, reminders, notifications and health journals. The demo simulates invitation creation and revocation locally; it does not deliver invitations or exercise real authentication, RLS or Storage.
+Phase 2.2 adds vaccination and medical text records for an active, unexpired shared pet. It does not permit editing/deleting existing records, onward sharing, private photos or attachments, reminders, notifications or health journals. Both database migrations are applied in production. Application merge/deployment evidence and remaining production UAT are tracked in [PR #36](https://github.com/lemai-rgb/MMincare/pull/36) and the [release log](docs/PHASE_2_2_RELEASE.md). The demo simulates invitation creation and revocation locally; it does not deliver invitations or exercise real authentication, RLS or Storage.
 
 **Typical flow:** register and confirm email → create a pet → record care and health observations → set reminders → review notifications and complete tasks → review history/statistics.
 
@@ -56,7 +56,7 @@ Caretaker access is read-only: basic pet information and text vaccination/medica
 
 ## Delivery and quality
 
-The original Owner MVP baseline was main `bcd14b51f4b70cd3d418bd10638f7a996713fdcf` (PR #26). Phase 2.1 was subsequently implemented in [PR #30](https://github.com/lemai-rgb/MMincare/pull/30); [PR #31](https://github.com/lemai-rgb/MMincare/pull/31) reconciles the production migration with repository history. See GitHub for their current status.
+The original Owner MVP baseline was main `bcd14b51f4b70cd3d418bd10638f7a996713fdcf` (PR #26). Phase 2.1 was subsequently implemented in [PR #30](https://github.com/lemai-rgb/MMincare/pull/30); [PR #31](https://github.com/lemai-rgb/MMincare/pull/31), now merged, reconciles the production migration with repository history. See GitHub for their current status.
 
 Historical checks at `7b777d1` included demo tests, lint, TypeScript, build and [CI](https://github.com/lemai-rgb/MMincare/actions/runs/38068595221). Phase 2.1's Owner/Caretaker flow was exercised using synthetic accounts and local Supabase in [CI](https://github.com/lemai-rgb/MMincare/actions/runs/43139448333). These are not a full production UAT.
 
@@ -138,7 +138,7 @@ Configure Supabase Site URL/auth redirects, reconcile migrations, and verify pri
 
 Optional `MINCARE_PERF_LOG=1` enables server timing logs with request/stage identifiers and durations. Actual production before/after timings have not been captured; no speed improvement percentage is claimed.
 
-The deployed `/demo` uses shared application components and synthetic per-tab client data, no backend credentials, with Pet, Vaccine/Medical, Reminder/Notification and Health flows. The real application still needs its configured Supabase environment. See [demo scope and acceptance](docs/PORTFOLIO_DEMO.md) before using a demo URL on a CV. Future scope includes controlled sharing, external notifications, OAuth and multi-pet analytics.
+The deployed `/demo` uses shared application components and synthetic per-tab client data, no backend credentials, with Pet, Vaccine/Medical, Reminder/Notification and Health flows. The real application still needs its configured Supabase environment. See [demo scope and acceptance](docs/PORTFOLIO_DEMO.md) before using a demo URL on a CV. Future scope includes external notifications, OAuth and multi-pet analytics.
 
 ## Portfolio access
 

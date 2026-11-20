@@ -169,3 +169,15 @@ The account menu may show Owner and/or Caretaker tabs only from active,
 server-derived roles. With neither role it shows `Chưa có vai trò`; pending
 invitations remain in the invitation flow and do not grant access.
 
+
+## Phase 2.2 amendment — release tracked in PR #36
+
+This amendment supersedes Phase 2.1 read-only restrictions for creation only:
+- Active Caretakers with confirmed accounts may add Vaccine/Medical text records for their explicitly shared Pet.
+- The database derives `created_by` from the authenticated account. The Owner can read those records.
+- Caretakers cannot update/delete records (including their own), share onward, access private files/photos, Health Logs, or manage Reminders.
+- Each write checks current access and expiry using the Vietnam date. Writes serialize with revoke on the access row: a write already holding the lock may commit before revoke; once revoke commits, subsequent writes fail.
+- Base-table SELECT/INSERT policies remain Owner-only. Owner may delete Vaccine/Medical records of their own Pet, including records created by a Caretaker. Caretakers may not delete any records.
+
+
+Production database migrations were applied on 21/11/2026 (Vietnam time). See [PR #36](https://github.com/lemai-rgb/MMincare/pull/36) and the release log in docs/PHASE_2_2_RELEASE.md for application deployment and verification limits.

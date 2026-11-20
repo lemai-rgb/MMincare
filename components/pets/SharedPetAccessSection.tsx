@@ -70,7 +70,7 @@ export function SharedPetAccessSection() {
     <section className={styles.sharedAccessSection} aria-labelledby="shared-pets-title">
       <div className={styles.sharedAccessHeading}>
         <div><p className={styles.sharedAccessEyebrow}>Caretaker</p><h2 id="shared-pets-title">Được chia sẻ với tôi</h2></div>
-        <span className={styles.readOnlyLabel}>Chỉ xem</span>
+        <span className={styles.readOnlyLabel}>Xem và thêm hồ sơ</span>
       </div>
       {error && <p className={styles.sharedAccessError} role="alert">{error}</p>}
       {invitations.length > 0 && (

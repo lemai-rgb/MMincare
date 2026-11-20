@@ -28,6 +28,7 @@ type ApiResponse = { medical_record?: SavedMedicalRecord; error?: string };
 type AttachmentApiResponse = { attachment?: { attachment_id: string }; error?: string };
 
 type MedicalRecordCreateFormProps = {
+  shared?: boolean;
   petId: string;
   onCancel: () => void;
   onRecordSaved: (entry: MedicalHistoryEntry) => void;
@@ -50,7 +51,7 @@ function toEntry(record: SavedMedicalRecord): MedicalHistoryEntry {
   };
 }
 
-export function MedicalRecordCreateForm({ petId, onCancel, onRecordSaved, onReadyForReminder }: MedicalRecordCreateFormProps) {
+export function MedicalRecordCreateForm({ petId, onCancel, onRecordSaved, onReadyForReminder, shared = false }: MedicalRecordCreateFormProps) {
   const request = useRuntimeRequest();
   const [visitDate, setVisitDate] = useState("");
   const [symptoms, setSymptoms] = useState("");
@@ -173,7 +174,7 @@ export function MedicalRecordCreateForm({ petId, onCancel, onRecordSaved, onRead
     requestController.current = controller;
 
     try {
-      const response = await request(`/api/pets/${encodeURIComponent(petId)}/medical-records`, {
+      const response = await request(`/api/${shared ? "shared-pets" : "pets"}/${encodeURIComponent(petId)}/medical-records`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ visit_date: visitDate, symptoms, diagnosis, clinic_name: clinicName, medication, note }),
@@ -235,7 +236,7 @@ export function MedicalRecordCreateForm({ petId, onCancel, onRecordSaved, onRead
           <span className={styles.fieldLabel}>Ngày khám <span aria-hidden="true">*</span></span>
           <input max={today} onChange={(event) => updateField(setVisitDate, event.target.value)} required type="date" value={visitDate} />
         </label>
-        <div className={styles.medicalFileField}>
+        {!shared && <div className={styles.medicalFileField}>
           <span className={styles.fieldLabel}>File khám bệnh</span>
           {selectedFile ? (
             <div className={styles.medicalSelectedFile}>
@@ -263,7 +264,7 @@ export function MedicalRecordCreateForm({ petId, onCancel, onRecordSaved, onRead
           <p className={fileError ? styles.medicalFieldError : styles.medicalFileHelp} role={fileError ? "alert" : undefined}>
             {fileError || "JPG, JPEG, PNG hoặc PDF · Tối đa 5MB"}
           </p>
-        </div>
+        </div>}
         <label className={styles.fullWidthField}>
           <span className={styles.fieldLabel}>Ghi chú</span>
           <textarea maxLength={MAX_LENGTHS.note} onChange={(event) => updateField(setNote, event.target.value)} placeholder="Ghi chú thêm về lần khám" value={note} />
