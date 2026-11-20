@@ -8,8 +8,8 @@
 | Phase 2.2 database | Both production migrations applied successfully | `20261120183551_caretaker_add_records`, then `20261120183616_owner_delete_caretaker_records`; 21 history entries |
 | Database authorization | Catalog, function ACL and RLS checked after apply | Public invoker wrapper/private definer, empty search_path, anon denied; Owner SELECT/DELETE by Pet ownership; base INSERT remains Owner-only |
 | Data integrity | Unchanged before/after | Pet 5, Vaccine 7, Medical 5, Pet access 0; matching full-row fingerprints |
-| Application release | [PR #36](https://github.com/lemai-rgb/MMincare/pull/36) | Final HEAD, CI, merge SHA and Vercel deployment are maintained in the PR release checklist |
-| Automated behavior | SQL and Playwright PASS at application HEAD `dbaf56a` | [Replay #55](https://github.com/lemai-rgb/MMincare/actions/runs/44774592381), [Demo #37](https://github.com/lemai-rgb/MMincare/actions/runs/44774592385); reconciled HEAD requires its own CI |
+| Application release | [PR #36](https://github.com/lemai-rgb/MMincare/pull/36) merged | Merge SHA `5b70a12f064fbcabe606444ab492a3d340dc6590`; production deployment evidence is maintained in the PR release checklist |
+| Automated behavior | SQL and Playwright PASS at reconciled HEAD `f79569e1` | [Replay #56](https://github.com/lemai-rgb/MMincare/actions/runs/44802823492), [Demo #38](https://github.com/lemai-rgb/MMincare/actions/runs/44802823433); both completed successfully before merge |
 | Production UAT | Not signed off | A production fixture call was interrupted without a result; no fixture session remains and data fingerprints match; no runtime PASS claimed |
 | Remaining QA | Explicitly pending | Full authenticated production Owner/Caretaker flow, simultaneous revoke/write race, visual/device matrix |
 

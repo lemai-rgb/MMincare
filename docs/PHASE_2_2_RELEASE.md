@@ -68,3 +68,13 @@ Application HEAD trước reconcile: dbaf56af26bc8d06416cedad4622264b9d3ae6f7.
 ## Theo dõi sau merge
 
 Checklist PR #36 được cập nhật theo kết quả thực tế: commit đã merge, trạng thái Vercel cho commit đó, URL production, HTTP smoke và công việc còn lại. Trạng thái database, application deployment và nghiệm thu người dùng được ghi riêng để tránh nhầm đã deploy với đã UAT đầy đủ.
+
+
+## Kết quả sau merge — 21/11/2026 (giờ Việt Nam)
+
+- [PR #36](https://github.com/lemai-rgb/MMincare/pull/36) đã merge; commit `5b70a12f064fbcabe606444ab492a3d340dc6590`.
+- HEAD trước merge `f79569e1b8ebd285b124798aaa3099bfae708d85`: [Migration Replay #56](https://github.com/lemai-rgb/MMincare/actions/runs/44802823492) PASS và [Demo Checks #38](https://github.com/lemai-rgb/MMincare/actions/runs/44802823433) PASS. Vercel Preview của HEAD này cũng success.
+- GitHub compare xác nhận hai migration được rename với 0 dòng SQL thay đổi. Merge tree giống tree của HEAD đã kiểm thử.
+- Cập nhật sau merge này chỉ ghi kết quả vào tài liệu, không thay đổi ứng dụng, SQL hay dữ liệu production. Feature branch được giữ lại.
+- Kết quả Vercel production theo commit và public smoke được cập nhật trực tiếp trong mục Sau merge của PR #36 khi trả về; không lấy Preview làm bằng chứng production.
+- Full production authenticated UAT, concurrent revoke/write race và visual/device QA vẫn giữ trạng thái chưa xác nhận.
