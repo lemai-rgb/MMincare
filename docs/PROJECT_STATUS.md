@@ -1,14 +1,21 @@
 # MMinCare — delivery status
 
-## Current checkpoint — 2026-11-20
+## Current checkpoint — 2026-11-21 (Asia/Ho_Chi_Minh)
 
-- Main baseline: `9fdc68e`, including merged PR #31 (production schema/history reconciliation).
-- PR #30: Phase 2.1 invitations, acceptance, limited reads and revocation merged.
-- PR #32–#35: sharing dialog, demo fixtures/landing, account menu and balanced frame merged.
-- Phase 2.2: implementation in review preparation. Narrow RPC + two POST routes allow active Caretakers to add vaccination/medical text records; actor is database-derived, and inserts serialize with revocation. No new base-table Caretaker policies.
-- UI reuses forms, hides file upload/reminder creation and preserves Owner-only delete controls.
-- Tests added: route authorization/error mapping, SQL projection/authorship/Owner visibility and unshared/revoked denial; Playwright extends the local two-account flow. CI results must be checked on the new PR head.
-- Not deployed: new migration is repository-only. Runtime expiry/race testing and browser visual QA remain pending. Existing production migration status is historical evidence from PR #31, not a fresh production audit.
+| Workstream | Verified state | Evidence / remaining |
+|---|---|---|
+| Phase 2.1 | PR #30 and #31 merged | Per-Pet invitations, accept, limited reads, revoke; recorded database baseline |
+| Phase 2.2 database | Both production migrations applied successfully | `20261120183551_caretaker_add_records`, then `20261120183616_owner_delete_caretaker_records`; 21 history entries |
+| Database authorization | Catalog, function ACL and RLS checked after apply | Public invoker wrapper/private definer, empty search_path, anon denied; Owner SELECT/DELETE by Pet ownership; base INSERT remains Owner-only |
+| Data integrity | Unchanged before/after | Pet 5, Vaccine 7, Medical 5, Pet access 0; matching full-row fingerprints |
+| Application release | [PR #36](https://github.com/lemai-rgb/MMincare/pull/36) | Final HEAD, CI, merge SHA and Vercel deployment are maintained in the PR release checklist |
+| Automated behavior | SQL and Playwright PASS at application HEAD `dbaf56a` | [Replay #55](https://github.com/lemai-rgb/MMincare/actions/runs/44774592381), [Demo #37](https://github.com/lemai-rgb/MMincare/actions/runs/44774592385); reconciled HEAD requires its own CI |
+| Production UAT | Not signed off | A production fixture call was interrupted without a result; no fixture session remains and data fingerprints match; no runtime PASS claimed |
+| Remaining QA | Explicitly pending | Full authenticated production Owner/Caretaker flow, simultaneous revoke/write race, visual/device matrix |
+
+Phase 2.2 allows confirmed Caretakers with Active, unexpired access to add Vaccine/Medical text records. Owner can see/delete those records. Caretakers cannot edit/delete, share onward, access private photos/files, Health Logs or manage Reminders.
+
+See [the detailed release log](PHASE_2_2_RELEASE.md) for operations, migration mapping, evidence and limitations. Production migrations are already applied: do not run them again. Repository filenames match the recorded remote versions; no production history repair was performed.
 
 ## Historical checkpoint — 2026-10-11
 
@@ -17,7 +24,7 @@
 **Đã triển khai:** PR #26 đã merge, [Vercel Production success](https://vercel.com/lemai-rgbs-projects/m-mincare/E3bmui2BdzU7iAzkP2kNtnM4XSLD).  
 [Ứng dụng](https://m-mincare.vercel.app/) · [Trải nghiệm thử](https://m-mincare.vercel.app/demo)
 
-## Current delivery
+## Historical delivery matrix — 2026-10-11
 
 | Workstream | Implementation | Evidence / remaining |
 |---|---|---|
@@ -34,7 +41,7 @@
 | Optional vaccine schedule suggestion | Partially delivered / unavailable | CR-08 status contract fixed; approved read access/dataset not complete; manual dates allowed |
 | Caretaker, OAuth, push/email, aggregate analytics | Planned | Reserved designs do not mean runtime permission |
 
-## Latest release evidence
+## Historical release evidence — PR #26
 
 - Application main `bcd14b5`: merged [PR #26](https://github.com/lemai-rgb/MMincare/pull/26), same application UI/forms/styles for demo, distinct fixture histories and non-empty Sushi profile.
 - [CI run 38068595221](https://github.com/lemai-rgb/MMincare/actions/runs/38068595221): PASS at PR head `7b777d16928148f1e83afc888e79521220eb28f2`, before merge. No separate merge-SHA CI run was claimed.
@@ -71,4 +78,4 @@ All11 product/technical artifacts (eight Markdown, ERD, User Flow, Use Case) now
 No “100% complete”, user-adoption count, production SLA, formal UAT sign-off or measured business improvement is claimed.
 
 ## Owner deletion follow-up (PR #36)
-Owner can delete vaccine/medical records for their own Pet regardless of author. API creator filters are removed only after the Pet owner check; medical DELETE RLS is owner-scoped. UI buttons remain visible to Owner. SQL and Playwright tests cover deletion of Caretaker-created records. Production was observed INACTIVE on 2026-11-20, so no live database verification or migration application is claimed.
+Owner can delete vaccine/medical records for their own Pet regardless of author. API creator filters are removed only after the Pet owner check; medical DELETE RLS is owner-scoped. UI buttons remain visible to Owner. SQL and Playwright tests cover deletion of Caretaker-created records. The earlier INACTIVE checkpoint is superseded by the production migration/catalog verification above. Production authenticated UAT remains unverified; local CI evidence is tracked separately.

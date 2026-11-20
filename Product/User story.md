@@ -291,7 +291,7 @@ Acceptance criteria above describe expected behavior; they are not all executed 
 | 2.0 | 2026-10-11 | Kept US-01…US-17 IDs, moved delivered chart/deletion into Current and added US-18…US-23 for shipped feedback/demo flows. |
 | 1.6 | 2026-09-22 | Owner baseline, recovery, health/dashboard, future scope and pending changes. |
 
-## US-16 extension — Phase 2.2 (in review, not deployed)
+## US-16 extension — Phase 2.2 (release tracked in PR #36)
 
 As an active Caretaker, I can add a vaccine or medical text record for the selected shared Pet so its Owner can see the care provided.
 
@@ -306,3 +306,6 @@ Acceptance criteria:
 Evidence: see PR #36, `supabase/tests/phase21_sharing.sql`, `e2e/phase21-sharing.spec.ts`, and `lib/sharedRecordRoute.test.ts`. Runtime race and Preview visual QA remain separate checks.
 
 Owner deletion AC: the Owner sees the Delete button on Caretaker records; confirmation deletes the record through the app API and RLS. Other owners and Caretakers remain denied.
+
+
+Production database migrations were applied on 21/11/2026 (Vietnam time). See [PR #36](https://github.com/lemai-rgb/MMincare/pull/36) and the release log in docs/PHASE_2_2_RELEASE.md for application deployment and verification limits.
