@@ -132,7 +132,7 @@ test("Owner invite, Caretaker accept, isolation, and revoke", async ({ browser }
       await expect(caretakerPage.getByRole("heading", { name: "Caretaker visit", exact: true })).toHaveCount(0);
     });
     await test.step("Owner revokes; old link no longer grants access", async () => {
-      await ownerPage.reload();
+      await ownerPage.goto("/dashboard");
       await ownerPage.getByRole("button", { name: "Chia sẻ hồ sơ Meo CI" }).click();
       await expect(ownerPage.getByText(caretakerEmail)).toBeVisible();
       const response = ownerPage.waitForResponse((r) => r.request().method() === "PATCH" && r.url().includes("/revoke"));
