@@ -62,7 +62,7 @@ Application HEAD trước reconcile: dbaf56af26bc8d06416cedad4622264b9d3ae6f7.
 - [Migration Replay #55](https://github.com/lemai-rgb/MMincare/actions/runs/44774592381): PASS trên Supabase local sạch và legacy; SQL fixture và Playwright chạy ứng dụng thật, gồm Caretaker thêm hồ sơ, Owner dùng UI xóa cả hai loại hồ sơ và revoke chặn link cũ.
 - [Portfolio Demo Checks #37](https://github.com/lemai-rgb/MMincare/actions/runs/44774592385): PASS.
 - Sau đổi tên migration/tài liệu, phải kiểm tra lại CI cho HEAD mới; kết quả được liên kết tại PR.
-- Production đã xác minh history, định nghĩa hàm, quyền, policy và fingerprint. Lượt fixture production không có kết quả; không ghi nhận production runtime PASS.
+- Production đã xác minh history, định nghĩa hàm, quyền, policy và fingerprint. Lượt fixture production ban đầu bị ngắt. Kết quả của lượt kiểm tra SQL sau merge được ghi ở mục bên dưới.
 - Full authenticated production UAT, race revoke/write đồng thời, Preview visual QA và toàn bộ thiết bị vẫn chưa được xác nhận.
 
 ## Theo dõi sau merge
@@ -76,5 +76,8 @@ Checklist PR #36 được cập nhật theo kết quả thực tế: commit đã
 - HEAD trước merge `f79569e1b8ebd285b124798aaa3099bfae708d85`: [Migration Replay #56](https://github.com/lemai-rgb/MMincare/actions/runs/44802823492) PASS và [Demo Checks #38](https://github.com/lemai-rgb/MMincare/actions/runs/44802823433) PASS. Vercel Preview của HEAD này cũng success.
 - GitHub compare xác nhận hai migration được rename với 0 dòng SQL thay đổi. Merge tree giống tree của HEAD đã kiểm thử.
 - Cập nhật sau merge này chỉ ghi kết quả vào tài liệu, không thay đổi ứng dụng, SQL hay dữ liệu production. Feature branch được giữ lại.
-- Kết quả Vercel production theo commit và public smoke được cập nhật trực tiếp trong mục Sau merge của PR #36 khi trả về; không lấy Preview làm bằng chứng production.
-- Full production authenticated UAT, concurrent revoke/write race và visual/device QA vẫn giữ trạng thái chưa xác nhận.
+- [Vercel Production](https://vercel.com/lemai-rgbs-projects/m-mincare/DHm98qvXf68z1RiJMnbNxNWdmvx9) `success` cho merge commit `5b70a12f064fbcabe606444ab492a3d340dc6590`, được xác nhận qua [GitHub Deployment #7950761337](https://api.github.com/repos/lemai-rgb/MMincare/deployments/7950761337/statuses).
+- [Trang chủ](https://m-mincare.vercel.app/) và [demo](https://m-mincare.vercel.app/demo) trả HTTP 200. `/dashboard` chuyển đến `/login` khi chưa đăng nhập. Hai POST route thêm Vaccine/Medical trả HTTP 401 khi chưa đăng nhập. Demo mở được dashboard và hiện mô tả quyền xem và thêm hồ sơ trong hộp thoại chia sẻ.
+- PASS trên Supabase production với một Pet và ba tài khoản giả trong transaction có rollback. Caretaker Active tạo một mũi tiêm và một lần khám qua RPC, cả hai ghi đúng `created_by`. Owner đọc và xóa được cả hai. Caretaker và tài khoản không liên quan xóa được 0 dòng. Kiểm tra sau rollback không còn tài khoản, Pet, quyền chia sẻ hay hồ sơ của lượt thử.
+- Số dòng và fingerprint trước/sau lượt SQL khớp ở cả bốn bảng Pet, Vaccine, Medical và Pet access. Tại thời điểm kiểm tra, không có Vaccine/Medical production nào do người khác Owner tạo.
+- Playwright trên Supabase local xác nhận nút xóa Owner cho cả hai loại bản ghi. UAT UI với Owner/Caretaker đã đăng nhập trên production, kiểm thử revoke/write đồng thời và QA đa thiết bị vẫn đang chờ.

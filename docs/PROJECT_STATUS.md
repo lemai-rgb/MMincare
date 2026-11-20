@@ -8,9 +8,11 @@
 | Phase 2.2 database | Both production migrations applied successfully | `20261120183551_caretaker_add_records`, then `20261120183616_owner_delete_caretaker_records`; 21 history entries |
 | Database authorization | Catalog, function ACL and RLS checked after apply | Public invoker wrapper/private definer, empty search_path, anon denied; Owner SELECT/DELETE by Pet ownership; base INSERT remains Owner-only |
 | Data integrity | Unchanged before/after | Pet 5, Vaccine 7, Medical 5, Pet access 0; matching full-row fingerprints |
-| Application release | [PR #36](https://github.com/lemai-rgb/MMincare/pull/36) merged | Merge SHA `5b70a12f064fbcabe606444ab492a3d340dc6590`; production deployment evidence is maintained in the PR release checklist |
+| Application release | [PR #36](https://github.com/lemai-rgb/MMincare/pull/36) merged | [Vercel Production success](https://vercel.com/lemai-rgbs-projects/m-mincare/DHm98qvXf68z1RiJMnbNxNWdmvx9) for merge SHA `5b70a12f064fbcabe606444ab492a3d340dc6590` |
 | Automated behavior | SQL and Playwright PASS at reconciled HEAD `f79569e1` | [Replay #56](https://github.com/lemai-rgb/MMincare/actions/runs/44802823492), [Demo #38](https://github.com/lemai-rgb/MMincare/actions/runs/44802823433); both completed successfully before merge |
-| Production UAT | Not signed off | A production fixture call was interrupted without a result; no fixture session remains and data fingerprints match; no runtime PASS claimed |
+| Public production smoke | Passed | Home and demo returned HTTP 200, dashboard redirected to login, both unauthenticated create requests returned HTTP 401 |
+| Production SQL behavior | Passed with transaction-scoped fixtures | Caretaker created both record types, Owner read and deleted both, Caretaker and unrelated account deleted zero rows. Fixtures rolled back and the four table fingerprints matched. |
+| Production authenticated UI UAT | Pending | Local Playwright covers the Owner delete buttons and confirmations. The production SQL run exercised the database layer. |
 | Remaining QA | Explicitly pending | Full authenticated production Owner/Caretaker flow, simultaneous revoke/write race, visual/device matrix |
 
 Phase 2.2 allows confirmed Caretakers with Active, unexpired access to add Vaccine/Medical text records. Owner can see/delete those records. Caretakers cannot edit/delete, share onward, access private photos/files, Health Logs or manage Reminders.
@@ -78,4 +80,4 @@ All11 product/technical artifacts (eight Markdown, ERD, User Flow, Use Case) now
 No “100% complete”, user-adoption count, production SLA, formal UAT sign-off or measured business improvement is claimed.
 
 ## Owner deletion follow-up (PR #36)
-Owner can delete vaccine/medical records for their own Pet regardless of author. API creator filters are removed only after the Pet owner check; medical DELETE RLS is owner-scoped. UI buttons remain visible to Owner. SQL and Playwright tests cover deletion of Caretaker-created records. The earlier INACTIVE checkpoint is superseded by the production migration/catalog verification above. Production authenticated UAT remains unverified; local CI evidence is tracked separately.
+Owner can delete vaccine/medical records for their own Pet regardless of author. API creator filters are removed only after the Pet owner check; medical DELETE RLS is owner-scoped. UI buttons remain visible to Owner. SQL and Playwright tests cover deletion of Caretaker-created records. The earlier INACTIVE checkpoint is superseded by the production migration/catalog verification above. Production SQL verified Owner deletion of one synthetic Caretaker-created record of each type. Authenticated production UI UAT remains pending.
