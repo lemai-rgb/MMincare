@@ -38,7 +38,7 @@ test("Owner invite, Caretaker accept, isolation, and revoke", async ({ browser }
   const petId = pet.data!.pet_id as string;
   const expiredInvitation = await admin.from("pet_access").insert({
     pet_id: petId, granted_by: owner.data.user!.id, caretaker_email: caretakerEmail,
-    status: "Pending", valid_until: "2000-01-01",
+    status: "Pending", granted_at: "1999-12-31T12:00:00Z", valid_until: "2000-01-01",
   });
   expect(expiredInvitation.error?.message ?? null).toBeNull();
 
