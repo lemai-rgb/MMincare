@@ -241,7 +241,7 @@ Target permission is View + Add Vaccine/Medical for an authorized Pet. Caretaker
 
 **Actor:** Owner · **Status:** Current
 
-- Choose file on phone/computer; JPEG/PNG/WebP ≤5 MiB, immediate format/size feedback.
+- Choose file on phone/computer; JPEG/PNG/WebP ≤4 MiB, immediate format/size feedback.
 - Preview and real image cover fill square; removal restores species fallback.
 - Server validates and uploads Owner-scoped private object; database/reference and cleanup result are explicit.
 

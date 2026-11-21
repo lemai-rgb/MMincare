@@ -1,3 +1,4 @@
+import { MAX_UPLOAD_FILE_BYTES, MAX_UPLOAD_FILE_MIB } from "@/lib/uploadLimits";
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
@@ -5,7 +6,6 @@ import { createClient } from "@/lib/supabase/server";
 type RouteContext = { params: Promise<{ recordId: string }> };
 
 const BUCKET = "medical-record-attachments";
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type ValidatedFile = { extension: "jpg" | "png" | "pdf"; contentType: string };
@@ -15,7 +15,7 @@ function jsonError(message: string, status: number) {
 }
 
 async function validateFile(file: File): Promise<ValidatedFile | null> {
-  if (file.size <= 0 || file.size > MAX_FILE_SIZE) return null;
+  if (file.size <= 0 || file.size > MAX_UPLOAD_FILE_BYTES) return null;
 
   const bytes = new Uint8Array(await file.slice(0, 1024).arrayBuffer());
   const isJpeg = bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
@@ -122,7 +122,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
   const file = formData.get("file");
   if (!(file instanceof File)) return jsonError("Vui lòng chọn file khám bệnh.", 400);
-  if (file.size > MAX_FILE_SIZE) return jsonError("File khám bệnh không được vượt quá 5MB.", 400);
+  if (file.size > MAX_UPLOAD_FILE_BYTES) return jsonError(`File khám bệnh không được vượt quá ${MAX_UPLOAD_FILE_MIB} MiB.`, 400);
 
   const validatedFile = await validateFile(file);
   if (!validatedFile) return jsonError("Chỉ hỗ trợ file JPG, JPEG, PNG hoặc PDF hợp lệ.", 400);

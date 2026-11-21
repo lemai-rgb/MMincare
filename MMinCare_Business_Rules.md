@@ -38,7 +38,7 @@
 | BR-PET-02 | Breed/date_of_birth/image are optional. Date of birth must be valid and not future. Weight is a Health Log field, not a pets column. | Current |
 | BR-PET-03 | An Owner may read only Pets they own. | Current |
 | BR-PET-04 | Only the Owner may create or update the Pet profile in the current runtime. | Current |
-| BR-PET-05 | Optional JPG/JPEG/PNG/WebP ≤5 MiB; select/change/remove with preview. Private pet-photos object access is Owner-scoped; real photo cover fills a square, species fallback uses contain. | Current |
+| BR-PET-05 | Optional JPG/JPEG/PNG/WebP ≤4 MiB; select/change/remove with preview. Private pet-photos object access is Owner-scoped; real photo cover fills a square, species fallback uses contain. | Current |
 | BR-PET-06 | Pet card shows latest Health Log business date, status, weight and link to Health; hides food/amount. Missing values are explicit; latest order follows BR-HLOG-06. | Current |
 | BR-PET-07 | Pet deletion is not part of the current API. | Current constraint |
 
@@ -64,7 +64,7 @@
 | BR-MED-03 | A Medical Record may be saved without an attachment. | Current |
 | BR-MED-04 | Attachment upload is a separate operation. Upload failure does not roll back the Medical Record or create false attachment metadata. | Current |
 | BR-MED-05 | The user may retry an attachment upload against the same Medical Record. | Current |
-| BR-MED-06 | Accepted attachment formats are the image/PDF MIME types allowed by the route; the effective maximum size is 5 MiB per file. | Current |
+| BR-MED-06 | Accepted attachment formats are the image/PDF MIME types allowed by the route; the effective maximum size is 4 MiB per file. | Current |
 | BR-MED-07 | Medical attachments are private and stored in bucket `medical-record-attachments`. Access uses authorization checks and time-limited signed URLs. | Current |
 | BR-MED-08 | Medical Records and attachments are Owner-only under the current runtime policies. | Current |
 | BR-MED-09 | Owner may hard-delete a Medical Record after confirmation; attachment metadata cascades, Storage cleanup may return pending/warnings, Reminders remain with null source FK. No PATCH/edit endpoint. | Current |

@@ -1,3 +1,4 @@
+import { getTodayInVietnam } from "@/lib/petAccess";
 import { NextResponse } from "next/server";
 
 import {
@@ -92,7 +93,6 @@ export async function GET() {
           .select("record_id, visit_date")
           .in("record_id", medicalSourceIds)
           .in("pet_id", petIds)
-          .eq("created_by", userId)
       : Promise.resolve({ data: [], error: null }),
   ]);
 
@@ -108,7 +108,7 @@ export async function GET() {
   });
 
   const petNameById = new Map(pets.map((pet) => [pet.pet_id, pet.name]));
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayInVietnam();
   const reminders: ReminderListItem[] = rows.map((row) => {
     const displayStatus = getReminderDisplayStatus(row.status, row.due_date, today);
     return {

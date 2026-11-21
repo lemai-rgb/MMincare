@@ -1,4 +1,6 @@
 "use client";
+import { MAX_UPLOAD_FILE_BYTES, MAX_UPLOAD_FILE_MIB } from "@/lib/uploadLimits";
+import { getTodayInVietnam } from "@/lib/petAccess";
 import { useRuntimeRequest } from "@/lib/appRuntime";
 
 import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from "react";
@@ -36,7 +38,6 @@ type MedicalRecordCreateFormProps = {
 };
 
 const ALLOWED_FILE_TYPES = new Set(["image/jpeg", "image/png", "application/pdf"]);
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 function toEntry(record: SavedMedicalRecord): MedicalHistoryEntry {
   return {
@@ -69,7 +70,7 @@ export function MedicalRecordCreateForm({ petId, onCancel, onRecordSaved, onRead
   const requestController = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputId = useId();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayInVietnam();
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -99,9 +100,9 @@ export function MedicalRecordCreateForm({ petId, onCancel, onRecordSaved, onRead
       event.target.value = "";
       return;
     }
-    if (file.size <= 0 || file.size > MAX_FILE_SIZE) {
+    if (file.size <= 0 || file.size > MAX_UPLOAD_FILE_BYTES) {
       setSelectedFile(null);
-      setFileError(file.size <= 0 ? "File khám bệnh không được để trống." : "File khám bệnh không được vượt quá 5MB.");
+      setFileError(file.size <= 0 ? "File khám bệnh không được để trống." : `File khám bệnh không được vượt quá ${MAX_UPLOAD_FILE_MIB} MiB.`);
       event.target.value = "";
       return;
     }
@@ -262,7 +263,7 @@ export function MedicalRecordCreateForm({ petId, onCancel, onRecordSaved, onRead
             type="file"
           />
           <p className={fileError ? styles.medicalFieldError : styles.medicalFileHelp} role={fileError ? "alert" : undefined}>
-            {fileError || "JPG, JPEG, PNG hoặc PDF · Tối đa 5MB"}
+            {fileError || `JPG, JPEG, PNG hoặc PDF · Tối đa ${MAX_UPLOAD_FILE_MIB} MiB`}
           </p>
         </div>}
         <label className={styles.fullWidthField}>

@@ -32,10 +32,7 @@ export function isAccessCurrentlyActive(validUntil: string, status: PetAccessSta
 }
 
 export function mapPetAccessError(error: { code?: string; message?: string } | null) {
-  if (error?.code === "23505") return "Lá»i má»i Ä‘ang tá»“n táº¡i hoáº·c quyá»n nÃ y Ä‘Ã£ Ä‘Æ°á»£c cáº¥p.";
-  if (error?.code === "42501") return "Báº¡n khÃ´ng cÃ³ quyá»n thá»±c hiá»‡n thao tÃ¡c nÃ y.";
-  return "KhÃ´ng thá»ƒ xá»­ lÃ½ quyá»n chia sáº» lÃºc nÃ y. Vui lÃ²ng thá»­ láº¡i.";
+  if (error?.code === "23505") return "Lời mời hoặc quyền chia sẻ cho email này vẫn còn hiệu lực.";
+  if (error?.code === "42501") return "Bạn không có quyền thực hiện thao tác này.";
+  return "Không thể xử lý quyền chia sẻ lúc này. Vui lòng thử lại.";
 }
-
-
-

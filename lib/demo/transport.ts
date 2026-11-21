@@ -1,3 +1,4 @@
+import { MAX_UPLOAD_FILE_BYTES, MAX_UPLOAD_FILE_MIB } from "@/lib/uploadLimits";
 import { aggregateStatusCounts, buildWeightTrend, getLatestWeight, getPeriodRange, getVietnamToday } from "@/lib/healthLogs/dashboard";
 import { getReminderDisplayStatus, REMINDER_TYPES } from "@/lib/reminders";
 import { validatePetImage } from "@/lib/petImage";
@@ -121,7 +122,7 @@ export function createDemoTransport(store: Store) {
         if (!state.medical_records.some((r) => r.record_id === parts[2])) return invalid("Không tìm thấy hồ sơ.",404);
         if (method === "GET") return invalid("File trải nghiệm được mở trong trình duyệt.",400);
         const file = init.body instanceof FormData ? init.body.get("file") : null;
-        if (!(file instanceof File) || !file.size || file.size > 5*1024*1024 || !["image/jpeg","image/png","application/pdf"].includes(file.type)) return invalid("Chỉ nhận JPG, PNG, PDF tối đa 5 MB.");
+        if (!(file instanceof File) || !file.size || file.size > MAX_UPLOAD_FILE_BYTES || !["image/jpeg","image/png","application/pdf"].includes(file.type)) return invalid(`Chỉ nhận JPG, PNG, PDF tối đa ${MAX_UPLOAD_FILE_MIB} MiB.`);
         const attachment = {attachment_id:uuid(),record_id:parts[2],file_name:file.name,file_type:(file.type === "application/pdf" ? "pdf" : file.type === "image/png" ? "png" : "jpg") as "pdf" | "png" | "jpg", data:await fileData(file)};
         const decoded = atob(attachment.data.split(",")[1]);
         if (file.type === "application/pdf" ? !decoded.startsWith("%PDF-") : !await validatePetImage(file)) return invalid("Nội dung file không khớp định dạng đã chọn.");
@@ -140,7 +141,7 @@ export function createDemoTransport(store: Store) {
         let picture = form.get("remove_picture") === "true" ? null : pet?.picture_url ?? null;
         const image = form.get("image");
         if (image instanceof File) {
-          if (!await validatePetImage(image)) return json({error:"Ảnh phải là JPEG, PNG hoặc WebP, tối đa 5 MB.",field:"image"},400);
+          if (!await validatePetImage(image)) return json({error:`Ảnh phải là JPEG, PNG hoặc WebP, tối đa ${MAX_UPLOAD_FILE_MIB} MiB.`,field:"image"},400);
           picture = await fileData(image);
         }
         const payload = JSON.stringify([name,species,gender,birth,nullable(form.get("breed")),picture]);

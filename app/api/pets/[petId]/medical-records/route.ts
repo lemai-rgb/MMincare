@@ -1,3 +1,4 @@
+import { getTodayInVietnam } from "@/lib/petAccess";
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
@@ -149,7 +150,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   }
 
   const visitDate = body.visit_date;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayInVietnam();
   if (typeof visitDate !== "string" || !isValidDate(visitDate)) {
     return jsonError("Vui lòng chọn ngày khám hợp lệ.", 400);
   }

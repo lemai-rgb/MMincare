@@ -1,5 +1,6 @@
 "use client";
 
+import { MAX_UPLOAD_FILE_MIB } from "@/lib/uploadLimits";
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 
@@ -17,7 +18,7 @@ type PetImagePickerProps = {
 };
 
 function readableFileError(file: File) {
-  if (file.size > MAX_PET_IMAGE_SIZE) return "Ảnh không được vượt quá 5MB.";
+  if (file.size > MAX_PET_IMAGE_SIZE) return `Ảnh không được vượt quá ${MAX_UPLOAD_FILE_MIB} MiB.`;
   return "Chỉ hỗ trợ ảnh JPG, JPEG, PNG hoặc WebP hợp lệ.";
 }
 

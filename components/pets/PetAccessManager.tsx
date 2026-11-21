@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAppRuntime, useRuntimeRequest } from "@/lib/appRuntime";
 
+import { getTodayInVietnam } from "@/lib/petAccess";
 import styles from "@/styles/petDetail.module.css";
 
 type AccessRow = {
@@ -21,6 +22,7 @@ function formatDate(value: string) {
 export function PetAccessManager({ petId, petName, inDialog = false }: { petId: string; petName: string; inDialog?: boolean }) {
   const request = useRuntimeRequest();
   const isDemo = useAppRuntime() !== null;
+  const today = getTodayInVietnam();
   const [isOpen, setIsOpen] = useState(inDialog);
   const [email, setEmail] = useState("");
   const [validUntil, setValidUntil] = useState("");
@@ -64,7 +66,7 @@ export function PetAccessManager({ petId, petName, inDialog = false }: { petId: 
       });
       const payload = await response.json() as { access?: AccessRow; error?: string };
       if (!response.ok || !payload.access) throw new Error(payload.error || "Không thể gửi lời mời.");
-      setRows((current) => [payload.access as AccessRow, ...current]);
+      await loadRows();
       setEmail("");
       setValidUntil("");
       setNotice(isDemo ? "Đã tạo lời mời mẫu. Demo không gửi email và không cấp quyền thật." : "Đã gửi lời mời chia sẻ. Người nhận cần đăng nhập bằng đúng email để chấp nhận.");
@@ -113,7 +115,7 @@ export function PetAccessManager({ petId, petName, inDialog = false }: { petId: 
             </label>
             <label>
               Xem đến hết ngày
-              <input onChange={(event) => setValidUntil(event.target.value)} type="date" value={validUntil} />
+              <input onChange={(event) => setValidUntil(event.target.value)} min={today} type="date" value={validUntil} />
             </label>
             <button className={styles.petAccessSubmit} disabled={isSubmitting || !email || !validUntil} onClick={() => void submitInvite()} type="button">
               {isSubmitting ? "Đang gửi…" : "Gửi lời mời"}
@@ -127,7 +129,7 @@ export function PetAccessManager({ petId, petName, inDialog = false }: { petId: 
               <div className={styles.petAccessRow} key={row.access_id}>
                 <div>
                   <strong>{row.caretaker_email}</strong>
-                  <span>{row.status === "Pending" ? "Đang chờ" : row.status === "Active" ? "Đang hoạt động" : "Đã thu hồi"} · đến {formatDate(row.valid_until)}</span>
+                  <span>{row.status === "Revoked" ? "Đã thu hồi" : row.valid_until < today ? "Đã hết hạn" : row.status === "Pending" ? "Đang chờ" : "Đang hoạt động"} · đến {formatDate(row.valid_until)}</span>
                 </div>
                 {row.status !== "Revoked" && <button disabled={isSubmitting} onClick={() => void revoke(row.access_id)} type="button">Thu hồi</button>}
               </div>
