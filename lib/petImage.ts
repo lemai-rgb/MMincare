@@ -1,5 +1,7 @@
+import { MAX_UPLOAD_FILE_BYTES } from "@/lib/uploadLimits";
+
 export const PET_PHOTO_BUCKET = "pet-photos";
-export const MAX_PET_IMAGE_SIZE = 5 * 1024 * 1024;
+export const MAX_PET_IMAGE_SIZE = MAX_UPLOAD_FILE_BYTES;
 
 export type ValidatedPetImage = {
   extension: "jpg" | "png" | "webp";

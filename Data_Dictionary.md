@@ -203,8 +203,8 @@ Việc xóa Medical metadata không tự xóa object Storage: API thực hiện 
 
 | Bucket | Quyền và file | Truy cập runtime |
 |---|---|---|
-| pet-photos | Private từ migration đầu;5 MiB; image/jpeg,image/png,image/webp; Owner folder auth.uid(), SELECT/INSERT/DELETE | GET /api/pets/{petId}?photo=1 kiểm tra Owner rồi stream; tên object duy nhất, không cần grant UPDATE/upsert |
-| medical-record-attachments | Private; file limit5 MiB; JPEG/PNG/PDF theo route | Owner authorization rồi signed URL60s; metadata medical_attachments lưu path |
+| pet-photos | Bucket private, trần Storage 5 MiB; form/API giới hạn 4 MiB; image/jpeg,image/png,image/webp; Owner folder auth.uid(), SELECT/INSERT/DELETE | GET /api/pets/{petId}?photo=1 kiểm tra Owner rồi stream; tên object duy nhất, không cần grant UPDATE/upsert |
+| medical-record-attachments | Bucket private, trần Storage 5 MiB; form/API giới hạn 4 MiB; JPEG/PNG/PDF theo route | Owner authorization rồi signed URL60s; metadata medical_attachments lưu path |
 
 `storage.objects` là object metadata do Supabase Storage quản lý; không thêm một bảng public chứa binary. Preview/blob/dataURL không phải permanent production URL. Legacy picture_url khác managed path không tự chuyển thành object Storage.
 

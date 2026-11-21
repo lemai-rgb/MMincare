@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "supabase/migrations/**"
+      - "supabase/tests/**"
       - "supabase/ci-production-pet-access-shape.sql"
       - "supabase/config.toml"
       - "database/schema.sql"
@@ -562,7 +563,7 @@ jobs:
         run: npm run test:notifications
 
       - name: Run account role menu regression test
-        run: npx vitest run lib/sharedRecordRoute.test.ts components/layout/AccountRoleMenu.test.tsx components/pets/SharedPetAccessSection.test.tsx 'app/api/pet-access/[accessId]/accept/route.test.ts' app/api/pet-access/invitations/route.test.ts
+        run: npx vitest run 'app/api/pets/[petId]/medical-records/[medicalRecordId]/route.test.ts' components/pets/MedicalRecordDate.test.tsx lib/sharedRecordRoute.test.ts components/layout/AccountRoleMenu.test.tsx components/pets/SharedPetAccessSection.test.tsx 'app/api/pet-access/[accessId]/accept/route.test.ts' app/api/pet-access/invitations/route.test.ts
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium

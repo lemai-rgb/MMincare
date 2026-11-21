@@ -1,3 +1,4 @@
+import { MAX_UPLOAD_FILE_BYTES, MAX_UPLOAD_FILE_MIB } from "@/lib/uploadLimits";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -32,13 +33,13 @@ describe("PetImagePicker", () => {
     expect(screen.getByRole("button", { name: "+ Thêm ảnh" })).toBeTruthy();
   });
 
-  it("rejects files over 5MB without replacing the current picture", async () => {
+  it("rejects files over the web upload limit without replacing the current picture", async () => {
     vi.stubGlobal("URL", { ...URL, createObjectURL: vi.fn(() => "blob:pet"), revokeObjectURL: vi.fn() });
     render(<PetImagePicker currentPictureUrl="https://legacy.example/pet.jpg" onSelectionChange={vi.fn()} species="Dog" />);
     const input = screen.getByLabelText(/Ảnh thú cưng/) as HTMLInputElement;
-    const large = new File([new Uint8Array(5 * 1024 * 1024 + 1)], "large.jpg", { type: "image/jpeg" });
+    const large = new File([new Uint8Array(MAX_UPLOAD_FILE_BYTES + 1)], "large.jpg", { type: "image/jpeg" });
     fireEvent.change(input, { target: { files: [large] } });
-    expect((await screen.findByRole("alert")).textContent).toContain("5MB");
+    expect((await screen.findByRole("alert")).textContent).toContain(`${MAX_UPLOAD_FILE_MIB} MiB`);
     expect(screen.getByRole("button", { name: "Đổi ảnh" })).toBeTruthy();
   });
 

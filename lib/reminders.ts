@@ -1,3 +1,5 @@
+import { getTodayInVietnam } from "@/lib/petAccess";
+
 export const REMINDER_TYPES = ["Vaccine", "Recheck", "Medication", "Other"] as const;
 export const REMINDER_STORED_STATUSES = ["Upcoming", "Completed"] as const;
 
@@ -41,13 +43,13 @@ export function replaceReminder(items: ReminderListItem[], updated: ReminderUpda
 export function getReminderDisplayStatus(
   status: ReminderStoredStatus,
   dueDate: string,
-  today = new Date().toISOString().slice(0, 10),
+  today = getTodayInVietnam(),
 ): ReminderDisplayStatus {
   if (status === "Completed") return "Completed";
   return dueDate < today ? "Overdue" : "Upcoming";
 }
 
-export function getDaysOverdue(dueDate: string, today = new Date().toISOString().slice(0, 10)) {
+export function getDaysOverdue(dueDate: string, today = getTodayInVietnam()) {
   const due = Date.parse(`${dueDate}T00:00:00.000Z`);
   const current = Date.parse(`${today}T00:00:00.000Z`);
   if (Number.isNaN(due) || Number.isNaN(current) || due >= current) return 0;

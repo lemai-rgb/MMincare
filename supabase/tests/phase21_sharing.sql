@@ -82,16 +82,60 @@ begin
 end $$;
 reset role;
 do $$ begin
- if not exists (select 1 from public.medical_records where diagnosis = 'Caretaker diagnosis' and created_by = '00000000-0000-0000-0000-0000000000b1') then raise exception 'Incorrect caretaker author'; end if;
+  if not exists (select 1 from public.medical_records
+                 where diagnosis = 'Caretaker diagnosis'
+                   and created_by = '00000000-0000-0000-0000-0000000000b1')
+  then raise exception 'Caretaker authorship was not kept'; end if;
 end $$;
 set local role authenticated;
-select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}',true);
-do $$ begin
- if not exists (select 1 from public.medical_records where diagnosis = 'Caretaker diagnosis') then raise exception 'Owner cannot see caretaker record'; end if;
- delete from public.medical_records where diagnosis = 'Caretaker diagnosis';
- if exists (select 1 from public.medical_records where diagnosis = 'Caretaker diagnosis') then raise exception 'Owner cannot delete caretaker medical record'; end if;
- delete from public.vaccine_records where vaccine_name = 'Caretaker vaccine';
- if exists (select 1 from public.vaccine_records where vaccine_name = 'Caretaker vaccine') then raise exception 'Owner cannot delete caretaker vaccine'; end if;
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-0000000000a1","email":"owner-a@example.com","role":"authenticated"}',true);
+do $$
+declare
+  pet uuid := '00000000-0000-0000-0000-0000000000a2';
+  expired_pet uuid := '00000000-0000-0000-0000-0000000000a3';
+  owner_id uuid := auth.uid();
+  medical uuid;
+  vaccine uuid;
+  completed_reminder uuid;
+  upcoming_reminder uuid;
+  completed_before jsonb;
+  upcoming_before jsonb;
+  deadline date := (now() at time zone 'Asia/Ho_Chi_Minh')::date + 10;
+  replacement jsonb;
+begin
+  replacement := public.invite_pet_caretaker(expired_pet, ' Caretaker-B@example.com ', deadline);
+  if replacement->>'status' <> 'Pending'
+     or not exists (select 1 from public.pet_access where pet_id = expired_pet and status = 'Revoked' and revoked_at is not null) then
+    raise exception 'Expired share was not replaced';
+  end if;
+  begin
+    perform public.invite_pet_caretaker(expired_pet, 'caretaker-b@example.com', deadline);
+    raise exception 'Duplicate active-period invitation was accepted';
+  exception when unique_violation then null; end;
+
+  select record_id into strict medical from public.medical_records where diagnosis = 'Caretaker diagnosis';
+  select vaccine_record_id into strict vaccine from public.vaccine_records where vaccine_name = 'Caretaker vaccine';
+  insert into public.reminders(user_id, pet_id, type, due_date, source_medical_record_id)
+    values (owner_id, pet, 'Recheck', deadline, medical) returning reminder_id into completed_reminder;
+  insert into public.reminders(user_id, pet_id, type, due_date, source_vaccine_record_id)
+    values (owner_id, pet, 'Vaccine', deadline, vaccine) returning reminder_id into upcoming_reminder;
+  update public.reminders set status = 'Completed', completed_at = now() where reminder_id = completed_reminder;
+
+  select to_jsonb(r) - 'source_medical_record_id' into strict completed_before
+    from public.reminders r where r.reminder_id = completed_reminder;
+  select to_jsonb(r) - 'source_vaccine_record_id' into strict upcoming_before
+    from public.reminders r where r.reminder_id = upcoming_reminder;
+
+  delete from public.medical_records where record_id = medical;
+  if not found then raise exception 'Owner cannot delete linked caretaker medical record'; end if;
+  delete from public.vaccine_records where vaccine_record_id = vaccine;
+  if not found then raise exception 'Owner cannot delete linked caretaker vaccine'; end if;
+
+  if not exists (select 1 from public.reminders r where r.reminder_id = completed_reminder
+                 and r.source_medical_record_id is null and to_jsonb(r) - 'source_medical_record_id' = completed_before)
+     or not exists (select 1 from public.reminders r where r.reminder_id = upcoming_reminder
+                   and r.source_vaccine_record_id is null and to_jsonb(r) - 'source_vaccine_record_id' = upcoming_before)
+  then raise exception 'Detaching source changed or removed its reminder'; end if;
 end $$;
 select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-0000000000c1","email":"other-c@example.com","role":"authenticated"}',true);
 do $$ begin

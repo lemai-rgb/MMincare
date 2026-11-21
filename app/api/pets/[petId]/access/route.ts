@@ -48,6 +48,9 @@ export async function POST(request: Request, { params }: RouteContext) {
     return errorResponse("Dữ liệu gửi lên không hợp lệ.", 400);
   }
 
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return errorResponse("Dữ liệu gửi lên không hợp lệ.", 400);
+  }
   const email = normalizeEmail(body.caretaker_email);
   const validUntil = body.valid_until;
   if (!email) return errorResponse("Vui lòng nhập email hợp lệ.", 400);
@@ -72,25 +75,17 @@ export async function POST(request: Request, { params }: RouteContext) {
     return errorResponse("Bạn không thể chia sẻ hồ sơ cho chính mình.", 400);
   }
 
-  const { data, error } = await supabase
-    .from("pet_access")
-    .insert({
-      pet_id: pet.pet_id,
-      granted_by: userId,
-      caretaker_email: email,
-      caretaker_id: null,
-      valid_until: validUntil,
-      status: "Pending",
-      pet_name_snapshot: pet.name,
-    })
-    .select("access_id, pet_id, caretaker_email, valid_until, status, granted_at, pet_name_snapshot")
-    .single();
+  const { data, error } = await supabase.rpc("invite_pet_caretaker", {
+    p_pet_id: pet.pet_id,
+    p_caretaker_email: email,
+    p_valid_until: validUntil,
+  });
 
   if (error || !data) {
-    return errorResponse(mapPetAccessError(error), error?.code === "23505" ? 409 : 500);
+    if (error?.code === "P0002") return errorResponse("Không tìm thấy hồ sơ thú cưng.", 404);
+    if (error?.code === "22023") return errorResponse("Email hoặc ngày hết hạn không hợp lệ.", 400);
+    const status = error?.code === "23505" ? 409 : error?.code === "42501" ? 403 : 500;
+    return errorResponse(mapPetAccessError(error), status);
   }
   return NextResponse.json({ access: data }, { status: 201 });
 }
-
-
-

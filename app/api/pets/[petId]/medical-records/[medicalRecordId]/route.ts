@@ -28,6 +28,38 @@ function logDeleteError(operation: string, error: DeleteError) {
   }
 }
 
+async function cleanupDeletedAttachments(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  recordId: string,
+) {
+  const prefix = `${userId}/${recordId.toLowerCase()}`;
+  const storage = supabase.storage.from(ATTACHMENT_BUCKET);
+  try {
+    const listed = await storage.list(prefix, { limit: 100 });
+    if (listed.error) return "pending";
+    if (!listed.data.length) return "empty";
+
+    const removed = await storage.remove(listed.data.map(({ name }) => `${prefix}/${name}`));
+    if (removed.error) return "pending";
+    const remaining = await storage.list(prefix, { limit: 1 });
+    return remaining.error || remaining.data.length > 0 ? "pending" : "complete";
+  } catch {
+    return "pending";
+  }
+}
+
+function deletionResponse(recordId: string, cleanup: string, detachedReminders = 0, deletedAttachments = 0) {
+  return NextResponse.json({
+    success: true,
+    deleted_record_id: recordId,
+    detached_reminders: detachedReminders,
+    deleted_attachments: deletedAttachments,
+    attachment_cleanup: cleanup === "pending" ? "pending" : "complete",
+    warnings: cleanup === "pending" ? ["Một số tệp đính kèm vẫn cần được dọn dẹp."] : [],
+  });
+}
+
 export async function DELETE(_request: Request, { params }: RouteContext) {
   const { petId, medicalRecordId } = await params;
   if (!isUuid(petId) || !isUuid(medicalRecordId)) {
@@ -61,11 +93,16 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     logDeleteError("record lookup", recordError);
     return errorResponse("Không thể kiểm tra bản ghi lúc này.", 500);
   }
-  if (!record) return errorResponse("Không tìm thấy bản ghi.", 404);
+  if (!record) {
+    const cleanup = await cleanupDeletedAttachments(supabase, userId, medicalRecordId);
+    if (cleanup === "empty") return errorResponse("Không tìm thấy bản ghi.", 404);
+    if (cleanup === "pending") return errorResponse("Chưa thể dọn dẹp tệp đính kèm. Vui lòng thử lại.", 503);
+    return deletionResponse(medicalRecordId, cleanup);
+  }
 
-  const { data: attachments, error: attachmentsError } = await supabase
+  const { count: attachmentCount, error: attachmentsError } = await supabase
     .from("medical_attachments")
-    .select("attachment_id, file_url")
+    .select("attachment_id", { count: "exact", head: true })
     .eq("record_id", medicalRecordId);
   if (attachmentsError) {
     logDeleteError("attachment lookup", attachmentsError);
@@ -94,28 +131,7 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     if (deleteError.code === "42501") return errorResponse("Bạn không có quyền xóa bản ghi này.", 403);
     return errorResponse("Không thể xóa bản ghi lúc này.", 500);
   }
-  if (!deletedRows || deletedRows.length !== 1) {
-    return errorResponse("Không tìm thấy bản ghi.", 404);
-  }
-
-  const paths = [...new Set((attachments ?? []).map((attachment) => attachment.file_url).filter(Boolean))];
-  let attachmentCleanup: "complete" | "pending" = "complete";
-  const warnings: string[] = [];
-  if (paths.length > 0) {
-    const { error: storageError } = await supabase.storage.from(ATTACHMENT_BUCKET).remove(paths);
-    if (storageError) {
-      attachmentCleanup = "pending";
-      warnings.push("Medical record was deleted, but one or more private attachment objects require cleanup.");
-      logDeleteError("storage cleanup", storageError);
-    }
-  }
-
-  return NextResponse.json({
-    success: true,
-    deleted_record_id: record.record_id,
-    detached_reminders: detachedReminders ?? 0,
-    deleted_attachments: attachments?.length ?? 0,
-    attachment_cleanup: attachmentCleanup,
-    warnings,
-  });
+  const cleanup = await cleanupDeletedAttachments(supabase, userId, medicalRecordId);
+  if (!deletedRows?.length && cleanup === "empty") return errorResponse("Không tìm thấy bản ghi.", 404);
+  return deletionResponse(record.record_id, cleanup, detachedReminders ?? 0, attachmentCount ?? 0);
 }

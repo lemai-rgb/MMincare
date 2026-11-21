@@ -1,6 +1,7 @@
+import { MAX_UPLOAD_FILE_MIB } from "@/lib/uploadLimits";
 import { NextResponse } from "next/server";
 
-import { getManagedPetPhotoPath, getPetPhotoReference, PET_PHOTO_BUCKET, validatePetImage, type ValidatedPetImage } from "@/lib/petImage";
+import { getManagedPetPhotoPath, getPetPhotoReference, MAX_PET_IMAGE_SIZE, PET_PHOTO_BUCKET, validatePetImage, type ValidatedPetImage } from "@/lib/petImage";
 import { PET_GENDERS, PET_SPECIES } from "@/lib/pets";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -128,7 +129,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     } catch {
       validated = null;
     }
-    if (!validated) return NextResponse.json({ error: file.size > 5 * 1024 * 1024 ? "Ảnh không được vượt quá 5MB." : "Chỉ hỗ trợ ảnh JPG, JPEG, PNG hoặc WebP hợp lệ.", field: "image" }, { status: 400 });
+    if (!validated) return NextResponse.json({ error: file.size > MAX_PET_IMAGE_SIZE ? `Ảnh không được vượt quá ${MAX_UPLOAD_FILE_MIB} MiB.` : "Chỉ hỗ trợ ảnh JPG, JPEG, PNG hoặc WebP hợp lệ.", field: "image" }, { status: 400 });
     const upload = await uploadPetPhoto(supabase, userId, file, validated);
     if (upload.error) return NextResponse.json({ error: "Không thể tải ảnh thú cưng lúc này. Vui lòng thử lại.", field: "image" }, { status: 500 });
     uploadedPath = upload.objectPath;

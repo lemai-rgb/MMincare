@@ -19,7 +19,7 @@ Owner đăng nhập dùng sản phẩm thật. Người xem CV mở public `/dem
 ## 3. Owner MVP đã triển khai
 
 1. Email/password signup/confirm/resend, login/logout, protected session và recovery an toàn.
-2. Tạo/xem/sửa Pet, chọn/đổi/bỏ ảnh JPEG/PNG/WebP ≤5 MiB; ảnh private, fallback theo loài, ảnh thật phủ khung vuông.
+2. Tạo/xem/sửa Pet, chọn/đổi/bỏ ảnh JPEG/PNG/WebP ≤4 MiB; ảnh private, fallback theo loài, ảnh thật phủ khung vuông.
 3. Pet card gọn: ngày nhật ký gần nhất, tình trạng/cân nặng và Xem nhật ký; thiếu dữ liệu được ghi rõ.
 4. Vaccine event không tương lai, create/read/delete có xác nhận; chưa edit. Suggestion contract phân biệt trạng thái nhưng CR-08 quyền/dataset chưa hoàn tất, có thể tự nhập Reminder.
 5. Medical create/read/delete, attachment private tùy chọn/retry/signed access; xóa xử lý phụ thuộc và cleanup warning, chưa edit.

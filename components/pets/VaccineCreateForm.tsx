@@ -1,4 +1,5 @@
 "use client";
+import { getTodayInVietnam } from "@/lib/petAccess";
 import { useRuntimeRequest } from "@/lib/appRuntime";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -67,7 +68,7 @@ export function VaccineCreateForm({ petId, species, onCancel, onSaved, shared = 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestController = useRef<AbortController | null>(null);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayInVietnam();
 
   useEffect(() => () => requestController.current?.abort(), []);
 

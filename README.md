@@ -29,7 +29,7 @@ This is an independent project with AI-assisted implementation and review. Repos
 | Area | Current capability |
 |---|---|
 | Authentication | Email/password signup, email confirmation and resend feedback, login/logout, password recovery, protected sessions |
-| Pet profiles | Create, view, edit; optional private JPEG/PNG/WebP upload up to 5 MB; change/remove photo; species avatar fallback; real photos fill a square frame |
+| Pet profiles | Create, view, edit; optional private JPEG/PNG/WebP upload up to 4 MiB; change/remove photo; species avatar fallback; real photos fill a square frame |
 | Vaccination and medical history | Record completed vaccinations and medical visits; optional private medical attachments; Owner-confirmed deletion of vaccine/medical records; no edit UI for these records |
 | Reminders | Manual or vaccine/medical-linked reminders; Upcoming/Overdue/Completed views; edit eligible Upcoming reminders and mark completed |
 | Notification Center | Current in-app events, unread red dot, read/retry state and navigation to the linked reminder |

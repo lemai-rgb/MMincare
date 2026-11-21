@@ -62,7 +62,7 @@ Suggestion states: `matched` (date calculated from approved matching rule), `no_
 
 Medical POST JSON: required valid `visit_date`; optional `symptoms,diagnosis,medication,clinic_name,note`, normalized/limited by route. Attachment is a subsequent independent request; its failure does not undo the Medical Record.
 
-Attachment POST uses multipart `file` (JPG/JPEG/PNG/PDF, ≤5 MiB). Metadata includes `attachment_id,record_id,file_url,file_type,file_size,uploaded_at`; `file_url` contains Storage object path, not permanent public URL. GET requires `attachmentId`, verifies record/Pet access and returns a signed URL valid for 60 seconds. Histories provide UI descriptors, not the raw table shape. No independent attachment DELETE is currently exposed.
+Attachment POST uses multipart `file` (JPG/JPEG/PNG/PDF, ≤4 MiB). Metadata includes `attachment_id,record_id,file_url,file_type,file_size,uploaded_at`; `file_url` contains Storage object path, not permanent public URL. GET requires `attachmentId`, verifies record/Pet access and returns a signed URL valid for 60 seconds. Histories provide UI descriptors, not the raw table shape. No independent attachment DELETE is currently exposed.
 
 Vaccine/Medical DELETE confirms in UI and hard-deletes the record. Linked Reminders survive with source FK null. Medical deletes attachment metadata through FK cascade and attempts private-object cleanup; `attachment_cleanup` plus warnings reports the outcome. Unknown network outcome is not inferred from a visual state alone.
 

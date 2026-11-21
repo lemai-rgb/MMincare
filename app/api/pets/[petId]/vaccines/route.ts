@@ -1,3 +1,4 @@
+import { getTodayInVietnam } from "@/lib/petAccess";
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
@@ -71,7 +72,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
   if (!vaccineName || vaccineName.length > 100) return errorResponse("Vui lòng nhập tên vaccine hợp lệ.");
   if (!isIsoDate(vaccineDate)) return errorResponse("Vui lòng chọn ngày tiêm hợp lệ.");
-  if (vaccineDate > new Date().toISOString().slice(0, 10)) return errorResponse("Ngày tiêm không được ở tương lai.");
+  if (vaccineDate > getTodayInVietnam()) return errorResponse("Ngày tiêm không được ở tương lai.");
   if (doseNumber !== null && (!Number.isInteger(doseNumber) || doseNumber < 1)) {
     return errorResponse("Số mũi phải là số nguyên lớn hơn hoặc bằng 1.");
   }
@@ -143,6 +144,6 @@ export async function POST(request: Request, { params }: RouteContext) {
     vaccine_record: vaccineRecord,
     suggested_next_due_date: suggestedNextDueDate,
     suggestion_status: suggestionStatus,
-    warning: vaccineDate > new Date().toISOString().slice(0, 10) ? "Ngày tiêm chưa đến." : null,
+    warning: vaccineDate > getTodayInVietnam() ? "Ngày tiêm chưa đến." : null,
   }, { status: 201 });
 }

@@ -139,7 +139,6 @@ export async function POST(request: Request, { params }: RouteContext) {
       .select("record_id")
       .eq("record_id", body.source_medical_record_id)
       .eq("pet_id", petId)
-      .eq("created_by", userId)
       .maybeSingle();
     if (medicalRecordError) return response("Không thể kiểm tra lần khám lúc này.", 500);
     if (!medicalRecord) return response("Không tìm thấy lần khám thuộc thú cưng này.", 404);

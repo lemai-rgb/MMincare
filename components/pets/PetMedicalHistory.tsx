@@ -76,6 +76,7 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [pendingAttachmentCleanup, setPendingAttachmentCleanup] = useState<string | null>(null);
   const historyRequestController = useRef<AbortController | null>(null);
   const reminderMutationController = useRef<AbortController | null>(null);
   const requestId = useRef(0);
@@ -281,19 +282,24 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
     setDeleteTarget({ entry, trigger });
   }
 
-  async function deleteEntry() {
-    if (!deleteTarget || deleteSubmissionGuard.current) return;
+  async function deleteEntry(retryRecordId?: string) {
+    const recordId = retryRecordId ?? deleteTarget?.entry.id;
+    if (!recordId || deleteSubmissionGuard.current) return;
     deleteSubmissionGuard.current = true;
     setIsDeleting(true);
     setDeleteError(null);
-    const { entry } = deleteTarget;
-    const resource = entry.type === "vaccine" ? "vaccines" : "medical-records";
+    const resource = !retryRecordId && deleteTarget?.entry.type === "vaccine" ? "vaccines" : "medical-records";
     const response = await request(
-      `/api/pets/${encodeURIComponent(petId)}/${resource}/${encodeURIComponent(entry.id)}`,
+      `/api/pets/${encodeURIComponent(petId)}/${resource}/${encodeURIComponent(recordId)}`,
       { method: "DELETE" },
     ).catch(() => null);
 
     try {
+      if (retryRecordId && response?.status === 404) {
+        setPendingAttachmentCleanup(null);
+        setNotice("Đã dọn dẹp tệp đính kèm.");
+        return;
+      }
       const payload = response ? await response.json() as DeleteResponse : null;
       if (!response || !response.ok) {
         const message = response?.status === 401
@@ -306,14 +312,22 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
         throw new Error(message);
       }
 
-      setEntries((current) => current.filter((item) => item.id !== entry.id));
+      setEntries((current) => current.filter((item) => item.id !== recordId));
       setDeleteTarget(null);
-      setNotice(payload?.attachment_cleanup === "pending"
-        ? "Hồ sơ đã được xóa. Một số tệp đang chờ hệ thống dọn dẹp."
-        : entry.type === "vaccine" ? "Đã xóa bản ghi tiêm phòng." : "Đã xóa hồ sơ khám bệnh.");
+      if (payload?.attachment_cleanup === "pending") {
+        setPendingAttachmentCleanup(recordId);
+        setNotice("Hồ sơ đã được xóa. Một số tệp vẫn cần được dọn dẹp.");
+      } else if (retryRecordId) {
+        setPendingAttachmentCleanup(null);
+        setNotice("Đã dọn dẹp tệp đính kèm.");
+      } else {
+        setNotice(resource === "vaccines" ? "Đã xóa bản ghi tiêm phòng." : "Đã xóa hồ sơ khám bệnh.");
+      }
       router.refresh();
     } catch (requestError) {
-      setDeleteError(requestError instanceof Error ? requestError.message : "Không thể xóa bản ghi lúc này. Vui lòng thử lại.");
+      const message = requestError instanceof Error ? requestError.message : "Không thể xóa bản ghi lúc này. Vui lòng thử lại.";
+      if (retryRecordId) setNotice(message);
+      else setDeleteError(message);
     } finally {
       deleteSubmissionGuard.current = false;
       setIsDeleting(false);
@@ -403,10 +417,11 @@ export function PetMedicalHistory({ form, isOwner = false, petId, species }: { f
             </div>}
           </div>
 
-          {notice && (
+          {(notice || pendingAttachmentCleanup) && (
             <p className={styles.medicalNotice} role="status">
-              {notice}
+              {notice ?? "Một số tệp đính kèm vẫn cần được dọn dẹp."}
               {createdReminderId && <Link className={styles.medicalNoticeLink} href={`/reminders?highlight=${encodeURIComponent(createdReminderId)}`}>Xem nhắc hẹn</Link>}
+              {pendingAttachmentCleanup && <button className={styles.medicalRetryButton} disabled={isDeleting} onClick={() => void deleteEntry(pendingAttachmentCleanup)} type="button">Thử dọn tệp lại</button>}
             </p>
           )}
           {historyError && (
