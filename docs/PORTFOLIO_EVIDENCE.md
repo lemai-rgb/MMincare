@@ -1,5 +1,25 @@
 # BA / PM / Tester portfolio evidence
 
+## Mốc Caretaker sau PR #37 — cập nhật 22/11/2026
+
+Ứng dụng đã phát hành commit [`f7738c3`](https://github.com/lemai-rgb/MMincare/commit/f7738c38b7b93ee0b13073ca0c60200a266229e1). [PR #37](https://github.com/lemai-rgb/MMincare/pull/37) chứa checklist triển khai và bằng chứng ngày 21/11/2026.
+
+| Phạm vi | Kết quả đã ghi nhận | Bằng chứng |
+|---|---|---|
+| Migration và SQL regression | Replay đạt trên Supabase sạch và legacy tại HEAD `1604009` | [Migration Replay #59](https://github.com/lemai-rgb/MMincare/actions/runs/44925460928) |
+| Demo regression | Workflow đạt tại cùng HEAD | [Demo Checks #41](https://github.com/lemai-rgb/MMincare/actions/runs/44925460985) |
+| UI Caretaker/Owner | Playwright đạt cả hai form thêm hồ sơ, tạo nhắc hẹn có nguồn, Owner xóa và dọn tệp trên hai nền Supabase thử | Workflow Replay #59 |
+| Database production | SQL fixture đạt mời lại/chặn trùng, thêm hồ sơ, Owner xóa và giữ nhắc hẹn, thu hồi quyền. Fixture rollback | [Nhật ký PR #37](PHASE_2_2_RELEASE.md) |
+| Dữ liệu production | Số lượng và mã đối chiếu bảy nhóm dữ liệu khớp trước/sau migration | Nhật ký PR #37 |
+| Phát hành | Vercel production thành công cho commit merge | [Deployment](https://vercel.com/lemai-rgbs-projects/m-mincare/ExfczfeCMTaYiEkSZkRGUWixNNKn) |
+| Smoke HTTP production | 9/9 đạt, gồm trang public, redirect dashboard và chặn API chưa đăng nhập | Checklist PR #37 |
+| CARE-15 production | Chưa chạy với hai phiên Owner/Caretaker trên giao diện production | Giữ trạng thái chờ |
+| Race/thiết bị/hiệu năng | Revoke/write đồng thời production, ma trận giao diện và đo hiệu năng còn chờ | [Tiến độ](PROJECT_STATUS.md) |
+
+Các kết quả cục bộ của lượt PR #37 gồm lint, TypeScript, build, 111 Vitest và 7 script chuyên biệt đã đạt. Số Vitest được ghi theo lượt chạy cục bộ đó.
+
+## Bằng chứng Owner MVP lịch sử — 11/10/2026
+
 **Cập nhật:** 2026-10-11 (VN) · **Application baseline:** `main` `bcd14b51f4b70cd3d418bd10638f7a996713fdcf`  
 **Đã triển khai:** PR #26 đã merge, [Vercel Production success](https://vercel.com/lemai-rgbs-projects/m-mincare/E3bmui2BdzU7iAzkP2kNtnM4XSLD).  
 [Ứng dụng](https://m-mincare.vercel.app/) · [Trải nghiệm thử](https://m-mincare.vercel.app/demo)
@@ -35,7 +55,7 @@ This is sampled mapping, not full acceptance/test coverage. Original US/BR IDs r
 | PF-11 | US-22 / BR-DEMO |31 demo tests/4 files, scoped adapter/persistence/migration contracts | Production public smoke, sampled |
 | PF-12 | US-23 / BR-UX-02 | Responsive tabs2×2/grouped metadata/footer | Full viewport/device matrix pending |
 
-## Evidence checkpoint
+## Evidence checkpoint — historical 2026-10-11
 
 - Current application main bcd14b5; exact Vercel deployment success linked above.
 - Latest [CI](https://github.com/lemai-rgb/MMincare/actions/runs/38068595221) passed on release feature head7b777d1. Demo31 tests/4 files; lint/TypeScript/Webpack build passed. These are release-head checks, not a separate merged-SHA CI run.
@@ -59,7 +79,7 @@ Use synthetic data and separate Owner A/B sessions; record environment, commit, 
 | MAN-08 | Delay GET then create/edit/delete; old read cannot overwrite/resurrect | CR-02 delivered; real race pending |
 | MAN-09 | Server may commit while response lost; retry same key/snapshot; no duplicate creation, DELETE404 revalidation | PR #22 regressions; real retry pending |
 | MAN-10 | Edit/complete Reminder/read notification/deep link; dot/filter/highlight consistent | Automated coverage; real flow pending |
-| MAN-11 | Delete care source/attachments; source null and cleanup warning accurate | Real dependency cleanup pending |
+| MAN-11 | Delete care source/attachments; source null and cleanup warning accurate | PR #37 Playwright clean/legacy và SQL production đạt; UI production CARE-15 còn chờ |
 | MAN-12 | Delete keyboard trap/Escape, cancel trigger and post-delete live focus target | Not re-certified / pending |
 | MAN-13 |320/360/390/430/768/1280/1440, long/missing content, readable controls/no overflow | Full visual not run |
 | MAN-14 | Cold/warm authenticated tab timings; network/Auth/DB/render separated | Not measured |

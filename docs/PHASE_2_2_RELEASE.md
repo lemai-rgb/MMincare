@@ -1,5 +1,58 @@
 # Phase 2.2 — triển khai và bằng chứng xác minh
 
+## Cập nhật sau PR #37 — 22/11/2026 (giờ Việt Nam)
+
+[PR #37](https://github.com/lemai-rgb/MMincare/pull/37) đã merge vào `main` lúc 23:46 ngày 21/11/2026. Commit ứng dụng production là [`f7738c38b7b93ee0b13073ca0c60200a266229e1`](https://github.com/lemai-rgb/MMincare/commit/f7738c38b7b93ee0b13073ca0c60200a266229e1). Bằng chứng trong phần này được ghi nhận trong lượt triển khai ngày 21/11/2026.
+
+### Hành vi đã sửa
+
+- Owner xóa hồ sơ tiêm/khám có nhắc hẹn liên kết. Khóa nguồn chuyển về NULL, các trường còn lại của nhắc hẹn được giữ, gồm trạng thái Completed.
+- API dọn object tệp sau khi xóa hồ sơ và trả trạng thái cần thử lại khi Storage còn tệp. UI có thao tác thử dọn lại.
+- Owner mời lại cùng email sau khi quyền cũ hết hạn trong một giao dịch. Lời mời/quyền còn hiệu lực vẫn bị chặn trùng.
+- Biểu mẫu, API tiêm/khám và trạng thái nhắc hẹn dùng ngày Việt Nam.
+- Owner tạo được nhắc hẹn từ lần khám Caretaker ghi cho cùng Pet.
+- Form/API upload ảnh Pet và tệp khám dùng giới hạn 4 MiB.
+
+### Thao tác và bằng chứng
+
+| Thứ tự | Thao tác | Kết quả |
+|---|---|---|
+| 1 | Rà lại diff, CI và Vercel Preview ở `d21c119` | Demo #40, Replay #58 và Preview đạt. Playwright thực hiện cả hai form Caretaker, Owner xóa hồ sơ có nhắc hẹn và dọn tệp |
+| 2 | Kiểm tra production trước migration | Lịch sử có 21 migration. Hai FK nguồn Reminder dùng ON DELETE SET NULL. Storage hỗ trợ các hàm giới hạn operation. Bucket tệp private, object hiện có thuộc phạm vi đường dẫn dọn tệp |
+| 3 | Áp dụng SQL đã kiểm thử | Supabase trả thành công, ghi phiên bản `20261121163456_fix_phase22_audit_regressions`, nâng lịch sử lên 22 migration |
+| 4 | Đối chiếu sau áp dụng | Số lượng và mã đối chiếu toàn bộ row của bảy nhóm dữ liệu trong bảng bên dưới khớp. ACL, trigger, policy Reminder và hai policy dọn tệp đạt |
+| 5 | Đồng bộ migration trên GitHub | Đổi tên file từ `20261121160524_fix_phase22_audit_regressions.sql` sang `20261121163456_fix_phase22_audit_regressions.sql`. Git xác nhận rename 100%, blob SQL `609377aa36bffffc288604e51bce05ec10285dad` |
+| 6 | Kiểm thử SQL production | Fixture Owner/Caretaker kiểm tra lời mời, thêm hồ sơ, Owner xóa và giữ nhắc hẹn, quyền sau revoke. Giao dịch rollback và kiểm tra tài khoản/Pet thử đã được loại bỏ |
+| 7 | Chạy lại CI ở HEAD cuối `1604009` | [Migration Replay #59](https://github.com/lemai-rgb/MMincare/actions/runs/44925460928), [Demo Checks #41](https://github.com/lemai-rgb/MMincare/actions/runs/44925460985) và [Vercel Preview](https://vercel.com/lemai-rgbs-projects/m-mincare/wjxFTshbsH9mFj74G9J5v4Q2Bj4d) đạt |
+| 8 | Merge đúng HEAD đã kiểm thử | Merge `f7738c3`, Git xác nhận tree giống HEAD `1604009` |
+| 9 | Chờ Vercel và kiểm tra sau deploy | [Vercel Production](https://vercel.com/lemai-rgbs-projects/m-mincare/ExfczfeCMTaYiEkSZkRGUWixNNKn) thành công. [Deployment #7966331282](https://api.github.com/repos/lemai-rgb/MMincare/deployments/7966331282/statuses) ghi môi trường Production |
+| 10 | Smoke HTTP website production | Đạt 9/9 trên trang chủ, đăng nhập, demo, dashboard, API danh sách Pet chia sẻ, lời mời, thông báo và hai API Caretaker thêm hồ sơ |
+
+### Đối chiếu dữ liệu trong lượt PR #37
+
+Mã MD5 ở đây được tính từ chuỗi JSON toàn bộ row sắp xếp theo nội dung JSON. Bảng lịch sử PR #36 bên dưới dùng lượt kiểm tra khác.
+
+| Nhóm dữ liệu | Số lượng trước/sau | MD5 trước/sau |
+|---|---|---|
+| pets | 5 / 5 | `37e58c01ab25e33ae5423cce4bc6eab4` |
+| vaccine_records | 7 / 7 | `70e87d64d945132d8a1e7344a3e3821b` |
+| medical_records | 5 / 5 | `8f1cb276825f2d25e77c5a1262cf7ffb` |
+| pet_access | 0 / 0 | `d41d8cd98f00b204e9800998ecf8427e` |
+| reminders | 8 / 8 | `4498bfae248f91616b8fcf44a9a5049f` |
+| medical_attachments | 1 / 1 | `09b8f54a96b735f1f011e0baab7e42c3` |
+| storage.objects trong medical-record-attachments | 1 / 1 | `0e3ef1b62d02fc392a46607b80f86482` |
+
+### Phần còn chờ
+
+- [ ] CARE-15 qua giao diện production với hai tài khoản Owner/Caretaker đã đăng nhập.
+- [ ] Kiểm thử revoke/write đồng thời trên production.
+- [ ] Ma trận thiết bị, bàn phím và giao diện đầy đủ.
+- [ ] Các kiểm thử email thực, retry và đo hiệu năng còn chờ trong [trang tiến độ](PROJECT_STATUS.md).
+
+Các kết quả SQL production, Playwright trên Supabase sạch/legacy và smoke HTTP được ghi theo đúng môi trường đã chạy. CARE-15 production tiếp tục giữ trạng thái chờ.
+
+## Lịch sử triển khai PR #36
+
 **Ngày:** 21/11/2026, giờ Việt Nam.  
 **Release:** [PR #36](https://github.com/lemai-rgb/MMincare/pull/36). PR ghi nhận HEAD, CI, merge SHA và deployment sau khi mỗi bước trả kết quả.
 
